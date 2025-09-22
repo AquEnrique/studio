@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Card } from '@/lib/types';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -8,7 +8,9 @@ import { ScrollArea } from './ui/scroll-area';
 import { Card as CardComponent, CardContent } from './ui/card';
 import { CardDisplay } from './card-display';
 import { Skeleton } from './ui/skeleton';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const RESULTS_PER_PAGE = 20;
 
 interface CardSearchProps {
   onSearch: (term: string) => void;
@@ -22,9 +24,17 @@ interface CardSearchProps {
 
 export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardClick, isCollapsed, setIsCollapsed }: CardSearchProps) {
   const [term, setTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(results.length / RESULTS_PER_PAGE);
+  const paginatedResults = useMemo(() => {
+    const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+    return results.slice(startIndex, startIndex + RESULTS_PER_PAGE);
+  }, [results, currentPage]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setCurrentPage(1);
     onSearch(term);
   };
   
@@ -35,7 +45,7 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
       <CardContent className="p-4 flex-grow flex flex-col">
         <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
           <Input
-            placeholder="Search for a card..."
+            placeholder="Search for a card (min 4 chars)..."
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             className="text-base"
@@ -71,7 +81,7 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
                   <p>Begin by searching for a card.</p>
                 </div>
               )}
-              {!isLoading && results.map((card) => (
+              {!isLoading && paginatedResults.map((card) => (
                 <div
                   key={card.id}
                   draggable
@@ -85,6 +95,29 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
             </div>
           </ScrollArea>
         </div>
+        {totalPages > 1 && !isCollapsed && (
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft />
+            </Button>
+            <span className="text-sm font-medium">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+        )}
       </CardContent>
     </CardComponent>
   );

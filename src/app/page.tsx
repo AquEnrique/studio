@@ -81,8 +81,13 @@ export default function Home() {
   }, [mainDeck, extraDeck, sideDeck, toast]);
   
   const handleSearch = async (term: string) => {
-    if (!term) {
+    if (term.length < 4) {
       setSearchResults([]);
+       toast({
+        variant: 'destructive',
+        title: 'Search Term Too Short',
+        description: 'Please enter at least 4 characters to search.',
+      });
       return;
     }
     setIsLoading(true);
@@ -286,7 +291,7 @@ export default function Home() {
         <div className="lg:col-span-3 flex flex-col min-h-[80vh] lg:min-h-0 lg:h-full">
           <DeckBuilder
             decks={allDecks}
-            validation={validation}
+            validation={null}
             totalDeckValue={totalDeckValue}
             onDrop={handleDrop}
             onDragStart={handleDragStart}
