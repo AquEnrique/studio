@@ -106,12 +106,14 @@ export default function Home() {
   };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, card: Card, source: DeckType | 'search') => {
-    e.dataTransfer.setData('application/json', JSON.stringify({ card, source }));
+    e.dataTransfer.setData('text/plain', JSON.stringify({ card, source }));
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetDeck: DeckType | 'trash') => {
     e.preventDefault();
-    const transferData = JSON.parse(e.dataTransfer.getData('application/json'));
+    const data = e.dataTransfer.getData('text/plain');
+    if (!data) return;
+    const transferData = JSON.parse(data);
     const { card, source }: { card: Card; source: DeckType | 'search' } = transferData;
 
     // Handle removing from source deck
