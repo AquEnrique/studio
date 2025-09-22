@@ -66,19 +66,21 @@ export default function Home() {
         `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(term)}`
       );
       if (!response.ok) {
-        if(response.status === 400) {
-            toast({
-                variant: 'destructive',
-                title: 'No cards found',
-                description: `No cards matching "${term}" were found.`,
-            });
-            setSearchResults([]);
-            return;
+        if (response.status === 400) {
+          const errorData = await response.json();
+          toast({
+            variant: 'destructive',
+            title: 'No cards found',
+            description: errorData.error || `No cards matching "${term}" were found.`,
+          });
+          setSearchResults([]);
+        } else {
+          throw new Error('Network response was not ok');
         }
-        throw new Error('Network response was not ok');
+      } else {
+        const data = await response.json();
+        setSearchResults(data.data);
       }
-      const data = await response.json();
-      setSearchResults(data.data);
     } catch (error) {
       console.error('Failed to fetch cards:', error);
       toast({
@@ -86,6 +88,7 @@ export default function Home() {
         title: 'Search Error',
         description: 'Could not fetch cards. Please try again later.',
       });
+      setSearchResults([]);
     } finally {
       setIsLoading(false);
     }
