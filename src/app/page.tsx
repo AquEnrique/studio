@@ -67,7 +67,6 @@ export default function Home() {
         `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(term)}`
       );
        if (!response.ok) {
-        // The API returns 400 with an error object if no cards are found
         if (response.status === 400) {
             const errorData = await response.json();
              toast({
@@ -76,20 +75,21 @@ export default function Home() {
                 description: errorData.error || `No cards matching "${term}" were found.`,
             });
             setSearchResults([]);
-            return;
+        } else {
+            throw new Error('Network response was not ok');
         }
-        throw new Error('Network response was not ok');
-      }
-      const data = await response.json();
-      if (data.data && data.data.length > 0) {
-        setSearchResults(data.data);
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'No cards found',
-          description: `No cards matching "${term}" were found.`,
-        });
-        setSearchResults([]);
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+            setSearchResults(data.data);
+        } else {
+            toast({
+            variant: 'destructive',
+            title: 'No cards found',
+            description: `No cards matching "${term}" were found.`,
+            });
+            setSearchResults([]);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch cards:', error);
@@ -121,7 +121,11 @@ export default function Home() {
     if (activeDeckTab === 'side') {
       targetDeck = 'side';
     } else {
-      targetDeck = isExtraDeckCard ? 'extra' : 'main';
+        if (isExtraDeckCard) {
+            targetDeck = 'extra';
+        } else {
+            targetDeck = 'main';
+        }
     }
 
     const targetSetter = {
@@ -146,7 +150,8 @@ export default function Home() {
   };
 
   const handleDragStart = (e: React.DragEvent, card: Card, source: DeckType | 'search') => {
-    e.dataTransfer.setData('application/json', JSON.stringify({ card, source }));
+    const data = JSON.stringify({ card, source });
+    e.dataTransfer.setData('application/json', data);
   };
 
   const handleDrop = (e: React.DragEvent, targetDeck: DeckType | 'trash') => {
@@ -156,7 +161,6 @@ export default function Home() {
     const transferData = JSON.parse(data);
     const { card, source }: { card: Card; source: DeckType | 'search' } = transferData;
 
-    // Handle removing from source deck
     if (source !== 'search') {
       const sourceSetter = {
         main: setMainDeck,
@@ -171,7 +175,6 @@ export default function Home() {
         return;
     }
 
-    // Handle adding to target deck
     const targetSetter = {
       main: setMainDeck,
       extra: setExtraDeck,
@@ -180,7 +183,6 @@ export default function Home() {
 
     const isExtraDeckCard = EXTRA_DECK_TYPES.includes(card.type);
 
-    // Auto-route to correct deck if dropped on main/extra
     if (targetDeck === 'main' && isExtraDeckCard) {
       targetDeck = 'extra';
     } else if (targetDeck === 'extra' && !isExtraDeckCard) {
@@ -195,7 +197,6 @@ export default function Home() {
         title: 'Card Limit Reached',
         description: `You can only have 3 copies of "${card.name}".`,
       });
-      // Re-add to source if moved
       if (source !== 'search') {
           const sourceSetterReAdd = { main: setMainDeck, extra: setExtraDeck, side: setSideDeck }[source];
           sourceSetterReAdd(prev => [...prev, card]);
@@ -214,10 +215,10 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-body">
+    <div className="flex flex-col lg:h-screen bg-background text-foreground font-body">
       <Header />
-      <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 overflow-hidden">
-        <div className="lg:col-span-2 flex flex-col h-full overflow-hidden">
+      <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 lg:overflow-hidden">
+        <div className="lg:col-span-2 flex flex-col h-full lg:overflow-hidden min-h-[50vh]">
           <CardSearch 
             onSearch={handleSearch} 
             results={searchResults} 
@@ -226,7 +227,7 @@ export default function Home() {
             onCardClick={handleCardClick}
           />
         </div>
-        <div className="lg:col-span-3 flex flex-col h-full overflow-hidden">
+        <div className="lg:col-span-3 flex flex-col h-full lg:overflow-hidden min-h-[80vh]">
           <DeckBuilder
             decks={allDecks}
             validation={validation}
