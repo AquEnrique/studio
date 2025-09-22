@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, DeckValidation } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, XCircle, Trash2, ArrowUpDown, Gem, Download } from 'lucide-react';
+import { CheckCircle, XCircle, Trash2, ArrowUpDown, Gem, Download, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
+import { toPng } from 'html-to-image';
 
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
@@ -25,8 +26,9 @@ interface DeckBuilderProps {
 
 export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragStart, activeTab, setActiveTab, onCardClick, onSort }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
+  const deckRef = useRef<HTMLDivElement>(null);
 
-  const handleDownload = () => {
+  const handleDownloadTxt = () => {
     const deckSections = {
       main: decks.main,
       extra: decks.extra,
@@ -66,6 +68,23 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+  
+  const handleDownloadJpg = () => {
+    if (deckRef.current === null) {
+      return;
+    }
+
+    toPng(deckRef.current, { cacheBust: true, backgroundColor: '#303030' })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = 'ygo-deck.jpg';
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
 
@@ -125,27 +144,31 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
   
   return (
     <CardComponent className="flex flex-col h-full shadow-lg">
-      <CardHeader className="flex-row items-center justify-between">
+       <CardHeader className="flex-row items-center justify-between">
         <div className="flex items-center gap-4">
             <CardTitle>Deck Builder</CardTitle>
-            <div className={`flex items-center gap-2 font-mono text-sm ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                <Gem className="w-4 h-4"/>
-                <span>Total Value:</span>
-                <span className="font-bold">{totalDeckValue}</span>
-            </div>
         </div>
         <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={onSort}>
             <ArrowUpDown className="mr-2 h-4 w-4" />
             Sort
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDownload}>
+            <Button variant="outline" size="sm" onClick={handleDownloadTxt}>
               <Download className="mr-2 h-4 w-4" />
-              Download
+              TXT
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadJpg}>
+              <ImageIcon className="mr-2 h-4 w-4" />
+              JPG
             </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
+      <CardContent ref={deckRef} className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
+        <div className="flex items-center gap-2 font-mono text-sm mb-2 justify-center">
+            <Gem className={`w-4 h-4 ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}/>
+            <span className={`${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>Total Value:</span>
+            <span className={`font-bold ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>{totalDeckValue}</span>
+        </div>
         <Tabs 
           defaultValue="main" 
           className="flex-grow flex flex-col"
@@ -170,15 +193,6 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
           </div>
         </Tabs>
         <div className="shrink-0 mt-4 space-y-4">
-            {validation && (
-                <Alert variant={validation.isValid ? 'default' : 'destructive'}>
-                {validation.isValid ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                <AlertTitle className="font-semibold">
-                    {validation.isValid ? 'Deck is Valid' : 'Deck is Invalid'}
-                </AlertTitle>
-                <AlertDescription>{validation.feedback}</AlertDescription>
-                </Alert>
-            )}
             <div
                 onDrop={(e) => { onDrop(e, 'trash'); setIsDragOverTrash(false); }}
                 onDragOver={(e) => { e.preventDefault(); setIsDragOverTrash(true); }}
