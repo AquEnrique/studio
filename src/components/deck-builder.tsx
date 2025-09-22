@@ -130,8 +130,12 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
        try {
         const dataUrl = await toPng(element, { 
             cacheBust: true, 
-            backgroundColor: '#303030', // Use dark background from theme
-            width: 800
+            backgroundColor: '#303030',
+            width: 800,
+            fetchRequestInit: {
+              mode: 'cors',
+              credentials: 'omit',
+            }
         });
         const link = document.createElement('a');
         link.download = 'ygo-deck.jpg';
