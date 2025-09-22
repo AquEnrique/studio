@@ -164,7 +164,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
+      <CardContent ref={deckRef} className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 font-mono text-sm">
             <Gem className={`w-4 h-4 ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}/>
@@ -189,7 +189,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
           </RadioGroup>
         </div>
         
-        <ScrollArea ref={deckRef} className="flex-grow rounded-md border p-2">
+        <ScrollArea className="flex-grow rounded-md border p-2">
             <div className="space-y-4">
               {renderDeckContent('main')}
               {renderDeckContent('extra')}
