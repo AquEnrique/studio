@@ -271,8 +271,8 @@ export default function Home() {
   return (
     <div className="flex flex-col lg:h-screen bg-background text-foreground font-body">
       <Header />
-      <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 lg:overflow-hidden">
-        <div className="lg:col-span-2 flex flex-col lg:overflow-hidden min-h-[50vh] lg:min-h-0">
+      <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4">
+        <div className="lg:col-span-2 flex flex-col min-h-[50vh] lg:min-h-0 lg:h-full">
           <CardSearch 
             onSearch={handleSearch} 
             results={searchResults} 
@@ -283,7 +283,7 @@ export default function Home() {
             setIsCollapsed={setIsSearchCollapsed}
           />
         </div>
-        <div className="lg:col-span-3 flex flex-col lg:overflow-hidden min-h-[80vh] lg:min-h-0">
+        <div className="lg:col-span-3 flex flex-col min-h-[80vh] lg:min-h-0 lg:h-full">
           <DeckBuilder
             decks={allDecks}
             validation={validation}

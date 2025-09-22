@@ -84,7 +84,7 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
             <span className="font-mono text-sm text-muted-foreground">{`${deck.length} / ${max}`}</span>
         </div>
         <ScrollArea className="flex-grow rounded-md">
-           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-2 pr-2">
+           <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-10 gap-2 pr-2">
             {deck.length === 0 ? (
               <div className="col-span-full text-center text-muted-foreground pt-8">
                 <p>Drag cards here</p>
@@ -102,7 +102,7 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
                     src={card.card_images[0].image_url}
                     alt={card.name}
                     fill
-                    sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 25vw"
+                    sizes="(max-width: 768px) 20vw, (max-width: 1200px) 12.5vw, 10vw"
                     className="object-cover rounded-md"
                   />
                   {card.value && card.value > 0 && (
