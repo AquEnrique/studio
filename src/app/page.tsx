@@ -26,6 +26,7 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<Card[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [validation, setValidation] = useState<DeckValidation | null>(null);
+  const [activeDeckTab, setActiveDeckTab] = useState<DeckType>('main');
   const { toast } = useToast();
 
   const allDecks = useMemo(() => ({
@@ -65,7 +66,7 @@ export default function Home() {
       const response = await fetch(
         `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(term)}`
       );
-      if (!response.ok) {
+       if (!response.ok) {
         // The API returns 400 with an error object if no cards are found
         if (response.status === 400) {
             const errorData = await response.json();
@@ -79,9 +80,7 @@ export default function Home() {
         }
         throw new Error('Network response was not ok');
       }
-      
       const data = await response.json();
-
       if (data.data && data.data.length > 0) {
         setSearchResults(data.data);
       } else {
@@ -105,13 +104,54 @@ export default function Home() {
     }
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, card: Card, source: DeckType | 'search') => {
-    e.dataTransfer.setData('text/plain', JSON.stringify({ card, source }));
+  const handleCardClick = (card: Card) => {
+    const cardCount = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.name === card.name).length;
+    if (cardCount >= 3) {
+      toast({
+        variant: 'destructive',
+        title: 'Card Limit Reached',
+        description: `You can only have 3 copies of "${card.name}".`,
+      });
+      return;
+    }
+    
+    const isExtraDeckCard = EXTRA_DECK_TYPES.includes(card.type);
+    let targetDeck: DeckType;
+
+    if (activeDeckTab === 'side') {
+      targetDeck = 'side';
+    } else {
+      targetDeck = isExtraDeckCard ? 'extra' : 'main';
+    }
+
+    const targetSetter = {
+      main: setMainDeck,
+      extra: setExtraDeck,
+      side: setSideDeck,
+    }[targetDeck];
+
+    targetSetter(prev => [...prev, card]);
+    toast({ title: 'Card Added', description: `Added ${card.name} to your ${targetDeck} deck.` });
+  };
+  
+  const removeCardFromDeck = (card: Card, deck: DeckType, index: number) => {
+    const deckSetter = {
+      main: setMainDeck,
+      extra: setExtraDeck,
+      side: setSideDeck,
+    }[deck];
+
+    deckSetter(prev => prev.filter((c, i) => i !== index));
+    toast({ title: 'Card Removed', description: `Removed ${card.name} from your ${deck} deck.` });
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetDeck: DeckType | 'trash') => {
+  const handleDragStart = (e: React.DragEvent, card: Card, source: DeckType | 'search') => {
+    e.dataTransfer.setData('application/json', JSON.stringify({ card, source }));
+  };
+
+  const handleDrop = (e: React.DragEvent, targetDeck: DeckType | 'trash') => {
     e.preventDefault();
-    const data = e.dataTransfer.getData('text/plain');
+    const data = e.dataTransfer.getData('application/json');
     if (!data) return;
     const transferData = JSON.parse(data);
     const { card, source }: { card: Card; source: DeckType | 'search' } = transferData;
@@ -147,7 +187,6 @@ export default function Home() {
       targetDeck = 'main';
     }
 
-    const deckToAdd = allDecks[targetDeck];
     const cardCount = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.name === card.name).length;
 
     if (cardCount >= 3) {
@@ -184,6 +223,7 @@ export default function Home() {
             results={searchResults} 
             isLoading={isLoading} 
             onDragStart={handleDragStart} 
+            onCardClick={handleCardClick}
           />
         </div>
         <div className="lg:col-span-3 flex flex-col h-full overflow-hidden">
@@ -192,6 +232,9 @@ export default function Home() {
             validation={validation}
             onDrop={handleDrop}
             onDragStart={handleDragStart}
+            activeTab={activeDeckTab}
+            setActiveTab={setActiveDeckTab}
+            onCardClick={removeCardFromDeck}
           />
         </div>
       </main>

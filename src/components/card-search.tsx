@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Card, DeckType } from '@/lib/types';
+import type { Card } from '@/lib/types';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
@@ -14,10 +14,11 @@ interface CardSearchProps {
   onSearch: (term: string) => void;
   results: Card[];
   isLoading: boolean;
-  onDragStart: (e: React.DragEvent<HTMLDivElement>, card: Card, source: DeckType | 'search') => void;
+  onDragStart: (e: React.DragEvent, card: Card, source: 'search') => void;
+  onCardClick: (card: Card) => void;
 }
 
-export function CardSearch({ onSearch, results, isLoading, onDragStart }: CardSearchProps) {
+export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardClick }: CardSearchProps) {
   const [term, setTerm] = useState('');
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -60,7 +61,8 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart }: CardSe
                 key={card.id}
                 draggable
                 onDragStart={(e) => onDragStart(e, card, 'search')}
-                className="cursor-grab active:cursor-grabbing transition-all duration-200 hover:scale-[1.02] hover:shadow-cyan-500/20"
+                onClick={() => onCardClick(card)}
+                className="cursor-pointer active:cursor-grabbing transition-all duration-200 hover:scale-[1.02] hover:shadow-cyan-500/20"
               >
                 <CardDisplay card={card} />
               </div>

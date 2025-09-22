@@ -7,22 +7,27 @@ import { ScrollArea } from './ui/scroll-area';
 import { CardDisplay } from './card-display';
 import type { Card, DeckType, DeckValidation } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Lightbulb, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import Image from 'next/image';
+import { Button } from './ui/button';
+import { X } from 'lucide-react';
 
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
   validation: DeckValidation | null;
-  onDrop: (e: React.DragEvent<HTMLDivElement>, targetDeck: DeckType | 'trash') => void;
-  onDragStart: (e: React.DragEvent<HTMLDivElement>, card: Card, source: DeckType) => void;
+  onDrop: (e: React.DragEvent, targetDeck: DeckType | 'trash') => void;
+  onDragStart: (e: React.DragEvent, card: Card, source: DeckType) => void;
+  activeTab: DeckType;
+  setActiveTab: (tab: DeckType) => void;
+  onCardClick: (card: Card, deck: DeckType, index: number) => void;
 }
 
-export function DeckBuilder({ decks, validation, onDrop, onDragStart }: DeckBuilderProps) {
+export function DeckBuilder({ decks, validation, onDrop, onDragStart, activeTab, setActiveTab, onCardClick }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
 
   const renderDeckContent = (deckType: DeckType) => {
     const deck = decks[deckType];
     const max = { main: 60, extra: 15, side: 15 }[deckType];
-    const min = { main: 40, extra: 0, side: 0 }[deckType];
 
     return (
       <div 
@@ -35,9 +40,9 @@ export function DeckBuilder({ decks, validation, onDrop, onDragStart }: DeckBuil
             <span className="font-mono text-sm text-muted-foreground">{`${deck.length} / ${max}`}</span>
         </div>
         <ScrollArea className="flex-grow rounded-md">
-          <div className="space-y-2 pr-2">
+           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-2 pr-2">
             {deck.length === 0 ? (
-              <div className="text-center text-muted-foreground pt-8">
+              <div className="col-span-full text-center text-muted-foreground pt-8">
                 <p>Drag cards here</p>
               </div>
             ) : (
@@ -46,9 +51,19 @@ export function DeckBuilder({ decks, validation, onDrop, onDragStart }: DeckBuil
                   key={`${card.id}-${index}`}
                   draggable
                   onDragStart={(e) => onDragStart(e, card, deckType)}
-                  className="cursor-grab active:cursor-grabbing"
+                  onClick={() => onCardClick(card, deckType, index)}
+                  className="relative group cursor-pointer aspect-[59/86]"
                 >
-                  <CardDisplay card={card} />
+                  <Image
+                    src={card.card_images[0].image_url}
+                    alt={card.name}
+                    fill
+                    sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 25vw"
+                    className="object-cover rounded-md"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <X className="w-8 h-8 text-white" />
+                  </div>
                 </div>
               ))
             )}
@@ -64,7 +79,12 @@ export function DeckBuilder({ decks, validation, onDrop, onDragStart }: DeckBuil
         <CardTitle>Deck Builder</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
-        <Tabs defaultValue="main" className="flex-grow flex flex-col">
+        <Tabs 
+          defaultValue="main" 
+          className="flex-grow flex flex-col"
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as DeckType)}
+        >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="main">Main</TabsTrigger>
             <TabsTrigger value="extra">Extra</TabsTrigger>
