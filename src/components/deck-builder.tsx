@@ -149,17 +149,17 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
             <CardTitle>Deck Builder</CardTitle>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onSort}>
-            <ArrowUpDown className="mr-2 h-4 w-4" />
-            Sort
+            <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={onSort}>
+                <ArrowUpDown className="md:mr-2" />
+                <span className="hidden md:inline">Sort</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDownloadTxt}>
-              <Download className="mr-2 h-4 w-4" />
-              TXT
+            <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={handleDownloadTxt}>
+              <Download className="md:mr-2" />
+              <span className="hidden md:inline">TXT</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDownloadJpg}>
-              <ImageIcon className="mr-2 h-4 w-4" />
-              JPG
+            <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={handleDownloadJpg}>
+              <ImageIcon className="md:mr-2" />
+              <span className="hidden md:inline">JPG</span>
             </Button>
         </div>
       </CardHeader>
