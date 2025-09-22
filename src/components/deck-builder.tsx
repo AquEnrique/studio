@@ -6,7 +6,7 @@ import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, DeckValidation } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, XCircle, Trash2, ArrowUpDown, Gem } from 'lucide-react';
+import { CheckCircle, XCircle, Trash2, ArrowUpDown, Gem, Download } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
@@ -25,6 +25,49 @@ interface DeckBuilderProps {
 
 export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragStart, activeTab, setActiveTab, onCardClick, onSort }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
+
+  const handleDownload = () => {
+    const deckSections = {
+      main: decks.main,
+      extra: decks.extra,
+      side: decks.side,
+    };
+
+    let content = `Total Deck Value: ${totalDeckValue}\n\n`;
+
+    for (const [deckName, deckCards] of Object.entries(deckSections)) {
+      content += `---------- ${deckName.toUpperCase()} DECK (${deckCards.length}) ----------\n`;
+      
+      const cardCounts: { [key: string]: { count: number; value?: number } } = {};
+      deckCards.forEach(card => {
+        if (!cardCounts[card.name]) {
+          cardCounts[card.name] = { count: 0, value: card.value };
+        }
+        cardCounts[card.name].count++;
+      });
+
+      Object.entries(cardCounts).forEach(([cardName, { count, value }]) => {
+        content += `${count}x ${cardName}`;
+        if (value && value > 0) {
+          content += ` (Value: ${value})`;
+        }
+        content += '\n';
+      });
+      
+      content += '\n';
+    }
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'ygo-deck.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
 
   const renderDeckContent = (deckType: DeckType) => {
     const deck = decks[deckType];
@@ -91,10 +134,16 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
                 <span className="font-bold">{totalDeckValue}</span>
             </div>
         </div>
-        <Button variant="outline" size="sm" onClick={onSort}>
-          <ArrowUpDown className="mr-2 h-4 w-4" />
-          Sort
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={onSort}>
+            <ArrowUpDown className="mr-2 h-4 w-4" />
+            Sort
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+        </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
         <Tabs 
