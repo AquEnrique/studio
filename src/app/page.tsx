@@ -63,16 +63,27 @@ export default function Home() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://yugioh-api.vercel.app/api/cards?name=${encodeURIComponent(term)}`
+        `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(term)}`
       );
       if (!response.ok) {
-          throw new Error('Network response was not ok');
+        // The API returns 400 with an error object if no cards are found
+        if (response.status === 400) {
+            const errorData = await response.json();
+             toast({
+                variant: 'destructive',
+                title: 'No cards found',
+                description: errorData.error || `No cards matching "${term}" were found.`,
+            });
+            setSearchResults([]);
+            return;
+        }
+        throw new Error('Network response was not ok');
       }
       
       const data = await response.json();
 
-      if (data.cards && data.cards.length > 0) {
-        setSearchResults(data.cards);
+      if (data.data && data.data.length > 0) {
+        setSearchResults(data.data);
       } else {
         toast({
           variant: 'destructive',
