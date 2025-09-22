@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, DeckValidation } from '@/lib/types';
@@ -11,6 +10,8 @@ import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { createRoot } from 'react-dom/client';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Label } from './ui/label';
 
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
@@ -18,8 +19,8 @@ interface DeckBuilderProps {
   totalDeckValue: number;
   onDrop: (e: React.DragEvent, targetDeck: DeckType | 'trash') => void;
   onDragStart: (e: React.DragEvent, card: Card, source: DeckType) => void;
-  activeTab: DeckType;
-  setActiveTab: (tab: DeckType) => void;
+  addMode: 'main-extra' | 'side';
+  setAddMode: (mode: 'main-extra' | 'side') => void;
   onCardClick: (card: Card, deck: DeckType, index: number) => void;
   onSort: () => void;
 }
@@ -65,7 +66,7 @@ const DeckImageContent = ({ decks, totalDeckValue }: { decks: DeckBuilderProps['
     </div>
   );
 
-export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragStart, activeTab, setActiveTab, onCardClick, onSort }: DeckBuilderProps) {
+export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const deckRef = useRef<HTMLDivElement>(null);
 
@@ -164,7 +165,6 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
             <span className="font-semibold text-lg">{deckType.charAt(0).toUpperCase() + deckType.slice(1)} Deck</span>
             <span className="font-mono text-sm text-muted-foreground">{`${deck.length} / ${max}`}</span>
         </div>
-        <ScrollArea className="flex-grow rounded-md">
            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-10 gap-2 pr-2">
             {deck.length === 0 ? (
               <div className="col-span-full text-center text-muted-foreground pt-8">
@@ -199,14 +199,13 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
               ))
             )}
           </div>
-        </ScrollArea>
       </div>
     );
   };
   
   return (
     <CardComponent className="flex flex-col h-full shadow-lg">
-       <CardHeader className="flex-row items-center justify-between">
+       <CardHeader className="flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-4">
             <CardTitle>Deck Builder</CardTitle>
         </div>
@@ -226,34 +225,38 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
         </div>
       </CardHeader>
       <CardContent ref={deckRef} className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
-        <div className="flex items-center gap-2 font-mono text-sm mb-2 justify-center">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 font-mono text-sm">
             <Gem className={`w-4 h-4 ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}/>
             <span className={`${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>Total Value:</span>
             <span className={`font-bold ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>{totalDeckValue}</span>
-        </div>
-        <Tabs 
-          defaultValue="main" 
-          className="flex-grow flex flex-col"
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as DeckType)}
-        >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="main">Main</TabsTrigger>
-            <TabsTrigger value="extra">Extra</TabsTrigger>
-            <TabsTrigger value="side">Side</TabsTrigger>
-          </TabsList>
-          <div className="flex-grow mt-2 overflow-hidden">
-            <TabsContent value="main" className="h-full m-0">
-              {renderDeckContent('main')}
-            </TabsContent>
-            <TabsContent value="extra" className="h-full m-0">
-              {renderDeckContent('extra')}
-            </TabsContent>
-            <TabsContent value="side" className="h-full m-0">
-              {renderDeckContent('side')}
-            </TabsContent>
           </div>
-        </Tabs>
+          <RadioGroup 
+            defaultValue="main-extra" 
+            value={addMode} 
+            onValueChange={(value) => setAddMode(value as 'main-extra' | 'side')}
+            className="flex items-center gap-4"
+          >
+            <Label className="text-sm font-medium">Target Deck:</Label>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="main-extra" id="main-extra" />
+              <Label htmlFor="main-extra">Main/Extra</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="side" id="side" />
+              <Label htmlFor="side">Side</Label>
+            </div>
+          </RadioGroup>
+        </div>
+        
+        <ScrollArea className="flex-grow rounded-md border p-2">
+            <div className="space-y-4">
+              {renderDeckContent('main')}
+              {renderDeckContent('extra')}
+              {renderDeckContent('side')}
+            </div>
+        </ScrollArea>
+        
         <div className="shrink-0 mt-4 space-y-4">
             <div
                 onDrop={(e) => { onDrop(e, 'trash'); setIsDragOverTrash(false); }}

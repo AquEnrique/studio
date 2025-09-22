@@ -45,8 +45,8 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<Card[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [validation, setValidation] = useState<DeckValidation | null>(null);
-  const [activeDeckTab, setActiveDeckTab] = useState<DeckType>('main');
-  const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
+  const [addMode, setAddMode] = useState<'main-extra' | 'side'>('main-extra');
+  const [isSearchCollapsed, setIsSearchCollapsed]_useState(true);
   const { toast } = useToast();
 
   const allDecks = useMemo(() => ({
@@ -152,14 +152,14 @@ export default function Home() {
     const isExtraDeckCard = EXTRA_DECK_TYPES.includes(card.type);
     let targetDeck: DeckType;
 
-    if (activeDeckTab === 'side') {
+    if (addMode === 'side') {
       targetDeck = 'side';
     } else {
-        if (isExtraDeckCard) {
-            targetDeck = 'extra';
-        } else {
-            targetDeck = 'main';
-        }
+      if (isExtraDeckCard) {
+        targetDeck = 'extra';
+      } else {
+        targetDeck = 'main';
+      }
     }
 
     const targetSetter = {
@@ -293,10 +293,10 @@ export default function Home() {
             decks={allDecks}
             validation={null}
             totalDeckValue={totalDeckValue}
-            onDrop={handleDrop}
+            onDrop={onDrop}
             onDragStart={handleDragStart}
-            activeTab={activeDeckTab}
-            setActiveTab={setActiveDeckTab}
+            addMode={addMode}
+            setAddMode={setAddMode}
             onCardClick={removeCardFromDeck}
             onSort={handleSortDecks}
           />
