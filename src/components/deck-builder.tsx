@@ -7,7 +7,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { CardDisplay } from './card-display';
 import type { Card, DeckType, DeckValidation } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { CheckCircle, XCircle, Trash2, ArrowUpDown } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
@@ -20,9 +20,10 @@ interface DeckBuilderProps {
   activeTab: DeckType;
   setActiveTab: (tab: DeckType) => void;
   onCardClick: (card: Card, deck: DeckType, index: number) => void;
+  onSort: () => void;
 }
 
-export function DeckBuilder({ decks, validation, onDrop, onDragStart, activeTab, setActiveTab, onCardClick }: DeckBuilderProps) {
+export function DeckBuilder({ decks, validation, onDrop, onDragStart, activeTab, setActiveTab, onCardClick, onSort }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
 
   const renderDeckContent = (deckType: DeckType) => {
@@ -75,8 +76,12 @@ export function DeckBuilder({ decks, validation, onDrop, onDragStart, activeTab,
   
   return (
     <CardComponent className="flex flex-col h-full shadow-lg">
-      <CardHeader>
+      <CardHeader className="flex-row items-center justify-between">
         <CardTitle>Deck Builder</CardTitle>
+        <Button variant="outline" size="sm" onClick={onSort}>
+          <ArrowUpDown className="mr-2 h-4 w-4" />
+          Sort
+        </Button>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
         <Tabs 

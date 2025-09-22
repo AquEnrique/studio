@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Card, DeckType, DeckValidation } from '@/lib/types';
 import { getDeckValidation } from './actions';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,19 @@ const EXTRA_DECK_TYPES = [
   'Fusion Pendulum Effect Monster',
 ];
 
+const CARD_TYPE_SORT_ORDER = {
+  'monster': 1,
+  'spell': 2,
+  'trap': 3,
+};
+
+function getCardSortType(card: Card): 'monster' | 'spell' | 'trap' {
+    if (card.type.includes('Monster')) return 'monster';
+    if (card.type.includes('Spell')) return 'spell';
+    if (card.type.includes('Trap')) return 'trap';
+    return 'monster'; // Default case
+}
+
 export default function Home() {
   const [mainDeck, setMainDeck] = useState<Card[]>([]);
   const [extraDeck, setExtraDeck] = useState<Card[]>([]);
@@ -27,6 +40,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [validation, setValidation] = useState<DeckValidation | null>(null);
   const [activeDeckTab, setActiveDeckTab] = useState<DeckType>('main');
+  const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const { toast } = useToast();
 
   const allDecks = useMemo(() => ({
@@ -62,6 +76,7 @@ export default function Home() {
       return;
     }
     setIsLoading(true);
+    setIsSearchCollapsed(false);
     try {
       const response = await fetch(
         `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(term)}`
@@ -151,12 +166,12 @@ export default function Home() {
 
   const handleDragStart = (e: React.DragEvent, card: Card, source: DeckType | 'search') => {
     const data = JSON.stringify({ card, source });
-    e.dataTransfer.setData('application/json', data);
+    e.dataTransfer.setData('text/plain', data);
   };
 
   const handleDrop = (e: React.DragEvent, targetDeck: DeckType | 'trash') => {
     e.preventDefault();
-    const data = e.dataTransfer.getData('application/json');
+    const data = e.dataTransfer.getData('text/plain');
     if (!data) return;
     const transferData = JSON.parse(data);
     const { card, source }: { card: Card; source: DeckType | 'search' } = transferData;
@@ -214,20 +229,47 @@ export default function Home() {
     toast({ title: 'Card Added', description: `Added ${card.name} to your ${targetDeck} deck.`});
   };
 
+  const sortDeck = useCallback((deck: Card[]) => {
+    return [...deck].sort((a, b) => {
+      const typeA = getCardSortType(a);
+      const typeB = getCardSortType(b);
+      const typeOrderA = CARD_TYPE_SORT_ORDER[typeA];
+      const typeOrderB = CARD_TYPE_SORT_ORDER[typeB];
+
+      if (typeOrderA !== typeOrderB) {
+        return typeOrderA - typeOrderB;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
+
+  const handleSortDecks = useCallback(() => {
+    setMainDeck(prev => sortDeck(prev));
+    setExtraDeck(prev => sortDeck(prev));
+    setSideDeck(prev => sortDeck(prev));
+    toast({
+      title: 'Decks Sorted',
+      description: 'Your decks have been sorted by type and name.',
+    });
+  }, [sortDeck, toast]);
+
+
   return (
     <div className="flex flex-col lg:h-screen bg-background text-foreground font-body">
       <Header />
       <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 lg:overflow-hidden">
-        <div className="lg:col-span-2 flex flex-col h-full lg:overflow-hidden min-h-[50vh]">
+        <div className="lg:col-span-2 flex flex-col lg:overflow-hidden min-h-[50vh] lg:min-h-0">
           <CardSearch 
             onSearch={handleSearch} 
             results={searchResults} 
             isLoading={isLoading} 
             onDragStart={handleDragStart} 
             onCardClick={handleCardClick}
+            isCollapsed={isSearchCollapsed}
+            setIsCollapsed={setIsSearchCollapsed}
           />
         </div>
-        <div className="lg:col-span-3 flex flex-col h-full lg:overflow-hidden min-h-[80vh]">
+        <div className="lg:col-span-3 flex flex-col lg:overflow-hidden min-h-[80vh] lg:min-h-0">
           <DeckBuilder
             decks={allDecks}
             validation={validation}
@@ -236,6 +278,7 @@ export default function Home() {
             activeTab={activeDeckTab}
             setActiveTab={setActiveDeckTab}
             onCardClick={removeCardFromDeck}
+            onSort={handleSortDecks}
           />
         </div>
       </main>
