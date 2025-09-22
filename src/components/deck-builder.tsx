@@ -133,8 +133,7 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
             backgroundColor: '#303030',
             width: 800,
             fetchRequestInit: {
-              mode: 'cors',
-              credentials: 'omit',
+              mode: 'no-cors',
             }
         });
         const link = document.createElement('a');
@@ -271,5 +270,3 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
     </CardComponent>
   );
 }
-
-    
