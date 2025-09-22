@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
-import type { Card, DeckType, DeckValidation } from '@/lib/types';
+import type { Card, DeckType } from '@/lib/types';
 import { Trash2, ArrowUpDown, Gem, Download, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
@@ -15,7 +15,6 @@ import { Label } from './ui/label';
 
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
-  validation: DeckValidation | null;
   totalDeckValue: number;
   onDrop: (e: React.DragEvent, targetDeck: DeckType | 'trash') => void;
   onDragStart: (e: React.DragEvent, card: Card, source: DeckType) => void;
@@ -66,7 +65,7 @@ const DeckImageContent = ({ decks, totalDeckValue }: { decks: DeckBuilderProps['
     </div>
   );
 
-export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort }: DeckBuilderProps) {
+export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const deckRef = useRef<HTMLDivElement>(null);
 
@@ -135,6 +134,7 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
             width: 800,
             fetchRequestInit: {
               mode: 'no-cors',
+              cache: 'no-cache'
             }
         });
         const link = document.createElement('a');

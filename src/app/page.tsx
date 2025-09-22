@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { Card, DeckType, DeckValidation } from '@/lib/types';
-import { getDeckValidation } from './actions';
+import type { Card, DeckType } from '@/lib/types';
+import { getDeckValidation, type DeckValidationOutput } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/header';
 import { CardSearch } from '@/components/card-search';
@@ -44,9 +44,9 @@ export default function Home() {
   const [sideDeck, setSideDeck] = useState<Card[]>([]);
   const [searchResults, setSearchResults] = useState<Card[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [validation, setValidation] = useState<DeckValidation | null>(null);
+  const [validation, setValidation] = useState<DeckValidationOutput | null>(null);
   const [addMode, setAddMode] = useState<'main-extra' | 'side'>('main-extra');
-  const [isSearchCollapsed, setIsSearchCollapsed]_useState(true);
+  const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const { toast } = useToast();
 
   const allDecks = useMemo(() => ({
@@ -209,43 +209,39 @@ export default function Home() {
         return;
     }
 
-    const targetSetter = {
-      main: setMainDeck,
-      extra: setExtraDeck,
-      side: setSideDeck,
-    }[targetDeck];
-
     const isExtraDeckCard = EXTRA_DECK_TYPES.includes(card.type);
 
     if (targetDeck === 'main' && isExtraDeckCard) {
-      targetDeck = 'extra';
+      setExtraDeck(prev => [...prev, card]);
+      toast({ title: 'Card Moved', description: `Moved ${card.name} to your extra deck.`});
     } else if (targetDeck === 'extra' && !isExtraDeckCard) {
-      targetDeck = 'main';
+      setMainDeck(prev => [...prev, card]);
+      toast({ title: 'Card Moved', description: `Moved ${card.name} to your main deck.`});
+    } else {
+        const cardCount = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.name === card.name).length;
+
+        if (cardCount >= 3) {
+          toast({
+            variant: 'destructive',
+            title: 'Card Limit Reached',
+            description: `You can only have 3 copies of "${card.name}".`,
+          });
+          if (source !== 'search') {
+              const sourceSetterReAdd = { main: setMainDeck, extra: setExtraDeck, side: setSideDeck }[source];
+              sourceSetterReAdd(prev => [...prev, card]);
+          }
+          return;
+        }
+
+        const actualSetter = {
+            main: setMainDeck,
+            extra: setExtraDeck,
+            side: setSideDeck,
+        }[targetDeck];
+        
+        actualSetter(prev => [...prev, card]);
+        toast({ title: 'Card Added', description: `Added ${card.name} to your ${targetDeck} deck.`});
     }
-
-    const cardCount = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.name === card.name).length;
-
-    if (cardCount >= 3) {
-      toast({
-        variant: 'destructive',
-        title: 'Card Limit Reached',
-        description: `You can only have 3 copies of "${card.name}".`,
-      });
-      if (source !== 'search') {
-          const sourceSetterReAdd = { main: setMainDeck, extra: setExtraDeck, side: setSideDeck }[source];
-          sourceSetterReAdd(prev => [...prev, card]);
-      }
-      return;
-    }
-
-    const actualSetter = {
-        main: setMainDeck,
-        extra: setExtraDeck,
-        side: setSideDeck,
-    }[targetDeck];
-    
-    actualSetter(prev => [...prev, card]);
-    toast({ title: 'Card Added', description: `Added ${card.name} to your ${targetDeck} deck.`});
   };
 
   const sortDeck = useCallback((deck: Card[]) => {
@@ -291,9 +287,8 @@ export default function Home() {
         <div className="lg:col-span-3 flex flex-col min-h-[80vh] lg:min-h-0 lg:h-full">
           <DeckBuilder
             decks={allDecks}
-            validation={null}
             totalDeckValue={totalDeckValue}
-            onDrop={onDrop}
+            onDrop={handleDrop}
             onDragStart={handleDragStart}
             addMode={addMode}
             setAddMode={setAddMode}
