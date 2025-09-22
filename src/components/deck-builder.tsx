@@ -9,7 +9,6 @@ import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import { toPng } from 'html-to-image';
-import { createRoot } from 'react-dom/client';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 
@@ -24,46 +23,6 @@ interface DeckBuilderProps {
   onSort: () => void;
 }
 
-const DeckImageContent = ({ decks, totalDeckValue }: { decks: DeckBuilderProps['decks'], totalDeckValue: number }) => (
-    <div className="bg-background p-4 rounded-lg">
-      <div className="flex items-center gap-2 font-mono text-sm mb-4 justify-center">
-        <Gem className={`w-4 h-4 ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`} />
-        <span className={`${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>Total Value:</span>
-        <span className={`font-bold ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>{totalDeckValue}</span>
-      </div>
-      {Object.entries(decks).map(([deckType, deck]) => {
-        if (deck.length === 0) return null;
-        const max = { main: 60, extra: 15, side: 15 }[deckType as DeckType];
-        return (
-          <div key={deckType} className="mb-4">
-            <div className="flex justify-between items-center mb-2 px-2">
-              <span className="font-semibold text-lg text-foreground">{deckType.charAt(0).toUpperCase() + deckType.slice(1)} Deck</span>
-              <span className="font-mono text-sm text-muted-foreground">{`${deck.length} / ${max}`}</span>
-            </div>
-            <div className="grid grid-cols-10 gap-2 pr-2">
-              {deck.map((card, index) => (
-                <div key={`${card.id}-${index}`} className="relative group cursor-pointer aspect-[59/86]">
-                  <Image
-                    src={card.card_images[0].image_url}
-                    alt={card.name}
-                    fill
-                    sizes="10vw"
-                    className="object-cover rounded-md"
-                  />
-                  {card.value && card.value > 0 && (
-                    <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm z-10">
-                      <Gem className="w-2 h-2" />
-                      {card.value}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
 
 export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
@@ -112,39 +71,23 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
   };
   
   const handleDownloadJpg = async () => {
-    const element = document.createElement('div');
-    element.style.position = 'absolute';
-    element.style.left = '-9999px';
-    element.style.width = '800px'; 
-    document.body.appendChild(element);
+    if (deckRef.current === null) {
+      return;
+    }
 
-    const root = createRoot(element);
-    
-    root.render(
-      <div style={{ backgroundColor: 'hsl(var(--background))' }}>
-        <DeckImageContent decks={decks} totalDeckValue={totalDeckValue} />
-      </div>
-    );
-    
-    setTimeout(async () => {
-       try {
-        const dataUrl = await toPng(element, { 
-          cacheBust: true,
-          skipFonts: true,
-          backgroundColor: '#303030',
-          width: 800,
-        });
-        const link = document.createElement('a');
-        link.download = 'ygo-deck.jpg';
-        link.href = dataUrl;
-        link.click();
-      } catch (err) {
-        console.error('oops, something went wrong!', err);
-      } finally {
-        root.unmount();
-        document.body.removeChild(element);
-      }
-    }, 100);
+    try {
+      const dataUrl = await toPng(deckRef.current, { 
+        cacheBust: true,
+        skipFonts: true,
+        backgroundColor: '#303030',
+      });
+      const link = document.createElement('a');
+      link.download = 'ygo-deck.jpg';
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('oops, something went wrong!', err);
+    }
   };
 
 
@@ -221,7 +164,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             </Button>
         </div>
       </CardHeader>
-      <CardContent ref={deckRef} className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
+      <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 font-mono text-sm">
             <Gem className={`w-4 h-4 ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}/>
@@ -246,7 +189,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
           </RadioGroup>
         </div>
         
-        <ScrollArea className="flex-grow rounded-md border p-2">
+        <ScrollArea ref={deckRef} className="flex-grow rounded-md border p-2">
             <div className="space-y-4">
               {renderDeckContent('main')}
               {renderDeckContent('extra')}
