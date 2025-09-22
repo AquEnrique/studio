@@ -24,6 +24,47 @@ interface DeckBuilderProps {
   onSort: () => void;
 }
 
+const DeckImageContent = ({ decks, totalDeckValue }: { decks: DeckBuilderProps['decks'], totalDeckValue: number }) => (
+    <div className="bg-background p-4 rounded-lg">
+      <div className="flex items-center gap-2 font-mono text-sm mb-4 justify-center">
+        <Gem className={`w-4 h-4 ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`} />
+        <span className={`${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>Total Value:</span>
+        <span className={`font-bold ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>{totalDeckValue}</span>
+      </div>
+      {Object.entries(decks).map(([deckType, deck]) => {
+        if (deck.length === 0) return null;
+        const max = { main: 60, extra: 15, side: 15 }[deckType as DeckType];
+        return (
+          <div key={deckType} className="mb-4">
+            <div className="flex justify-between items-center mb-2 px-2">
+              <span className="font-semibold text-lg text-foreground">{deckType.charAt(0).toUpperCase() + deckType.slice(1)} Deck</span>
+              <span className="font-mono text-sm text-muted-foreground">{`${deck.length} / ${max}`}</span>
+            </div>
+            <div className="grid grid-cols-10 gap-2 pr-2">
+              {deck.map((card, index) => (
+                <div key={`${card.id}-${index}`} className="relative group cursor-pointer aspect-[59/86]">
+                  <Image
+                    src={card.card_images[0].image_url}
+                    alt={card.name}
+                    fill
+                    sizes="10vw"
+                    className="object-cover rounded-md"
+                  />
+                  {card.value && card.value > 0 && (
+                    <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm z-10">
+                      <Gem className="w-2 h-2" />
+                      {card.value}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
 export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragStart, activeTab, setActiveTab, onCardClick, onSort }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const deckRef = useRef<HTMLDivElement>(null);
@@ -70,21 +111,42 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
     URL.revokeObjectURL(url);
   };
   
-  const handleDownloadJpg = () => {
-    if (deckRef.current === null) {
-      return;
-    }
+  const handleDownloadJpg = async () => {
+    const element = document.createElement('div');
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    element.style.width = '800px'; 
+    document.body.appendChild(element);
 
-    toPng(deckRef.current, { cacheBust: true, backgroundColor: '#303030' })
-      .then((dataUrl) => {
+    const { createRoot } = await import('react-dom/client');
+    const root = createRoot(element);
+    
+    await new Promise<void>((resolve) => {
+      root.render(
+        <div style={{ backgroundColor: 'hsl(var(--background))' }}>
+          <DeckImageContent decks={decks} totalDeckValue={totalDeckValue} />
+        </div>
+      , () => resolve());
+    });
+    
+    setTimeout(async () => {
+       try {
+        const dataUrl = await toPng(element, { 
+            cacheBust: true, 
+            backgroundColor: '#303030', // Use dark background from theme
+            width: 800
+        });
         const link = document.createElement('a');
         link.download = 'ygo-deck.jpg';
         link.href = dataUrl;
         link.click();
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+      } catch (err) {
+        console.error('oops, something went wrong!', err);
+      } finally {
+        root.unmount();
+        document.body.removeChild(element);
+      }
+    }, 100);
   };
 
 
