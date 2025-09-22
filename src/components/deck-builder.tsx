@@ -129,13 +129,10 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
     setTimeout(async () => {
        try {
         const dataUrl = await toPng(element, { 
-            cacheBust: true, 
-            backgroundColor: '#303030',
-            width: 800,
-            fetchRequestInit: {
-              mode: 'no-cors',
-              cache: 'no-cache'
-            }
+          cacheBust: true,
+          skipFonts: true,
+          backgroundColor: '#303030',
+          width: 800,
         });
         const link = document.createElement('a');
         link.download = 'ygo-deck.jpg';
