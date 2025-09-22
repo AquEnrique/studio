@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/header';
 import { CardSearch } from '@/components/card-search';
 import { DeckBuilder } from '@/components/deck-builder';
+import cardValues from '@/lib/card-values.json';
 
 const EXTRA_DECK_TYPES = [
   'Fusion Monster',
@@ -24,6 +25,11 @@ const CARD_TYPE_SORT_ORDER = {
   'spell': 2,
   'trap': 3,
 };
+
+const cardValueMap: { [key: string]: number } = {};
+cardValues.forEach(card => {
+  cardValueMap[card.cardName] = card.value;
+});
 
 function getCardSortType(card: Card): 'monster' | 'spell' | 'trap' {
     if (card.type.includes('Monster')) return 'monster';
@@ -48,6 +54,10 @@ export default function Home() {
     extra: extraDeck,
     side: sideDeck,
   }), [mainDeck, extraDeck, sideDeck]);
+
+  const totalDeckValue = useMemo(() => {
+    return [...mainDeck, ...extraDeck, ...sideDeck].reduce((acc, card) => acc + (card.value || 0), 0);
+  }, [mainDeck, extraDeck, sideDeck]);
 
   useEffect(() => {
     const validate = async () => {
@@ -96,7 +106,11 @@ export default function Home() {
       } else {
         const data = await response.json();
         if (data.data && data.data.length > 0) {
-            setSearchResults(data.data);
+          const cardsWithValues = data.data.map((card: Card) => ({
+            ...card,
+            value: cardValueMap[card.name] || 0,
+          }));
+          setSearchResults(cardsWithValues);
         } else {
             toast({
             variant: 'destructive',
@@ -273,6 +287,7 @@ export default function Home() {
           <DeckBuilder
             decks={allDecks}
             validation={validation}
+            totalDeckValue={totalDeckValue}
             onDrop={handleDrop}
             onDragStart={handleDragStart}
             activeTab={activeDeckTab}

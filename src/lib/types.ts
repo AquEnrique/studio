@@ -17,6 +17,7 @@ export interface Card {
   race?: string;
   attribute?: string;
   card_images: CardImage[];
+  value?: number;
 }
 
 export type DeckType = 'main' | 'extra' | 'side';

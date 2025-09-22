@@ -4,10 +4,9 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
-import { CardDisplay } from './card-display';
 import type { Card, DeckType, DeckValidation } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, XCircle, Trash2, ArrowUpDown } from 'lucide-react';
+import { CheckCircle, XCircle, Trash2, ArrowUpDown, Gem } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
@@ -15,6 +14,7 @@ import { X } from 'lucide-react';
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
   validation: DeckValidation | null;
+  totalDeckValue: number;
   onDrop: (e: React.DragEvent, targetDeck: DeckType | 'trash') => void;
   onDragStart: (e: React.DragEvent, card: Card, source: DeckType) => void;
   activeTab: DeckType;
@@ -23,7 +23,7 @@ interface DeckBuilderProps {
   onSort: () => void;
 }
 
-export function DeckBuilder({ decks, validation, onDrop, onDragStart, activeTab, setActiveTab, onCardClick, onSort }: DeckBuilderProps) {
+export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragStart, activeTab, setActiveTab, onCardClick, onSort }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
 
   const renderDeckContent = (deckType: DeckType) => {
@@ -62,6 +62,12 @@ export function DeckBuilder({ decks, validation, onDrop, onDragStart, activeTab,
                     sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 25vw"
                     className="object-cover rounded-md"
                   />
+                  {card.value && card.value > 0 && (
+                    <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm">
+                      <Gem className="w-2 h-2" />
+                      {card.value}
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                     <X className="w-8 h-8 text-white" />
                   </div>
@@ -77,7 +83,14 @@ export function DeckBuilder({ decks, validation, onDrop, onDragStart, activeTab,
   return (
     <CardComponent className="flex flex-col h-full shadow-lg">
       <CardHeader className="flex-row items-center justify-between">
-        <CardTitle>Deck Builder</CardTitle>
+        <div className="flex items-center gap-4">
+            <CardTitle>Deck Builder</CardTitle>
+            <div className={`flex items-center gap-2 font-mono text-sm ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                <Gem className="w-4 h-4"/>
+                <span>Total Value:</span>
+                <span className="font-bold">{totalDeckValue}</span>
+            </div>
+        </div>
         <Button variant="outline" size="sm" onClick={onSort}>
           <ArrowUpDown className="mr-2 h-4 w-4" />
           Sort
