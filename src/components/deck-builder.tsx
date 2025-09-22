@@ -5,12 +5,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, DeckValidation } from '@/lib/types';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, XCircle, Trash2, ArrowUpDown, Gem, Download, Image as ImageIcon } from 'lucide-react';
+import { Trash2, ArrowUpDown, Gem, Download, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { createRoot } from 'react-dom/client';
 
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
@@ -118,16 +118,13 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
     element.style.width = '800px'; 
     document.body.appendChild(element);
 
-    const { createRoot } = await import('react-dom/client');
     const root = createRoot(element);
     
-    await new Promise<void>((resolve) => {
-      root.render(
-        <div style={{ backgroundColor: 'hsl(var(--background))' }}>
-          <DeckImageContent decks={decks} totalDeckValue={totalDeckValue} />
-        </div>
-      , () => resolve());
-    });
+    root.render(
+      <div style={{ backgroundColor: 'hsl(var(--background))' }}>
+        <DeckImageContent decks={decks} totalDeckValue={totalDeckValue} />
+      </div>
+    );
     
     setTimeout(async () => {
        try {
@@ -270,3 +267,5 @@ export function DeckBuilder({ decks, validation, totalDeckValue, onDrop, onDragS
     </CardComponent>
   );
 }
+
+    
