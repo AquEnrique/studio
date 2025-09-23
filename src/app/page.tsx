@@ -284,7 +284,7 @@ export default function Home() {
   return (
     <div className="flex flex-col lg:h-screen bg-background text-foreground font-body">
       <Header />
-      <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4">
+      <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 overflow-hidden">
         <div className="lg:col-span-2 flex flex-col min-h-[50vh] lg:min-h-0 lg:h-full">
           <CardSearch 
             onSearch={handleSearch} 
