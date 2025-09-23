@@ -64,7 +64,7 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
             {isCollapsed ? <ChevronDown /> : <ChevronUp />}
           </Button>
         </form>
-        <div className={`flex-grow transition-all duration-300 ease-in-out ${isCollapsed ? 'hidden' : 'block'}`}>
+        <div className={`flex-grow transition-all duration-300 ease-in-out ${isCollapsed ? 'hidden' : 'block'} overflow-hidden`}>
           <ScrollArea className="h-full">
             <div className="space-y-2 pr-4">
               {isLoading && (
