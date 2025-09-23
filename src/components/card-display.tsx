@@ -27,9 +27,9 @@ export function CardDisplay({ card }: CardDisplayProps) {
             sizes="64px"
           />
         </div>
-        <div className="flex-grow">
+        <div className="flex-grow min-w-0">
           <h3 className="font-semibold text-sm truncate">{card.name}</h3>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
             <CardTypeIcon type={card.type} />
             <span>{card.type}</span>
           </div>
