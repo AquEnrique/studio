@@ -111,11 +111,23 @@ export default function Home() {
       } else {
         const data = await response.json();
         if (data.data && data.data.length > 0) {
-          const cardsWithValues = data.data.map((card: Card) => ({
-            ...card,
-            value: cardValueMap[card.name] || 0,
-          }));
-          setSearchResults(cardsWithValues);
+          const cardsWithValues = data.data
+            .filter((card: Card) => !card.type.includes('Link') && !card.type.includes('Pendulum'))
+            .map((card: Card) => ({
+              ...card,
+              value: cardValueMap[card.name] || 0,
+            }));
+
+          if (cardsWithValues.length > 0) {
+            setSearchResults(cardsWithValues);
+          } else {
+             toast({
+              variant: 'destructive',
+              title: 'No cards found',
+              description: `No cards matching "${term}" were found after filtering.`,
+            });
+            setSearchResults([]);
+          }
         } else {
             toast({
             variant: 'destructive',
