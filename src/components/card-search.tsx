@@ -43,7 +43,7 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
   return (
     <CardComponent className="flex flex-col flex-grow h-full overflow-hidden shadow-lg">
       <CardContent className="p-4 flex-grow flex flex-col">
-        <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4">
+        <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4 shrink-0">
           <Input
             placeholder="Search for a card (min 4 chars)..."
             value={term}
@@ -64,9 +64,9 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
             {isCollapsed ? <ChevronDown /> : <ChevronUp />}
           </Button>
         </form>
-        <div className={`flex-grow transition-all duration-300 ease-in-out ${isCollapsed ? 'hidden' : 'block'} overflow-hidden`}>
-          <ScrollArea className="h-full">
-            <div className="space-y-2 pr-4">
+        <div className={`flex-grow flex flex-col min-h-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'hidden' : ''}`}>
+          <ScrollArea className="flex-grow">
+            <div className="space-y-2 pr-4 h-full">
               {isLoading && (
                 <>
                   <Skeleton className="h-20 w-full" />
@@ -96,7 +96,7 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
           </ScrollArea>
         </div>
         {totalPages > 1 && !isCollapsed && (
-          <div className="flex items-center justify-center gap-2 pt-4">
+          <div className="flex items-center justify-center gap-2 pt-4 shrink-0">
             <Button
               variant="outline"
               size="icon"
