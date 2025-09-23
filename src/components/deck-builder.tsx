@@ -80,7 +80,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
         cacheBust: true,
         skipFonts: true,
         backgroundColor: '#303030',
-        fetchRequestInit: {
+         fetchRequestInit: {
           mode: 'no-cors'
         }
       });
@@ -148,7 +148,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
   
   return (
     <CardComponent className="flex flex-col h-full shadow-lg">
-       <CardHeader className="flex-row items-center justify-between pb-2">
+       <CardHeader className="flex-row items-center justify-between pb-2 shrink-0">
         <div className="flex items-center gap-4">
             <CardTitle>Deck Builder</CardTitle>
         </div>
@@ -167,32 +167,34 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
-        <div ref={deckRef} className="flex-grow flex flex-col min-h-0">
-          <div className="flex items-center justify-between mb-2 shrink-0">
-            <div className="flex items-center gap-2 font-mono text-sm">
-              <Gem className={`w-4 h-4 ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}/>
-              <span className={`${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>Total Value:</span>
-              <span className={`font-bold ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>{totalDeckValue}</span>
+      <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0 min-h-0">
+        <div className="shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 font-mono text-sm">
+                <Gem className={`w-4 h-4 ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}/>
+                <span className={`${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>Total Value:</span>
+                <span className={`font-bold ${totalDeckValue >= 101 ? 'text-red-500' : 'text-muted-foreground'}`}>{totalDeckValue}</span>
+              </div>
+              <RadioGroup 
+                defaultValue="main-extra" 
+                value={addMode} 
+                onValueChange={(value) => setAddMode(value as 'main-extra' | 'side')}
+                className="flex items-center gap-4"
+              >
+                <Label className="text-sm font-medium">Target Deck:</Label>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="main-extra" id="main-extra" />
+                  <Label htmlFor="main-extra">Main/Extra</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="side" id="side" />
+                  <Label htmlFor="side">Side</Label>
+                </div>
+              </RadioGroup>
             </div>
-            <RadioGroup 
-              defaultValue="main-extra" 
-              value={addMode} 
-              onValueChange={(value) => setAddMode(value as 'main-extra' | 'side')}
-              className="flex items-center gap-4"
-            >
-              <Label className="text-sm font-medium">Target Deck:</Label>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="main-extra" id="main-extra" />
-                <Label htmlFor="main-extra">Main/Extra</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="side" id="side" />
-                <Label htmlFor="side">Side</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          
+        </div>
+        
+        <div ref={deckRef} className="flex-grow flex flex-col min-h-0">
           <ScrollArea className="flex-grow rounded-md border">
               <div className="space-y-4 p-2">
                 {renderDeckContent('main')}
@@ -202,7 +204,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
           </ScrollArea>
         </div>
         
-        <div className="shrink-0 mt-4 space-y-4">
+        <div className="shrink-0 mt-4">
             <div
                 onDrop={(e) => { onDrop(e, 'trash'); setIsDragOverTrash(false); }}
                 onDragOver={(e) => { e.preventDefault(); setIsDragOverTrash(true); }}
