@@ -194,7 +194,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             </div>
         </div>
         
-        <div ref={deckRef} className="flex-grow flex flex-col min-h-0">
+        <div ref={deckRef} className="flex-grow flex flex-col min-h-0 bg-card p-2 rounded-md">
           <ScrollArea className="flex-grow rounded-md border pr-4">
               <div className="space-y-4 p-2">
                 {renderDeckContent('main')}
