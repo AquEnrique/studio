@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { Card, DeckType } from '@/lib/types';
+import type { Card, DeckType, Interaction } from '@/lib/types';
 import { getDeckValidation, type DeckValidationOutput } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/header';
@@ -47,6 +47,7 @@ export default function Home() {
   const [validation, setValidation] = useState<DeckValidationOutput | null>(null);
   const [addMode, setAddMode] = useState<'main-extra' | 'side'>('main-extra');
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
+  const [lastInteraction, setLastInteraction] = useState<Interaction | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,13 +61,8 @@ export default function Home() {
       if (savedSideDeck) setSideDeck(JSON.parse(savedSideDeck));
     } catch (error) {
       console.error("Failed to load deck from localStorage", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not load your previously saved deck.',
-      });
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     try {
@@ -114,24 +110,14 @@ export default function Home() {
         setValidation(result);
       } catch (error) {
         console.error('Validation failed:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to get deck validation from AI.',
-        });
       }
     };
     validate();
-  }, [mainDeck, extraDeck, sideDeck, toast]);
+  }, [mainDeck, extraDeck, sideDeck]);
   
   const handleSearch = async (term: string) => {
     if (term.length < 4) {
       setSearchResults([]);
-       toast({
-        variant: 'destructive',
-        title: 'Search Term Too Short',
-        description: 'Please enter at least 4 characters to search.',
-      });
       return;
     }
     setIsLoading(true);
@@ -142,12 +128,6 @@ export default function Home() {
       );
        if (!response.ok) {
         if (response.status === 400) {
-            const errorData = await response.json();
-             toast({
-                variant: 'destructive',
-                title: 'No cards found',
-                description: errorData.error || `No cards matching "${term}" were found.`,
-            });
             setSearchResults([]);
         } else {
             throw new Error('Network response was not ok');
@@ -165,29 +145,14 @@ export default function Home() {
           if (cardsWithValues.length > 0) {
             setSearchResults(cardsWithValues);
           } else {
-             toast({
-              variant: 'destructive',
-              title: 'No cards found',
-              description: `No cards matching "${term}" were found after filtering.`,
-            });
             setSearchResults([]);
           }
         } else {
-            toast({
-            variant: 'destructive',
-            title: 'No cards found',
-            description: `No cards matching "${term}" were found.`,
-            });
             setSearchResults([]);
         }
       }
     } catch (error) {
       console.error('Failed to fetch cards:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Search Error',
-        description: 'Could not fetch cards. Please try again later.',
-      });
       setSearchResults([]);
     } finally {
       setIsLoading(false);
@@ -197,11 +162,6 @@ export default function Home() {
   const handleCardClick = (card: Card) => {
     const cardCount = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.name === card.name).length;
     if (cardCount >= 3) {
-      toast({
-        variant: 'destructive',
-        title: 'Card Limit Reached',
-        description: `You can only have 3 copies of "${card.name}".`,
-      });
       return;
     }
     
@@ -224,8 +184,9 @@ export default function Home() {
       side: setSideDeck,
     }[targetDeck];
 
-    targetSetter(prev => [...prev, card]);
-    toast({ title: 'Card Added', description: `Added ${card.name} to your ${targetDeck} deck.` });
+    const newCard = { ...card, instanceId: Date.now() };
+    targetSetter(prev => [...prev, newCard]);
+    setLastInteraction({ cardInstanceId: newCard.instanceId, action: 'add' });
   };
   
   const removeCardFromDeck = (card: Card, deck: DeckType, index: number) => {
@@ -235,12 +196,15 @@ export default function Home() {
       side: setSideDeck,
     }[deck];
 
-    deckSetter(prev => prev.filter((c, i) => i !== index));
-    toast({ title: 'Card Removed', description: `Removed ${card.name} from your ${deck} deck.` });
+    setLastInteraction({ cardInstanceId: card.instanceId!, action: 'remove' });
+    setTimeout(() => {
+        deckSetter(prev => prev.filter((c) => c.instanceId !== card.instanceId));
+    }, 500);
   };
 
-  const handleDragStart = (e: React.DragEvent, card: Card, source: DeckType | 'search') => {
-    const data = JSON.stringify({ card, source });
+  const handleDragStart = (e: React.DragEvent, card: Card, source: DeckType | 'search', index?: number) => {
+    const cardWithInstanceId = source === 'search' ? { ...card, instanceId: Date.now() } : card;
+    const data = JSON.stringify({ card: cardWithInstanceId, source, index });
     e.dataTransfer.setData('text/plain', data);
   };
 
@@ -248,57 +212,54 @@ export default function Home() {
     e.preventDefault();
     const data = e.dataTransfer.getData('text/plain');
     if (!data) return;
-    const transferData = JSON.parse(data);
-    const { card, source }: { card: Card; source: DeckType | 'search' } = transferData;
+    const { card, source, index }: { card: Card; source: DeckType | 'search', index?: number } = JSON.parse(data);
 
-    if (source !== 'search') {
+    if (source !== 'search' && index !== undefined) {
       const sourceSetter = {
         main: setMainDeck,
         extra: setExtraDeck,
         side: setSideDeck,
       }[source];
-      sourceSetter(prev => prev.filter(c => c.id !== card.id));
+      sourceSetter(prev => prev.filter((c) => c.instanceId !== card.instanceId));
     }
 
     if (targetDeck === 'trash') {
-        toast({ title: 'Card Removed', description: `Removed ${card.name} from your deck.`});
+        setLastInteraction({ cardInstanceId: card.instanceId!, action: 'remove' });
         return;
     }
 
     const isExtraDeckCard = EXTRA_DECK_TYPES.includes(card.type);
+    let actualTargetDeck = targetDeck;
 
-    if (targetDeck === 'main' && isExtraDeckCard) {
-      setExtraDeck(prev => [...prev, card]);
-      toast({ title: 'Card Moved', description: `Moved ${card.name} to your extra deck.`});
-    } else if (targetDeck === 'extra' && !isExtraDeckCard) {
-      setMainDeck(prev => [...prev, card]);
-      toast({ title: 'Card Moved', description: `Moved ${card.name} to your main deck.`});
-    } else {
-        const cardCount = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.name === card.name).length;
-
-        if (cardCount >= 3) {
-          toast({
-            variant: 'destructive',
-            title: 'Card Limit Reached',
-            description: `You can only have 3 copies of "${card.name}".`,
-          });
-          if (source !== 'search') {
-              const sourceSetterReAdd = { main: setMainDeck, extra: setExtraDeck, side: setSideDeck }[source];
-              sourceSetterReAdd(prev => [...prev, card]);
-          }
-          return;
-        }
-
-        const actualSetter = {
-            main: setMainDeck,
-            extra: setExtraDeck,
-            side: setSideDeck,
-        }[targetDeck];
-        
-        actualSetter(prev => [...prev, card]);
-        toast({ title: 'Card Added', description: `Added ${card.name} to your ${targetDeck} deck.`});
+    if (targetDeck === 'main' && isExtraDeckCard) actualTargetDeck = 'extra';
+    if (targetDeck === 'extra' && !isExtraDeckCard) actualTargetDeck = 'main';
+    
+    const allCards = [...mainDeck, ...extraDeck, ...sideDeck];
+    if (source !== 'search') {
+      const cardIndexInAll = allCards.findIndex(c => c.instanceId === card.instanceId);
+      if(cardIndexInAll > -1) allCards.splice(cardIndexInAll, 1);
     }
+    
+    const cardCount = allCards.filter(c => c.name === card.name).length;
+
+    if (cardCount >= 3) {
+      if (source !== 'search') {
+          const sourceSetterReAdd = { main: setMainDeck, extra: setExtraDeck, side: setSideDeck }[source];
+          sourceSetterReAdd(prev => [...prev, card].sort((a,b) => (a.instanceId || 0) - (b.instanceId || 0)));
+      }
+      return;
+    }
+
+    const actualSetter = {
+        main: setMainDeck,
+        extra: setExtraDeck,
+        side: setSideDeck,
+    }[actualTargetDeck];
+    
+    actualSetter(prev => [...prev, card]);
+    setLastInteraction({ cardInstanceId: card.instanceId!, action: 'add' });
   };
+
 
   const sortDeck = useCallback((deck: Card[]) => {
     return [...deck].sort((a, b) => {
@@ -318,21 +279,13 @@ export default function Home() {
     setMainDeck(prev => sortDeck(prev));
     setExtraDeck(prev => sortDeck(prev));
     setSideDeck(prev => sortDeck(prev));
-    toast({
-      title: 'Decks Sorted',
-      description: 'Your decks have been sorted by type and name.',
-    });
-  }, [sortDeck, toast]);
+  }, [sortDeck]);
 
   const handleClearDecks = useCallback(() => {
     setMainDeck([]);
     setExtraDeck([]);
     setSideDeck([]);
-    toast({
-      title: 'Decks Cleared',
-      description: 'Your decks have been cleared.',
-    });
-  }, [toast]);
+  }, []);
 
 
   return (
@@ -361,6 +314,7 @@ export default function Home() {
             onCardClick={removeCardFromDeck}
             onSort={handleSortDecks}
             onClear={handleClearDecks}
+            lastInteraction={lastInteraction}
           />
         </div>
       </main>

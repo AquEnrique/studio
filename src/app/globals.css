@@ -86,3 +86,23 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @keyframes shine {
+    0% { box-shadow: 0 0 0 0 rgba(0, 188, 212, 0.5); }
+    70% { box-shadow: 0 0 10px 5px rgba(0, 188, 212, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 188, 212, 0); }
+  }
+  .animate-shine {
+    animation: shine 0.7s ease-out;
+  }
+  
+  @keyframes shine-red {
+    0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); }
+    70% { box-shadow: 0 0 10px 5px rgba(220, 38, 38, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  }
+  .animate-shine-red {
+    animation: shine-red 0.7s ease-out;
+  }
+}

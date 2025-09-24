@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
-import type { Card, DeckType } from '@/lib/types';
+import type { Card, DeckType, Interaction } from '@/lib/types';
 import { Trash2, ArrowUpDown, Gem, Download, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
@@ -28,18 +28,31 @@ interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
   totalDeckValue: number;
   onDrop: (e: React.DragEvent, targetDeck: DeckType | 'trash') => void;
-  onDragStart: (e: React.DragEvent, card: Card, source: DeckType) => void;
+  onDragStart: (e: React.DragEvent, card: Card, source: DeckType, index: number) => void;
   addMode: 'main-extra' | 'side';
   setAddMode: (mode: 'main-extra' | 'side') => void;
   onCardClick: (card: Card, deck: DeckType, index: number) => void;
   onSort: () => void;
   onClear: () => void;
+  lastInteraction: Interaction | null;
 }
 
 
-export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort, onClear }: DeckBuilderProps) {
+export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort, onClear, lastInteraction }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const deckRef = useRef<HTMLDivElement>(null);
+  const [animationState, setAnimationState] = useState<Interaction | null>(null);
+
+  useEffect(() => {
+    if (lastInteraction) {
+      setAnimationState(lastInteraction);
+      const timer = setTimeout(() => {
+        setAnimationState(null);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [lastInteraction]);
+
 
   const handleDownloadTxt = () => {
     const deckSections = {
@@ -127,13 +140,20 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                 <p>Drag cards here</p>
               </div>
             ) : (
-              deck.map((card, index) => (
+              deck.map((card, index) => {
+                const isAnimated = animationState?.cardInstanceId === card.instanceId;
+                let animationClass = '';
+                if (isAnimated) {
+                  animationClass = animationState?.action === 'add' ? 'animate-shine' : 'animate-shine-red';
+                }
+                
+                return (
                 <div
-                  key={`${card.id}-${index}`}
+                  key={card.instanceId || `${card.id}-${index}`}
                   draggable
-                  onDragStart={(e) => onDragStart(e, card, deckType)}
+                  onDragStart={(e) => onDragStart(e, card, deckType, index)}
                   onClick={() => onCardClick(card, deckType, index)}
-                  className="relative group cursor-pointer aspect-[59/86]"
+                  className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
                 >
                   <Image
                     src={card.card_images[0].image_url}
@@ -152,7 +172,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                     <X className="w-8 h-8 text-white" />
                   </div>
                 </div>
-              ))
+              )})
             )}
           </div>
       </div>

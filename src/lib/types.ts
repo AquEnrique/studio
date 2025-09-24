@@ -7,6 +7,7 @@ export interface CardImage {
 
 export interface Card {
   id: number;
+  instanceId?: number;
   name: string;
   type: string;
   frameType: string;
@@ -25,4 +26,9 @@ export type DeckType = 'main' | 'extra' | 'side';
 export interface DeckValidation {
   isValid: boolean;
   feedback: string;
+}
+
+export interface Interaction {
+  cardInstanceId: number;
+  action: 'add' | 'remove';
 }
