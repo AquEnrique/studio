@@ -49,7 +49,7 @@
     },
     {
         "cardName": "Arahime the Manifested Mikanko",
-        "value": 33
+        "value": 0
     },
     {
         "cardName": "Arcana Force XXI - The World",
@@ -149,11 +149,11 @@
     },
     {
         "cardName": "Blackwing - Chinook the Snow Blast",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Blackwing - Zephyros the Elite",
-        "value": 15
+        "value": 13
     },
     {
         "cardName": "Blaster, Dragon Ruler of Infernos",
@@ -169,7 +169,7 @@
     },
     {
         "cardName": "Block Dragon",
-        "value": 40
+        "value": 33
     },
     {
         "cardName": "Bonfire",
@@ -290,6 +290,10 @@
     {
         "cardName": "Charge of the Light Brigade",
         "value": 33
+    },
+    {
+        "cardName": "Chicken Game",
+        "value": 7
     },
     {
         "cardName": "Cold Wave",
@@ -416,6 +420,10 @@
         "value": 5
     },
     {
+        "cardName": "Dark World Dealings",
+        "value": 5
+    },
+    {
         "cardName": "Deception of the Sinful Spoils",
         "value": 33
     },
@@ -430,6 +438,10 @@
     {
         "cardName": "Delinquent Duo",
         "value": 100
+    },
+    {
+        "cardName": "Demise of the Land",
+        "value": 1
     },
     {
         "cardName": "Denglong, First of the Yang Zing",
@@ -469,7 +481,7 @@
     },
     {
         "cardName": "Dimension Shifter",
-        "value": 5
+        "value": 10
     },
     {
         "cardName": "Dimensional Barrier",
@@ -516,8 +528,12 @@
         "value": 10
     },
     {
-        "cardName": "Dracotail Arthalion",
+        "cardName": "Dominus Spiral",
         "value": 10
+    },
+    {
+        "cardName": "Dracotail Arthalion",
+        "value": 20
     },
     {
         "cardName": "Dracotail Faimena",
@@ -553,7 +569,7 @@
     },
     {
         "cardName": "Droll & Lock Bird",
-        "value": 7
+        "value": 5
     },
     {
         "cardName": "Drytron Alpha Thuban",
@@ -616,6 +632,10 @@
         "value": 10
     },
     {
+        "cardName": "Evilswarm Ouroboros",
+        "value": 67
+    },
+    {
         "cardName": "Ext Ryzeal",
         "value": 25
     },
@@ -666,6 +686,10 @@
     {
         "cardName": "Foolish Burial",
         "value": 33
+    },
+    {
+        "cardName": "Foolish Burial Goods",
+        "value": 3
     },
     {
         "cardName": "Forbidden Chalice",
@@ -757,7 +781,7 @@
     },
     {
         "cardName": "Gladiator Rejection",
-        "value": 20
+        "value": 15
     },
     {
         "cardName": "Glow-Up Bulb",
@@ -801,7 +825,7 @@
     },
     {
         "cardName": "Harpie's Feather Duster",
-        "value": 33
+        "value": 30
     },
     {
         "cardName": "Harpie's Feather Storm",
@@ -817,7 +841,7 @@
     },
     {
         "cardName": "Heavy Storm",
-        "value": 25
+        "value": 20
     },
     {
         "cardName": "Herald of the Arc Light",
@@ -865,7 +889,7 @@
     },
     {
         "cardName": "Infinite Impermanence",
-        "value": 15
+        "value": 13
     },
     {
         "cardName": "Inspector Boarder",
@@ -881,7 +905,7 @@
     },
     {
         "cardName": "Into the Void",
-        "value": 1
+        "value": 3
     },
     {
         "cardName": "Invoked Caliga",
@@ -900,12 +924,20 @@
         "value": 100
     },
     {
+        "cardName": "K9-04 Noroi",
+        "value": 10
+    },
+    {
         "cardName": "K9-17 \"Ripper\"",
         "value": 20
     },
     {
         "cardName": "K9-17 Izuna",
         "value": 20
+    },
+    {
+        "cardName": "K9-66a Jokul",
+        "value": 13
     },
     {
         "cardName": "K9-ØØ Lupis",
@@ -934,6 +966,10 @@
     {
         "cardName": "Keldo the Sacred Protector",
         "value": 1
+    },
+    {
+        "cardName": "Ketu Dracotail",
+        "value": 10
     },
     {
         "cardName": "King of the Feral Imps",
@@ -992,6 +1028,10 @@
         "value": 80
     },
     {
+        "cardName": "Left Arm Offering",
+        "value": 7
+    },
+    {
         "cardName": "Legendary Fire King Ponix",
         "value": 10
     },
@@ -1028,6 +1068,10 @@
         "value": 40
     },
     {
+        "cardName": "Lightsworn Dragonling",
+        "value": 10
+    },
+    {
         "cardName": "Lonefire Blossom",
         "value": 33
     },
@@ -1038,6 +1082,14 @@
     {
         "cardName": "Lubellion the Searing Dragon",
         "value": 33
+    },
+    {
+        "cardName": "Lyrilusc - Beryl Canary",
+        "value": 5
+    },
+    {
+        "cardName": "Lyrilusc - Bird Call",
+        "value": 20
     },
     {
         "cardName": "Lyrilusc - Independent Nightingale",
@@ -1080,6 +1132,10 @@
         "value": 33
     },
     {
+        "cardName": "Mathmech Sigma",
+        "value": 7
+    },
+    {
         "cardName": "Maxx \"C\"",
         "value": 50
     },
@@ -1102,6 +1158,10 @@
     {
         "cardName": "Metamorphosis",
         "value": 10
+    },
+    {
+        "cardName": "Metaverse",
+        "value": 3
     },
     {
         "cardName": "Mikanko Water Arabesque",
@@ -1149,7 +1209,7 @@
     },
     {
         "cardName": "Monster Reborn",
-        "value": 20
+        "value": 15
     },
     {
         "cardName": "Morphing Jar",
@@ -1173,11 +1233,15 @@
     },
     {
         "cardName": "Mulcharmy Meowls",
-        "value": 5
+        "value": 3
     },
     {
         "cardName": "Mulcharmy Purulia",
         "value": 10
+    },
+    {
+        "cardName": "Multi-Universe",
+        "value": 3
     },
     {
         "cardName": "M-X-Saber Invoker",
@@ -1249,7 +1313,7 @@
     },
     {
         "cardName": "Number 38: Hope Harbinger Dragon Titanic Galaxy",
-        "value": 10
+        "value": 20
     },
     {
         "cardName": "Number 4: Numeron Gate Catvari",
@@ -1270,6 +1334,14 @@
     {
         "cardName": "Number 59: Crooked Cook",
         "value": 100
+    },
+    {
+        "cardName": "Number 60: Dugares the Timeless",
+        "value": 10
+    },
+    {
+        "cardName": "Number 67: Pair-a-Dice Smasher",
+        "value": 67
     },
     {
         "cardName": "Number 75: Bamboozling Gossip Shadow",
@@ -1304,8 +1376,16 @@
         "value": 50
     },
     {
+        "cardName": "Number F0: Utopic Draco Future",
+        "value": 20
+    },
+    {
         "cardName": "Number S0: Utopic ZEXAL",
         "value": 100
+    },
+    {
+        "cardName": "Numbers Eveil",
+        "value": 70
     },
     {
         "cardName": "Numeron Calling",
@@ -1318,6 +1398,18 @@
     {
         "cardName": "Obedience Schooled",
         "value": 40
+    },
+    {
+        "cardName": "Ohime the Manifested Mikanko",
+        "value": 33
+    },
+    {
+        "cardName": "Ojama Duo",
+        "value": 2
+    },
+    {
+        "cardName": "Ojama Trio",
+        "value": 3
     },
     {
         "cardName": "One Day of Peace",
@@ -1356,6 +1448,10 @@
         "value": 50
     },
     {
+        "cardName": "Planet Pathfinder",
+        "value": 3
+    },
+    {
         "cardName": "Pot of Desires",
         "value": 20
     },
@@ -1373,7 +1469,7 @@
     },
     {
         "cardName": "Premature Burial",
-        "value": 27
+        "value": 25
     },
     {
         "cardName": "Preparation of Rites",
@@ -1394,6 +1490,18 @@
     {
         "cardName": "Primite Lordly Lode",
         "value": 33
+    },
+    {
+        "cardName": "Prohibition",
+        "value": 100
+    },
+    {
+        "cardName": "Pseudo Space",
+        "value": 3
+    },
+    {
+        "cardName": "Psi-Blocker",
+        "value": 61
     },
     {
         "cardName": "Psychic End Punisher",
@@ -1549,7 +1657,7 @@
     },
     {
         "cardName": "Return of the Dragon Lords",
-        "value": 10
+        "value": 7
     },
     {
         "cardName": "Rise Rank-Up-Magic Raidraptor's Force",
@@ -1590,6 +1698,10 @@
     {
         "cardName": "Ryzeal Duo Drive",
         "value": 20
+    },
+    {
+        "cardName": "Sales Ban",
+        "value": 100
     },
     {
         "cardName": "Sangen Kaimen",
@@ -1713,6 +1825,14 @@
     },
     {
         "cardName": "Stand Up Centur-Ion!",
+        "value": 5
+    },
+    {
+        "cardName": "Star Seraph Scepter",
+        "value": 5
+    },
+    {
+        "cardName": "Star Seraph Sovereignty",
         "value": 5
     },
     {
@@ -1904,8 +2024,16 @@
         "value": 3
     },
     {
+        "cardName": "Transaction Rollback",
+        "value": 7
+    },
+    {
         "cardName": "Trap Dustshoot",
         "value": 94
+    },
+    {
+        "cardName": "Trap Holic",
+        "value": 7
     },
     {
         "cardName": "Traptrix Rafflesia",
@@ -1950,6 +2078,10 @@
     {
         "cardName": "Vanity's Ruler",
         "value": 100
+    },
+    {
+        "cardName": "Vanquish Soul Hollie Sue",
+        "value": 10
     },
     {
         "cardName": "Varudras, the Final Bringer of the End Times",
