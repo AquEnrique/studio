@@ -11,6 +11,18 @@ import { X } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
@@ -21,10 +33,11 @@ interface DeckBuilderProps {
   setAddMode: (mode: 'main-extra' | 'side') => void;
   onCardClick: (card: Card, deck: DeckType, index: number) => void;
   onSort: () => void;
+  onClear: () => void;
 }
 
 
-export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort }: DeckBuilderProps) {
+export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort, onClear }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const deckRef = useRef<HTMLDivElement>(null);
 
@@ -153,18 +166,27 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             <CardTitle>Deck Builder</CardTitle>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={onSort}>
-                <ArrowUpDown className="md:mr-2" />
-                <span className="hidden md:inline">Sort</span>
-            </Button>
-            <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={handleDownloadTxt}>
-              <Download className="md:mr-2" />
-              <span className="hidden md:inline">TXT</span>
-            </Button>
-            <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={handleDownloadJpg}>
-              <ImageIcon className="md:mr-2" />
-              <span className="hidden md:inline">JPG</span>
-            </Button>
+            <Button variant="outline" size="icon" onClick={onSort}><ArrowUpDown /></Button>
+            <Button variant="outline" size="icon" onClick={handleDownloadTxt}><Download /></Button>
+            <Button variant="outline" size="icon" onClick={handleDownloadJpg}><ImageIcon /></Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="icon"><Trash2 /></Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete your
+                    entire deck.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onClear}>Continue</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0 min-h-0">
@@ -220,5 +242,3 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
     </CardComponent>
   );
 }
-
-    

@@ -324,6 +324,16 @@ export default function Home() {
     });
   }, [sortDeck, toast]);
 
+  const handleClearDecks = useCallback(() => {
+    setMainDeck([]);
+    setExtraDeck([]);
+    setSideDeck([]);
+    toast({
+      title: 'Decks Cleared',
+      description: 'Your decks have been cleared.',
+    });
+  }, [toast]);
+
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-body">
@@ -350,11 +360,10 @@ export default function Home() {
             setAddMode={setAddMode}
             onCardClick={removeCardFromDeck}
             onSort={handleSortDecks}
+            onClear={handleClearDecks}
           />
         </div>
       </main>
     </div>
   );
 }
-
-    
