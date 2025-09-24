@@ -49,6 +49,50 @@ export default function Home() {
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const { toast } = useToast();
 
+  useEffect(() => {
+    try {
+      const savedMainDeck = localStorage.getItem('mainDeck');
+      const savedExtraDeck = localStorage.getItem('extraDeck');
+      const savedSideDeck = localStorage.getItem('sideDeck');
+
+      if (savedMainDeck) setMainDeck(JSON.parse(savedMainDeck));
+      if (savedExtraDeck) setExtraDeck(JSON.parse(savedExtraDeck));
+      if (savedSideDeck) setSideDeck(JSON.parse(savedSideDeck));
+    } catch (error) {
+      console.error("Failed to load deck from localStorage", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not load your previously saved deck.',
+      });
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mainDeck', JSON.stringify(mainDeck));
+    } catch (error) {
+       console.error("Failed to save main deck to localStorage", error);
+    }
+  }, [mainDeck]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('extraDeck', JSON.stringify(extraDeck));
+    } catch (error) {
+      console.error("Failed to save extra deck to localStorage", error);
+    }
+  }, [extraDeck]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sideDeck', JSON.stringify(sideDeck));
+    } catch (error) {
+      console.error("Failed to save side deck to localStorage", error);
+    }
+  }, [sideDeck]);
+
+
   const allDecks = useMemo(() => ({
     main: mainDeck,
     extra: extraDeck,
@@ -312,3 +356,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

@@ -65,8 +65,8 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
           </Button>
         </form>
         <div className={`flex-grow flex flex-col min-h-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'hidden lg:flex' : 'flex'}`}>
-          <ScrollArea className="flex-grow pr-4">
-            <div className="space-y-2 h-full">
+          <ScrollArea className="flex-grow pr-4 -mr-4">
+            <div className="space-y-2 h-full pr-4">
               {isLoading && (
                 <>
                   <Skeleton className="h-20 w-full" />
@@ -122,3 +122,5 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
     </CardComponent>
   );
 }
+
+    
