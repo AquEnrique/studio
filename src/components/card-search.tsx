@@ -41,7 +41,7 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
 
   return (
-    <CardComponent className="flex flex-col flex-grow h-full overflow-hidden shadow-lg">
+    <CardComponent className="flex flex-col h-full overflow-hidden shadow-lg">
       <CardContent className="p-4 flex-grow flex flex-col min-h-0">
         <form onSubmit={handleFormSubmit} className="flex gap-2 mb-4 shrink-0">
           <Input
@@ -65,8 +65,8 @@ export function CardSearch({ onSearch, results, isLoading, onDragStart, onCardCl
           </Button>
         </form>
         <div className={`flex-grow flex flex-col min-h-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'hidden lg:flex' : 'flex'}`}>
-          <ScrollArea className="flex-grow">
-            <div className="space-y-2 pr-4 h-full">
+          <ScrollArea className="flex-grow pr-4">
+            <div className="space-y-2 h-full">
               {isLoading && (
                 <>
                   <Skeleton className="h-20 w-full" />
