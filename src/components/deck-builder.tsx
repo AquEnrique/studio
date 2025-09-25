@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, Interaction } from '@/lib/types';
-import { Trash2, ArrowUpDown, Gem, Download, Image as ImageIcon } from 'lucide-react';
+import { Trash2, ArrowUpDown, Gem, Download } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
@@ -95,29 +95,6 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
-  
-  const handleDownloadJpg = async () => {
-    if (deckRef.current === null) {
-      return;
-    }
-
-    try {
-      const dataUrl = await toPng(deckRef.current, { 
-        cacheBust: true,
-        skipFonts: true,
-        backgroundColor: '#303030',
-         fetchRequestInit: {
-          mode: 'no-cors'
-        }
-      });
-      const link = document.createElement('a');
-      link.download = 'ygo-deck.jpg';
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error('oops, something went wrong!', err);
-    }
-  };
 
 
   const renderDeckContent = (deckType: DeckType) => {
@@ -188,7 +165,6 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
         <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={onSort}><ArrowUpDown /></Button>
             <Button variant="outline" size="icon" onClick={handleDownloadTxt}><Download /></Button>
-            <Button variant="outline" size="icon" onClick={handleDownloadJpg}><ImageIcon /></Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="icon"><Trash2 /></Button>
