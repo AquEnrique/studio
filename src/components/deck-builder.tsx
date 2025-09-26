@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, Interaction } from '@/lib/types';
-import { Trash2, ArrowUpDown, Gem, Download, FileText } from 'lucide-react';
+import { Trash2, ArrowUpDown, Gem, FileText, Download } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
+const LONG_PRESS_DURATION = 500; // ms
 
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
@@ -30,15 +31,18 @@ interface DeckBuilderProps {
   addMode: 'main-extra' | 'side';
   setAddMode: (mode: 'main-extra' | 'side') => void;
   onCardClick: (card: Card, deck: DeckType) => void;
+  onCardRemove: (card: Card, deck: DeckType) => void;
   onSort: () => void;
   onClear: () => void;
   lastInteraction: Interaction | null;
 }
 
 
-export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort, onClear, lastInteraction }: DeckBuilderProps) {
+export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onCardRemove, onSort, onClear, lastInteraction }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const [animationState, setAnimationState] = useState<Interaction | null>(null);
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isLongPress = useRef(false);
 
   useEffect(() => {
     if (lastInteraction) {
@@ -49,6 +53,27 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
       return () => clearTimeout(timer);
     }
   }, [lastInteraction]);
+
+  const handlePressStart = (card: Card, deckType: DeckType) => {
+    isLongPress.current = false;
+    pressTimer.current = setTimeout(() => {
+      onCardRemove(card, deckType);
+      isLongPress.current = true;
+    }, LONG_PRESS_DURATION);
+  };
+
+  const handlePressEnd = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
+  const handleCardClick = (card: Card, deckType: DeckType) => {
+    if (!isLongPress.current) {
+      onCardClick(card, deckType);
+    }
+  };
 
 
   const handleDownloadTxt = () => {
@@ -154,7 +179,12 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                   key={card.instanceId || `${card.id}-${index}`}
                   draggable
                   onDragStart={(e) => onDragStart(e, card, deckType, index)}
-                  onClick={() => onCardClick(card, deckType)}
+                  onClick={() => handleCardClick(card, deckType)}
+                  onMouseDown={() => handlePressStart(card, deckType)}
+                  onMouseUp={handlePressEnd}
+                  onMouseLeave={handlePressEnd}
+                  onTouchStart={() => handlePressStart(card, deckType)}
+                  onTouchEnd={handlePressEnd}
                   className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
                 >
                   <Image

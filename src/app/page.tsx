@@ -201,11 +201,14 @@ export default function Home() {
     }[deck];
 
     setLastInteraction({ cardInstanceId: card.instanceId!, action: 'remove' });
-    setSelectedCard(null); // Close dialog on removal
+    if (selectedCard?.card.instanceId === card.instanceId) {
+      setSelectedCard(null); // Close dialog on removal
+    }
     setTimeout(() => {
         deckSetter(prev => prev.filter((c) => c.instanceId !== card.instanceId));
     }, 500);
   };
+
 
   const handleDragStart = (e: React.DragEvent, card: Card, source: DeckType | 'search', index?: number) => {
     const cardWithInstanceId = source === 'search' ? { ...card, instanceId: Date.now() } : card;
@@ -317,6 +320,7 @@ export default function Home() {
             addMode={addMode}
             setAddMode={setAddMode}
             onCardClick={handleDeckCardClick}
+            onCardRemove={removeCardFromDeck}
             onSort={handleSortDecks}
             onClear={handleClearDecks}
             lastInteraction={lastInteraction}
