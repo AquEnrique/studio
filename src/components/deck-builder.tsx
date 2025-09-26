@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, Interaction } from '@/lib/types';
-import { Trash2, ArrowUpDown, Gem, Download } from 'lucide-react';
+import { Trash2, ArrowUpDown, Gem, Download, FileText } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
@@ -93,6 +93,34 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadYdk = () => {
+    let content = '#created by YGDeck Builder\n';
+
+    content += '#main\n';
+    decks.main.forEach(card => {
+      content += `${card.id}\n`;
+    });
+
+    content += '#extra\n';
+    decks.extra.forEach(card => {
+      content += `${card.id}\n`;
+    });
+
+    content += '!side\n';
+    decks.side.forEach(card => {
+      content += `${card.id}\n`;
+    });
+
+    const blob = new Blob([content], { type: 'application/octet-stream;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'deck.ydk';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   const renderDeckContent = (deckType: DeckType) => {
     const deck = decks[deckType];
@@ -158,6 +186,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
         </div>
         <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={onSort} aria-label="Sort Deck"><ArrowUpDown /></Button>
+            <Button variant="outline" size="icon" onClick={handleDownloadYdk} aria-label="Download as YDK"><FileText /></Button>
             <Button variant="outline" size="icon" onClick={handleDownloadTxt} aria-label="Download as TXT"><Download /></Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
