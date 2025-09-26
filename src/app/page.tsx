@@ -3,11 +3,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Card, DeckType, Interaction } from '@/lib/types';
 import { getDeckValidation, type DeckValidationOutput } from './actions';
-import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/header';
 import { CardSearch } from '@/components/card-search';
 import { DeckBuilder } from '@/components/deck-builder';
 import cardValues from '@/lib/card-values.json';
+import { CardDetailDialog } from '@/components/card-detail-dialog';
 
 const EXTRA_DECK_TYPES = [
   'Fusion Monster',
@@ -48,7 +48,7 @@ export default function Home() {
   const [addMode, setAddMode] = useState<'main-extra' | 'side'>('main-extra');
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const [lastInteraction, setLastInteraction] = useState<Interaction | null>(null);
-  const { toast } = useToast();
+  const [selectedCard, setSelectedCard] = useState<{ card: Card; deck: DeckType } | null>(null);
 
   useEffect(() => {
     try {
@@ -189,7 +189,11 @@ export default function Home() {
     setLastInteraction({ cardInstanceId: newCard.instanceId, action: 'add' });
   };
   
-  const removeCardFromDeck = (card: Card, deck: DeckType, index: number) => {
+  const handleDeckCardClick = (card: Card, deck: DeckType) => {
+    setSelectedCard({ card, deck });
+  };
+
+  const removeCardFromDeck = (card: Card, deck: DeckType) => {
     const deckSetter = {
       main: setMainDeck,
       extra: setExtraDeck,
@@ -197,6 +201,7 @@ export default function Home() {
     }[deck];
 
     setLastInteraction({ cardInstanceId: card.instanceId!, action: 'remove' });
+    setSelectedCard(null); // Close dialog on removal
     setTimeout(() => {
         deckSetter(prev => prev.filter((c) => c.instanceId !== card.instanceId));
     }, 500);
@@ -212,9 +217,9 @@ export default function Home() {
     e.preventDefault();
     const data = e.dataTransfer.getData('text/plain');
     if (!data) return;
-    const { card, source, index }: { card: Card; source: DeckType | 'search', index?: number } = JSON.parse(data);
+    const { card, source }: { card: Card; source: DeckType | 'search' } = JSON.parse(data);
 
-    if (source !== 'search' && index !== undefined) {
+    if (source !== 'search') {
       const sourceSetter = {
         main: setMainDeck,
         extra: setExtraDeck,
@@ -311,13 +316,21 @@ export default function Home() {
             onDragStart={handleDragStart}
             addMode={addMode}
             setAddMode={setAddMode}
-            onCardClick={removeCardFromDeck}
+            onCardClick={handleDeckCardClick}
             onSort={handleSortDecks}
             onClear={handleClearDecks}
             lastInteraction={lastInteraction}
           />
         </div>
       </main>
+      {selectedCard && (
+        <CardDetailDialog
+          card={selectedCard.card}
+          deck={selectedCard.deck}
+          onOpenChange={(isOpen) => !isOpen && setSelectedCard(null)}
+          onRemoveCard={removeCardFromDeck}
+        />
+      )}
     </div>
   );
 }

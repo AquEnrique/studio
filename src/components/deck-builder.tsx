@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, Interaction } from '@/lib/types';
 import { Trash2, ArrowUpDown, Gem, Download } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { X } from 'lucide-react';
-import { toPng } from 'html-to-image';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 import {
@@ -31,7 +29,7 @@ interface DeckBuilderProps {
   onDragStart: (e: React.DragEvent, card: Card, source: DeckType, index: number) => void;
   addMode: 'main-extra' | 'side';
   setAddMode: (mode: 'main-extra' | 'side') => void;
-  onCardClick: (card: Card, deck: DeckType, index: number) => void;
+  onCardClick: (card: Card, deck: DeckType) => void;
   onSort: () => void;
   onClear: () => void;
   lastInteraction: Interaction | null;
@@ -40,7 +38,6 @@ interface DeckBuilderProps {
 
 export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onSort, onClear, lastInteraction }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
-  const deckRef = useRef<HTMLDivElement>(null);
   const [animationState, setAnimationState] = useState<Interaction | null>(null);
 
   useEffect(() => {
@@ -111,7 +108,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             <span className="font-semibold text-lg">{deckType.charAt(0).toUpperCase() + deckType.slice(1)} Deck</span>
             <span className="font-mono text-sm text-muted-foreground">{`${deck.length} / ${max}`}</span>
         </div>
-           <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-10 gap-2 pr-2">
+           <div className="grid gap-2 pr-2" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(65px, 1fr))'}}>
             {deck.length === 0 ? (
               <div className="col-span-full text-center text-muted-foreground pt-8">
                 <p>Drag cards here</p>
@@ -129,14 +126,14 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                   key={card.instanceId || `${card.id}-${index}`}
                   draggable
                   onDragStart={(e) => onDragStart(e, card, deckType, index)}
-                  onClick={() => onCardClick(card, deckType, index)}
+                  onClick={() => onCardClick(card, deckType)}
                   className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
                 >
                   <Image
                     src={card.card_images[0].image_url}
                     alt={card.name}
                     fill
-                    sizes="(max-width: 768px) 20vw, (max-width: 1200px) 12.5vw, 10vw"
+                    sizes="(max-width: 768px) 15vw, 65px"
                     className="object-cover rounded-md"
                   />
                   {card.value && card.value > 0 && (
@@ -145,9 +142,6 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                       {card.value}
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <X className="w-8 h-8 text-white" />
-                  </div>
                 </div>
               )})
             )}
@@ -163,11 +157,11 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             <CardTitle>Deck Builder</CardTitle>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={onSort}><ArrowUpDown /></Button>
-            <Button variant="outline" size="icon" onClick={handleDownloadTxt}><Download /></Button>
+            <Button variant="outline" size="icon" onClick={onSort} aria-label="Sort Deck"><ArrowUpDown /></Button>
+            <Button variant="outline" size="icon" onClick={handleDownloadTxt} aria-label="Download as TXT"><Download /></Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="icon"><Trash2 /></Button>
+                <Button variant="destructive" size="icon" aria-label="Clear Deck"><Trash2 /></Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -212,7 +206,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             </div>
         </div>
         
-        <div ref={deckRef} className="flex-grow flex flex-col min-h-0 bg-card p-2 rounded-md">
+        <div className="flex-grow flex flex-col min-h-0 bg-card p-2 rounded-md">
           <ScrollArea className="flex-grow rounded-md border -mr-4 pr-4">
               <div className="space-y-4 p-2">
                 {renderDeckContent('main')}
