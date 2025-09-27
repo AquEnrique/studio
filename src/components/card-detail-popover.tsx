@@ -2,7 +2,7 @@ import Image from 'next/image';
 import type { Card } from '@/lib/types';
 import { CardTypeIcon } from './card-type-icon';
 import { Button } from './ui/button';
-import { Trash2, Minus, Plus } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 interface CardDetailPopoverProps {
@@ -51,9 +51,9 @@ export function CardDetailPopover({ card, onRemoveCard, onAddCard, keepOpenOnRem
                     <Separator />
                 </>
             )}
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap max-h-24 overflow-y-auto">
-            {card.desc}
-            </p>
+            <blockquote className="text-sm text-muted-foreground whitespace-pre-wrap max-h-36 overflow-y-auto bg-muted/50 p-2 rounded-md border-l-4 border-border italic">
+              {card.desc}
+            </blockquote>
             <Separator />
             <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">Manage card:</p>
