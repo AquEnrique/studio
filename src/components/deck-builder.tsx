@@ -19,7 +19,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { CardDetailPopover } from './card-detail-popover';
 
 const LONG_PRESS_DURATION = 500; // ms
 
@@ -30,7 +32,6 @@ interface DeckBuilderProps {
   onDragStart: (e: React.DragEvent, card: Card, source: DeckType, index: number) => void;
   addMode: 'main-extra' | 'side';
   setAddMode: (mode: 'main-extra' | 'side') => void;
-  onCardClick: (card: Card, deck: DeckType) => void;
   onCardRemove: (card: Card, deck: DeckType) => void;
   onSort: () => void;
   onClear: () => void;
@@ -38,11 +39,10 @@ interface DeckBuilderProps {
 }
 
 
-export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardClick, onCardRemove, onSort, onClear, lastInteraction }: DeckBuilderProps) {
+export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardRemove, onSort, onClear, lastInteraction }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const [animationState, setAnimationState] = useState<Interaction | null>(null);
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
-  const isLongPress = useRef(false);
 
   useEffect(() => {
     if (lastInteraction) {
@@ -55,10 +55,11 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
   }, [lastInteraction]);
 
   const handlePressStart = (card: Card, deckType: DeckType) => {
-    isLongPress.current = false;
     pressTimer.current = setTimeout(() => {
       onCardRemove(card, deckType);
-      isLongPress.current = true;
+      // Prevent click from firing after long press
+      if (pressTimer.current) clearTimeout(pressTimer.current);
+      pressTimer.current = null;
     }, LONG_PRESS_DURATION);
   };
 
@@ -68,13 +69,6 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
       pressTimer.current = null;
     }
   };
-
-  const handleCardClick = (card: Card, deckType: DeckType) => {
-    if (!isLongPress.current) {
-      onCardClick(card, deckType);
-    }
-  };
-
 
   const handleDownloadTxt = () => {
     const deckSections = {
@@ -175,32 +169,37 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                 }
                 
                 return (
-                <div
-                  key={card.instanceId || `${card.id}-${index}`}
-                  draggable
-                  onDragStart={(e) => onDragStart(e, card, deckType, index)}
-                  onClick={() => handleCardClick(card, deckType)}
-                  onMouseDown={() => handlePressStart(card, deckType)}
-                  onMouseUp={handlePressEnd}
-                  onMouseLeave={handlePressEnd}
-                  onTouchStart={() => handlePressStart(card, deckType)}
-                  onTouchEnd={handlePressEnd}
-                  className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
-                >
-                  <Image
-                    src={card.card_images[0].image_url}
-                    alt={card.name}
-                    fill
-                    sizes="(max-width: 768px) 15vw, 65px"
-                    className="object-cover rounded-md"
-                  />
-                  {card.value && card.value > 0 && (
-                    <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm">
-                      <Gem className="w-2 h-2" />
-                      {card.value}
-                    </div>
-                  )}
-                </div>
+                  <Popover key={card.instanceId || `${card.id}-${index}`} openDelay={200} >
+                    <PopoverTrigger asChild>
+                      <div
+                        draggable
+                        onDragStart={(e) => onDragStart(e, card, deckType, index)}
+                        onMouseDown={() => handlePressStart(card, deckType)}
+                        onMouseUp={handlePressEnd}
+                        onMouseLeave={handlePressEnd}
+                        onTouchStart={() => handlePressStart(card, deckType)}
+                        onTouchEnd={handlePressEnd}
+                        className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
+                      >
+                        <Image
+                          src={card.card_images[0].image_url}
+                          alt={card.name}
+                          fill
+                          sizes="(max-width: 768px) 15vw, 65px"
+                          className="object-cover rounded-md"
+                        />
+                        {card.value && card.value > 0 && (
+                          <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm">
+                            <Gem className="w-2 h-2" />
+                            {card.value}
+                          </div>
+                        )}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80" side="left" align="start" alignOffset={-10}>
+                       <CardDetailPopover card={card} onRemoveCard={() => onCardRemove(card, deckType)} />
+                    </PopoverContent>
+                  </Popover>
               )})
             )}
           </div>

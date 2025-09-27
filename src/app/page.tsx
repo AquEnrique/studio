@@ -7,7 +7,8 @@ import { Header } from '@/components/header';
 import { CardSearch } from '@/components/card-search';
 import { DeckBuilder } from '@/components/deck-builder';
 import cardValues from '@/lib/card-values.json';
-import { CardDetailDialog } from '@/components/card-detail-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CardDetailPopover } from '@/components/card-detail-popover';
 
 const EXTRA_DECK_TYPES = [
   'Fusion Monster',
@@ -24,6 +25,16 @@ const CARD_TYPE_SORT_ORDER = {
   'monster': 1,
   'spell': 2,
   'trap': 3,
+};
+
+const EXTRA_DECK_SORT_ORDER = {
+    'Fusion Monster': 1,
+    'Synchro Monster': 2,
+    'Synchro Tuner Monster': 2,
+    'Synchro Pendulum Effect Monster': 2,
+    'XYZ Monster': 3,
+    'XYZ Pendulum Effect Monster': 3,
+    'Link Monster': 4,
 };
 
 const cardValueMap: { [key: string]: number } = {};
@@ -48,7 +59,6 @@ export default function Home() {
   const [addMode, setAddMode] = useState<'main-extra' | 'side'>('main-extra');
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const [lastInteraction, setLastInteraction] = useState<Interaction | null>(null);
-  const [selectedCard, setSelectedCard] = useState<{ card: Card; deck: DeckType } | null>(null);
 
   useEffect(() => {
     try {
@@ -188,10 +198,6 @@ export default function Home() {
     targetSetter(prev => [...prev, newCard]);
     setLastInteraction({ cardInstanceId: newCard.instanceId, action: 'add' });
   };
-  
-  const handleDeckCardClick = (card: Card, deck: DeckType) => {
-    setSelectedCard({ card, deck });
-  };
 
   const removeCardFromDeck = (card: Card, deck: DeckType) => {
     const deckSetter = {
@@ -201,9 +207,6 @@ export default function Home() {
     }[deck];
 
     setLastInteraction({ cardInstanceId: card.instanceId!, action: 'remove' });
-    if (selectedCard?.card.instanceId === card.instanceId) {
-      setSelectedCard(null); // Close dialog on removal
-    }
     setTimeout(() => {
         deckSetter(prev => prev.filter((c) => c.instanceId !== card.instanceId));
     }, 500);
@@ -269,25 +272,60 @@ export default function Home() {
   };
 
 
-  const sortDeck = useCallback((deck: Card[]) => {
+  const sortMainDeck = useCallback((deck: Card[]) => {
     return [...deck].sort((a, b) => {
       const typeA = getCardSortType(a);
       const typeB = getCardSortType(b);
       const typeOrderA = CARD_TYPE_SORT_ORDER[typeA];
       const typeOrderB = CARD_TYPE_SORT_ORDER[typeB];
-
+      
       if (typeOrderA !== typeOrderB) {
         return typeOrderA - typeOrderB;
       }
+      
+      if (typeA === 'monster') {
+        const levelA = a.level || 0;
+        const levelB = b.level || 0;
+        if (levelA !== levelB) {
+          return levelB - levelA; // Sort by level descending
+        }
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
+  }, []);
+  
+  const sortExtraDeck = useCallback((deck: Card[]) => {
+    return [...deck].sort((a, b) => {
+      const getExtraDeckSortGroup = (card: Card) => {
+        for (const type in EXTRA_DECK_SORT_ORDER) {
+          if (card.type.includes(type)) return EXTRA_DECK_SORT_ORDER[type as keyof typeof EXTRA_DECK_SORT_ORDER];
+        }
+        return 99; // Should not happen
+      };
+      
+      const groupA = getExtraDeckSortGroup(a);
+      const groupB = getExtraDeckSortGroup(b);
+      
+      if (groupA !== groupB) {
+        return groupA - groupB;
+      }
+      
+      const levelA = a.level || 0; // Rank for XYZ is in 'level' field
+      const levelB = b.level || 0;
+      if (levelA !== levelB) {
+        return levelB - levelA; // Sort by level/rank descending
+      }
+      
       return a.name.localeCompare(b.name);
     });
   }, []);
 
   const handleSortDecks = useCallback(() => {
-    setMainDeck(prev => sortDeck(prev));
-    setExtraDeck(prev => sortDeck(prev));
-    setSideDeck(prev => sortDeck(prev));
-  }, [sortDeck]);
+    setMainDeck(prev => sortMainDeck(prev));
+    setExtraDeck(prev => sortExtraDeck(prev));
+    setSideDeck(prev => sortMainDeck(prev)); // Side deck uses main deck sorting
+  }, [sortMainDeck, sortExtraDeck]);
 
   const handleClearDecks = useCallback(() => {
     setMainDeck([]);
@@ -319,7 +357,6 @@ export default function Home() {
             onDragStart={handleDragStart}
             addMode={addMode}
             setAddMode={setAddMode}
-            onCardClick={handleDeckCardClick}
             onCardRemove={removeCardFromDeck}
             onSort={handleSortDecks}
             onClear={handleClearDecks}
@@ -327,14 +364,6 @@ export default function Home() {
           />
         </div>
       </main>
-      {selectedCard && (
-        <CardDetailDialog
-          card={selectedCard.card}
-          deck={selectedCard.deck}
-          onOpenChange={(isOpen) => !isOpen && setSelectedCard(null)}
-          onRemoveCard={removeCardFromDeck}
-        />
-      )}
     </div>
   );
 }
