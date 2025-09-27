@@ -168,6 +168,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                 if (isAnimated) {
                   animationClass = animationState?.action === 'add' ? 'animate-shine' : 'animate-shine-red';
                 }
+                const otherCopiesInDeck = [...decks.main, ...decks.extra, ...decks.side].filter(c => c.name === card.name && c.instanceId !== card.instanceId).length > 0;
                 
                 return (
                   <Popover key={card.instanceId || `${card.id}-${index}`} openDelay={200} >
@@ -202,6 +203,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                          card={card} 
                          onRemoveCard={() => onCardRemove(card, deckType)}
                          onAddCard={onCardAdd}
+                         keepOpenOnRemove={otherCopiesInDeck}
                        />
                     </PopoverContent>
                   </Popover>
