@@ -333,6 +333,81 @@ export default function Home() {
     setSideDeck([]);
   }, []);
 
+  const handleYdkUpload = async (file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const content = e.target?.result as string;
+      if (!content) return;
+
+      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+      
+      let currentDeck: 'main' | 'extra' | 'side' | null = null;
+      const deckIds = {
+        main: [] as string[],
+        extra: [] as string[],
+        side: [] as string[],
+      };
+
+      for (const line of lines) {
+        if (line === '#main') {
+          currentDeck = 'main';
+        } else if (line === '#extra') {
+          currentDeck = 'extra';
+        } else if (line === '!side') {
+          currentDeck = 'side';
+        } else if (currentDeck && !line.startsWith('#') && !line.startsWith('!')) {
+          deckIds[currentDeck].push(line);
+        }
+      }
+
+      const allIds = [...deckIds.main, ...deckIds.extra, ...deckIds.side];
+      if (allIds.length === 0) return;
+
+      setIsLoading(true);
+      try {
+        const response = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${allIds.join(',')}`);
+        const data = await response.json();
+        
+        if (data.data && data.data.length > 0) {
+          const fetchedCards: Card[] = data.data.map((card: Card) => ({
+            ...card,
+            value: cardValueMap[card.name] || 0,
+          }));
+
+          const cardMap = new Map<string, Card>(fetchedCards.map(c => [c.id.toString(), c]));
+
+          const newMainDeck: Card[] = [];
+          deckIds.main.forEach(id => {
+            const card = cardMap.get(id);
+            if (card) newMainDeck.push({ ...card, instanceId: Date.now() + Math.random() });
+          });
+
+          const newExtraDeck: Card[] = [];
+          deckIds.extra.forEach(id => {
+            const card = cardMap.get(id);
+            if (card) newExtraDeck.push({ ...card, instanceId: Date.now() + Math.random() });
+          });
+
+          const newSideDeck: Card[] = [];
+          deckIds.side.forEach(id => {
+            const card = cardMap.get(id);
+            if (card) newSideDeck.push({ ...card, instanceId: Date.now() + Math.random() });
+          });
+          
+          handleClearDecks();
+          setMainDeck(newMainDeck);
+          setExtraDeck(newExtraDeck);
+          setSideDeck(newSideDeck);
+        }
+      } catch (error) {
+        console.error("Failed to fetch cards from YDK file:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    reader.readAsText(file);
+  };
+
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-body">
@@ -362,6 +437,7 @@ export default function Home() {
             onSort={handleSortDecks}
             onClear={handleClearDecks}
             lastInteraction={lastInteraction}
+            onYdkUpload={handleYdkUpload}
           />
         </div>
       </main>

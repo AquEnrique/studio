@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card as CardComponent, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from './ui/scroll-area';
 import type { Card, DeckType, Interaction } from '@/lib/types';
-import { Trash2, ArrowUpDown, Gem, FileText, Download } from 'lucide-react';
+import { Trash2, ArrowUpDown, Gem, FileText, Download, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
@@ -37,13 +37,15 @@ interface DeckBuilderProps {
   onSort: () => void;
   onClear: () => void;
   lastInteraction: Interaction | null;
+  onYdkUpload: (file: File) => void;
 }
 
 
-export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardRemove, onCardAdd, onSort, onClear, lastInteraction }: DeckBuilderProps) {
+export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardRemove, onCardAdd, onSort, onClear, lastInteraction, onYdkUpload }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const [animationState, setAnimationState] = useState<Interaction | null>(null);
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (lastInteraction) {
@@ -142,6 +144,22 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
     URL.revokeObjectURL(url);
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onYdkUpload(file);
+    }
+    // Reset file input value to allow uploading the same file again
+    if(event.target) {
+        event.target.value = '';
+    }
+  };
+
+
   const renderDeckContent = (deckType: DeckType) => {
     const deck = decks[deckType];
     const max = { main: 60, extra: 15, side: 15 }[deckType];
@@ -190,12 +208,18 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                           sizes="(max-width: 768px) 15vw, 65px"
                           className="object-cover rounded-md"
                         />
-                        {card.value && card.value > 0 && (
-                          <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm">
-                            <Gem className="w-2 h-2" />
-                            {card.value}
-                          </div>
-                        )}
+                        {card.value ? (
+                          card.value > 0 ? (
+                            <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm">
+                              <Gem className="w-2 h-2" />
+                              {card.value}
+                            </div>
+                           ) : (
+                            <div className="absolute top-1 right-1 bg-green-600/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm z-10">
+                                Free
+                            </div>
+                           )
+                        ) : null}
                       </div>
                     </PopoverTrigger>
                     <PopoverContent className="w-80" side="left" align="start" alignOffset={-10}>
@@ -221,6 +245,14 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
             <CardTitle>Deck Builder</CardTitle>
         </div>
         <div className="flex items-center gap-2">
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".ydk"
+                className="hidden"
+            />
+            <Button variant="outline" size="icon" onClick={handleUploadClick} aria-label="Upload YDK"><Upload /></Button>
             <Button variant="outline" size="icon" onClick={onSort} aria-label="Sort Deck"><ArrowUpDown /></Button>
             <Button variant="outline" size="icon" onClick={handleDownloadYdk} aria-label="Download as YDK"><FileText /></Button>
             <Button variant="outline" size="icon" onClick={handleDownloadTxt} aria-label="Download as TXT"><Download /></Button>
