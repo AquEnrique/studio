@@ -169,7 +169,7 @@ export default function Home() {
     }
   };
 
-  const handleCardClick = (card: Card) => {
+  const addCardToDeck = (card: Card) => {
     const cardCount = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.name === card.name).length;
     if (cardCount >= 3) {
       return;
@@ -344,7 +344,7 @@ export default function Home() {
             results={searchResults} 
             isLoading={isLoading} 
             onDragStart={handleDragStart} 
-            onCardClick={handleCardClick}
+            onCardClick={addCardToDeck}
             isCollapsed={isSearchCollapsed}
             setIsCollapsed={setIsSearchCollapsed}
           />
@@ -358,6 +358,7 @@ export default function Home() {
             addMode={addMode}
             setAddMode={setAddMode}
             onCardRemove={removeCardFromDeck}
+            onCardAdd={addCardToDeck}
             onSort={handleSortDecks}
             onClear={handleClearDecks}
             lastInteraction={lastInteraction}

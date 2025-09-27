@@ -33,13 +33,14 @@ interface DeckBuilderProps {
   addMode: 'main-extra' | 'side';
   setAddMode: (mode: 'main-extra' | 'side') => void;
   onCardRemove: (card: Card, deck: DeckType) => void;
+  onCardAdd: (card: Card) => void;
   onSort: () => void;
   onClear: () => void;
   lastInteraction: Interaction | null;
 }
 
 
-export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardRemove, onSort, onClear, lastInteraction }: DeckBuilderProps) {
+export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardRemove, onCardAdd, onSort, onClear, lastInteraction }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const [animationState, setAnimationState] = useState<Interaction | null>(null);
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -197,7 +198,11 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                       </div>
                     </PopoverTrigger>
                     <PopoverContent className="w-80" side="left" align="start" alignOffset={-10}>
-                       <CardDetailPopover card={card} onRemoveCard={() => onCardRemove(card, deckType)} />
+                       <CardDetailPopover 
+                         card={card} 
+                         onRemoveCard={() => onCardRemove(card, deckType)}
+                         onAddCard={onCardAdd}
+                       />
                     </PopoverContent>
                   </Popover>
               )})

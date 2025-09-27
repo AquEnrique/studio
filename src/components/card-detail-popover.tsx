@@ -2,15 +2,16 @@ import Image from 'next/image';
 import type { Card } from '@/lib/types';
 import { CardTypeIcon } from './card-type-icon';
 import { Button } from './ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Minus, Plus } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 interface CardDetailPopoverProps {
   card: Card;
   onRemoveCard: () => void;
+  onAddCard: (card: Card) => void;
 }
 
-export function CardDetailPopover({ card, onRemoveCard }: CardDetailPopoverProps) {
+export function CardDetailPopover({ card, onRemoveCard, onAddCard }: CardDetailPopoverProps) {
   return (
     <div className="grid gap-4">
       <div className="space-y-2">
@@ -37,14 +38,25 @@ export function CardDetailPopover({ card, onRemoveCard }: CardDetailPopoverProps
           {card.desc}
         </p>
         <Separator />
-        <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={onRemoveCard}
-        >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Remove from Deck
-        </Button>
+        <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">Manage card:</p>
+            <div className="flex items-center gap-2">
+                <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => onAddCard(card)}
+                >
+                    <Plus className="w-4 h-4" />
+                </Button>
+                 <Button 
+                    variant="destructive" 
+                    size="icon"
+                    onClick={onRemoveCard}
+                >
+                    <Minus className="w-4 h-4" />
+                </Button>
+            </div>
+        </div>
       </div>
     </div>
   )
