@@ -339,7 +339,7 @@ export default function Home() {
       const content = e.target?.result as string;
       if (!content) return;
 
-      const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+      const lines = content.split('\n').map(line => line.trim()).filter(line => line && !line.startsWith('#created by'));
       
       let currentDeck: 'main' | 'extra' | 'side' | null = null;
       const deckIds = {
