@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -7,6 +8,7 @@ import { Header } from '@/components/header';
 import { CardSearch } from '@/components/card-search';
 import { DeckBuilder } from '@/components/deck-builder';
 import cardValues from '@/lib/card-values.json';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CardDetailPopover } from '@/components/card-detail-popover';
 
@@ -59,6 +61,7 @@ export default function Home() {
   const [addMode, setAddMode] = useState<'main-extra' | 'side'>('main-extra');
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const [lastInteraction, setLastInteraction] = useState<Interaction | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     try {
@@ -360,12 +363,15 @@ export default function Home() {
         }
       }
 
-      const allIds = [...deckIds.main, ...deckIds.extra, ...deckIds.side];
+      const allIds = [...deckIds.main, ...deckIds.extra, ...deckIds.side].filter(id => id);
       if (allIds.length === 0) return;
 
       setIsLoading(true);
       try {
         const response = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${allIds.join(',')}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch card data for YDK file');
+        }
         const data = await response.json();
         
         if (data.data && data.data.length > 0) {
@@ -438,6 +444,7 @@ export default function Home() {
             onClear={handleClearDecks}
             lastInteraction={lastInteraction}
             onYdkUpload={handleYdkUpload}
+            isMobile={isMobile}
           />
         </div>
       </main>

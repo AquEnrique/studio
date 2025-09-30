@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -36,10 +37,11 @@ interface DeckBuilderProps {
   onClear: () => void;
   lastInteraction: Interaction | null;
   onYdkUpload: (file: File) => void;
+  isMobile: boolean;
 }
 
 
-export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardRemove, onCardAdd, onSort, onClear, lastInteraction, onYdkUpload }: DeckBuilderProps) {
+export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardRemove, onCardAdd, onSort, onClear, lastInteraction, onYdkUpload, isMobile }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const [animationState, setAnimationState] = useState<Interaction | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -169,34 +171,38 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                 }
                 const otherCopiesInDeck = [...decks.main, ...decks.extra, ...decks.side].filter(c => c.name === card.name && c.instanceId !== card.instanceId).length > 0;
                 
+                const cardImage = (
+                  <div
+                    draggable={!isMobile}
+                    onDragStart={(e) => !isMobile && onDragStart(e, card, deckType, index)}
+                    className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
+                  >
+                    <Image
+                      src={card.card_images[0].image_url}
+                      alt={card.name}
+                      fill
+                      sizes="(max-width: 768px) 15vw, 65px"
+                      className="object-cover rounded-md"
+                    />
+                    {card.value ? (
+                      card.value > 0 ? (
+                        <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm">
+                          <Gem className="w-2 h-2" />
+                          {card.value}
+                        </div>
+                       ) : (
+                        <div className="absolute top-1 right-1 bg-green-600/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm z-10">
+                            Free
+                        </div>
+                       )
+                    ) : null}
+                  </div>
+                );
+                
                 return (
-                  <Popover key={card.instanceId || `${card.id}-${index}`} openDelay={200} >
-                    <PopoverTrigger asChild>
-                      <div
-                        draggable
-                        onDragStart={(e) => onDragStart(e, card, deckType, index)}
-                        className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
-                      >
-                        <Image
-                          src={card.card_images[0].image_url}
-                          alt={card.name}
-                          fill
-                          sizes="(max-width: 768px) 15vw, 65px"
-                          className="object-cover rounded-md"
-                        />
-                        {card.value ? (
-                          card.value > 0 ? (
-                            <div className="absolute top-1 right-1 bg-primary/80 text-primary-foreground text-[10px] font-bold px-1 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm">
-                              <Gem className="w-2 h-2" />
-                              {card.value}
-                            </div>
-                           ) : (
-                            <div className="absolute top-1 right-1 bg-green-600/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm flex items-center gap-1 backdrop-blur-sm z-10">
-                                Free
-                            </div>
-                           )
-                        ) : null}
-                      </div>
+                  <Popover key={card.instanceId || `${card.id}-${index}`} openDelay={isMobile ? undefined : 200}>
+                    <PopoverTrigger asChild onContextMenu={(e) => e.preventDefault()}>
+                      {cardImage}
                     </PopoverTrigger>
                     <PopoverContent className="w-80" side="left" align="start" alignOffset={-10}>
                        <CardDetailPopover 
@@ -305,3 +311,5 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
     </CardComponent>
   );
 }
+
+    
