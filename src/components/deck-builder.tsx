@@ -51,7 +51,7 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
       setAnimationState(lastInteraction);
       const timer = setTimeout(() => {
         setAnimationState(null);
-      }, 700);
+        }, 700);
       return () => clearTimeout(timer);
     }
   }, [lastInteraction]);
@@ -169,12 +169,12 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                 if (isAnimated) {
                   animationClass = animationState?.action === 'add' ? 'animate-shine' : 'animate-shine-red';
                 }
-                const otherCopiesInDeck = [...decks.main, ...decks.extra, ...decks.side].filter(c => c.name === card.name && c.instanceId !== card.instanceId).length > 0;
                 
                 const cardImage = (
                   <div
                     draggable={!isMobile}
                     onDragStart={(e) => !isMobile && onDragStart(e, card, deckType, index)}
+                    onClick={isMobile ? () => onCardRemove(card, deckType) : undefined}
                     className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
                   >
                     <Image
@@ -198,9 +198,15 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                     ) : null}
                   </div>
                 );
+
+                if (isMobile) {
+                    return <div key={card.instanceId || `${card.id}-${index}`}>{cardImage}</div>;
+                }
+                
+                const otherCopiesInDeck = [...decks.main, ...decks.extra, ...decks.side].filter(c => c.name === card.name && c.instanceId !== card.instanceId).length > 0;
                 
                 return (
-                  <Popover key={card.instanceId || `${card.id}-${index}`} openDelay={isMobile ? undefined : 200}>
+                  <Popover key={card.instanceId || `${card.id}-${index}`} openDelay={200}>
                     <PopoverTrigger asChild onContextMenu={(e) => e.preventDefault()}>
                       {cardImage}
                     </PopoverTrigger>
@@ -312,4 +318,4 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
   );
 }
 
-    
+  
