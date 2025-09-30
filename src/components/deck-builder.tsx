@@ -23,8 +23,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { CardDetailPopover } from './card-detail-popover';
 
-const LONG_PRESS_DURATION = 500; // ms
-
 interface DeckBuilderProps {
   decks: { main: Card[]; extra: Card[]; side: Card[] };
   totalDeckValue: number;
@@ -44,7 +42,6 @@ interface DeckBuilderProps {
 export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMode, setAddMode, onCardRemove, onCardAdd, onSort, onClear, lastInteraction, onYdkUpload }: DeckBuilderProps) {
   const [isDragOverTrash, setIsDragOverTrash] = useState(false);
   const [animationState, setAnimationState] = useState<Interaction | null>(null);
-  const pressTimer = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -56,22 +53,6 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
       return () => clearTimeout(timer);
     }
   }, [lastInteraction]);
-
-  const handlePressStart = (card: Card, deckType: DeckType) => {
-    pressTimer.current = setTimeout(() => {
-      onCardRemove(card, deckType);
-      // Prevent click from firing after long press
-      if (pressTimer.current) clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }, LONG_PRESS_DURATION);
-  };
-
-  const handlePressEnd = () => {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-  };
 
   const handleDownloadTxt = () => {
     const deckSections = {
@@ -194,11 +175,6 @@ export function DeckBuilder({ decks, totalDeckValue, onDrop, onDragStart, addMod
                       <div
                         draggable
                         onDragStart={(e) => onDragStart(e, card, deckType, index)}
-                        onMouseDown={() => handlePressStart(card, deckType)}
-                        onMouseUp={handlePressEnd}
-                        onMouseLeave={handlePressEnd}
-                        onTouchStart={() => handlePressStart(card, deckType)}
-                        onTouchEnd={handlePressEnd}
                         className={`relative group cursor-pointer aspect-[59/86] ${animationClass}`}
                       >
                         <Image
