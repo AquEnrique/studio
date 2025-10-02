@@ -21,9 +21,12 @@ export default function TournamentPage() {
   } = useTournament();
 
   const displayedRound = state.viewingRound || state.currentRound;
-  const pairingsForView = state.history[displayedRound]?.pairings || state.pairings;
+  const pairingsForView = state.status === 'running' && state.history[displayedRound] 
+    ? state.history[displayedRound].pairings 
+    : state.pairings;
   const isViewingHistory = state.viewingRound !== null && state.viewingRound < state.currentRound;
-  const isLatestRound = displayedRound === state.currentRound;
+  const isLatestRound = displayedRound === state.currentRound && !isViewingHistory;
+
 
   return (
     <main className="flex-grow p-4 space-y-4">
