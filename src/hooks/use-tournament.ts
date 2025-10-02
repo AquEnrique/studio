@@ -215,7 +215,7 @@ export function useTournament() {
   const updateMatchResult = (playerId: string, result: MatchResult) => {
       if (!result) return;
       
-      setState(draft => {
+      const newState = produce(state, draft => {
           const player = draft.players.find(p => p.id === playerId);
           if (!player) return;
 
@@ -233,6 +233,7 @@ export function useTournament() {
           player.matches.push({ round: draft.currentRound, opponentId: opponent.id, result });
           player.opponentIds.push(opponent.id);
       });
+      setState(newState);
   };
 
   const resetTournament = () => {
