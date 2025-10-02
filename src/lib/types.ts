@@ -1,3 +1,4 @@
+
 export interface CardImage {
   id: number;
   image_url: string;
@@ -56,15 +57,22 @@ export type Player = {
 };
 
 export type Pairing = {
-  player1: Player;
-  player2: Player | { id: 'bye'; name: 'BYE' };
+  player1: Player | StandingsPlayer;
+  player2: Player | StandingsPlayer | { id: 'bye'; name: 'BYE' };
 };
+
+export interface RoundHistory {
+    pairings: Pairing[];
+    players: Player[];
+}
 
 export type TournamentState = {
   players: Player[];
   currentRound: number;
   pairings: Pairing[];
   status: 'registration' | 'running' | 'finished';
+  history: { [round: number]: RoundHistory };
+  viewingRound: number | null;
 };
 
 export type StandingsPlayer = Player & {
