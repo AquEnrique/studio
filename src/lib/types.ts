@@ -32,3 +32,38 @@ export interface Interaction {
   cardInstanceId: number;
   action: 'add' | 'remove';
 }
+
+// Tournament Types
+export type Player = {
+  id: string;
+  name: string;
+  points: number;
+  matches: Match[];
+  opponentIds: string[];
+};
+
+export type MatchResult = 'win' | 'loss' | 'draw' | null;
+
+export type Match = {
+  round: number;
+  opponentId: string | null; // null for a bye
+  result: MatchResult;
+};
+
+export type Pairing = {
+  player1: Player;
+  player2: Player | { id: 'bye'; name: 'BYE' };
+};
+
+export type TournamentState = {
+  players: Player[];
+  currentRound: number;
+  pairings: Pairing[];
+  status: 'registration' | 'running' | 'finished';
+};
+
+export type StandingsPlayer = Player & {
+    omwPercentage: number;
+    gwPercentage: number;
+    ogwPercentage: number;
+};

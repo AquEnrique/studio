@@ -4,7 +4,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Card, DeckType, Interaction } from '@/lib/types';
 import { getDeckValidation, type DeckValidationOutput } from './actions';
-import { Header } from '@/components/header';
 import { CardSearch } from '@/components/card-search';
 import { DeckBuilder } from '@/components/deck-builder';
 import cardValues from '@/lib/card-values.json';
@@ -416,8 +415,7 @@ export default function Home() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-body">
-      <Header />
+    <>
       <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 min-h-0">
         <div className="lg:col-span-2 flex flex-col h-full min-h-0">
           <CardSearch 
@@ -448,6 +446,6 @@ export default function Home() {
           />
         </div>
       </main>
-    </div>
+    </>
   );
 }
