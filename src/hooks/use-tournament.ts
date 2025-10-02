@@ -50,6 +50,8 @@ export function useTournament() {
       points: 0,
       matches: [],
       opponentIds: [],
+      gameWins: 0,
+      gamesPlayed: 0,
     };
     const newState = produce(state, draft => {
         draft.players.push(newPlayer);
@@ -58,13 +60,37 @@ export function useTournament() {
   };
   
   const generatePairings = (players: Player[], round: number): Pairing[] => {
-      const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
+      const sortedPlayers = calculateStandings(players);
       const pairings: Pairing[] = [];
       const pairedIds = new Set<string>();
+
+      // Handle bye for odd number of players
+      if (sortedPlayers.length % 2 !== 0) {
+          // Find the lowest-ranked player who hasn't had a bye yet
+          let byePlayer: Player | undefined;
+          for (let i = sortedPlayers.length - 1; i >= 0; i--) {
+              const player = sortedPlayers[i];
+              if (!player.opponentIds.includes('bye')) {
+                  byePlayer = player;
+                  break;
+              }
+          }
+          // If all have had a bye, give it to the lowest player
+          if (!byePlayer) {
+              byePlayer = sortedPlayers[sortedPlayers.length - 1];
+          }
+          
+          if (byePlayer) {
+            pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
+            pairedIds.add(byePlayer.id);
+          }
+      }
+
 
       for (const player of sortedPlayers) {
           if (pairedIds.has(player.id)) continue;
           
+          // Find a valid opponent (swiss pairings)
           let opponent: Player | null = null;
           for (const potentialOpponent of sortedPlayers) {
               if (
@@ -82,7 +108,8 @@ export function useTournament() {
               pairedIds.add(player.id);
               pairedIds.add(opponent.id);
           } else {
-             // If no opponent found, try to find one they already played
+             // If no opponent found that they haven't played, start pairing down
+             // Find any unpaired player
              for (const potentialOpponent of sortedPlayers) {
                  if (!pairedIds.has(potentialOpponent.id) && player.id !== potentialOpponent.id) {
                      opponent = potentialOpponent;
@@ -93,21 +120,9 @@ export function useTournament() {
                 pairings.push({ player1: player, player2: opponent });
                 pairedIds.add(player.id);
                 pairedIds.add(opponent.id);
-             } else if (!pairedIds.has(player.id)) {
-                // This player gets a bye
-                pairings.push({ player1: player, player2: { id: 'bye', name: 'BYE' } });
-                pairedIds.add(player.id);
              }
           }
       }
-
-      if (sortedPlayers.length % 2 !== 0) {
-          const unpairedPlayer = sortedPlayers.find(p => !pairedIds.has(p.id));
-          if (unpairedPlayer) {
-              pairings.push({ player1: unpairedPlayer, player2: { id: 'bye', name: 'BYE' } });
-          }
-      }
-
 
       return pairings;
   };
@@ -115,31 +130,31 @@ export function useTournament() {
   const startTournament = () => {
     if (state.status !== 'registration' || state.players.length < 2) return;
     
-    // Randomize initial pairings
-    const shuffledPlayers = [...state.players].sort(() => Math.random() - 0.5);
-    const firstRoundPairings: Pairing[] = [];
-    
-    for (let i = 0; i < shuffledPlayers.length; i += 2) {
-        if (i + 1 < shuffledPlayers.length) {
-            firstRoundPairings.push({ player1: shuffledPlayers[i], player2: shuffledPlayers[i+1] });
-        } else {
-            // Bye for the last player if odd number
-            firstRoundPairings.push({ player1: shuffledPlayers[i], player2: { id: 'bye', name: 'BYE' } });
-        }
-    }
+    const nextRoundNumber = 1;
+    const firstRoundPairings = generatePairings(state.players, nextRoundNumber);
     
     const newState = produce(state, draft => {
-        draft.currentRound = 1;
+        draft.currentRound = nextRoundNumber;
         draft.status = 'running';
         draft.pairings = firstRoundPairings;
+        
         // Handle bye
-        const byePlayer = firstRoundPairings.find(p => p.player2.id === 'bye')?.player1;
-        if(byePlayer) {
-            const playerInDraft = draft.players.find(p => p.id === byePlayer.id);
+        const byePairing = firstRoundPairings.find(p => p.player2.id === 'bye');
+        if(byePairing) {
+            const playerInDraft = draft.players.find(p => p.id === byePairing.player1.id);
             if(playerInDraft) {
-                playerInDraft.points += 3;
-                playerInDraft.matches.push({ round: 1, opponentId: 'bye', result: 'win' });
+                playerInDraft.points += 3; // 3 points for a bye win
+                playerInDraft.matches.push({ 
+                    round: nextRoundNumber, 
+                    opponentId: 'bye', 
+                    result: 'win',
+                    gamesWon: 1, // Conventionally a 1-0 or 2-0 win
+                    gamesLost: 0,
+                    gamesDrawn: 0,
+                });
                 playerInDraft.opponentIds.push('bye');
+                playerInDraft.gameWins += 1;
+                playerInDraft.gamesPlayed += 1;
             }
         }
     });
@@ -158,13 +173,22 @@ export function useTournament() {
         draft.pairings = newPairings;
         
         // Handle bye
-        const byePlayer = newPairings.find(p => p.player2.id === 'bye')?.player1;
-        if(byePlayer) {
-            const playerInDraft = draft.players.find(p => p.id === byePlayer.id);
+        const byePairing = newPairings.find(p => p.player2.id === 'bye');
+        if(byePairing) {
+            const playerInDraft = draft.players.find(p => p.id === byePairing.player1.id);
             if(playerInDraft) {
                 playerInDraft.points += 3;
-                playerInDraft.matches.push({ round: nextRoundNumber, opponentId: 'bye', result: 'win' });
+                playerInDraft.matches.push({ 
+                    round: nextRoundNumber, 
+                    opponentId: 'bye', 
+                    result: 'win',
+                    gamesWon: 1,
+                    gamesLost: 0,
+                    gamesDrawn: 0,
+                });
                 playerInDraft.opponentIds.push('bye');
+                playerInDraft.gameWins += 1;
+                playerInDraft.gamesPlayed += 1;
             }
         }
     });
@@ -173,67 +197,118 @@ export function useTournament() {
   };
   
   const calculateStandings = (players: Player[]): StandingsPlayer[] => {
-      const playerMap = new Map(players.map(p => [p.id, p]));
+    const playerMap = new Map(players.map(p => [p.id, p]));
 
-      const standingsPlayers: StandingsPlayer[] = players.map(player => {
-        // OMW%
+    const standingsPlayers: StandingsPlayer[] = players.map(player => {
+        // Calculate GW% (Game Win Percentage)
+        const gwPercentage = player.gamesPlayed > 0 ? player.gameWins / player.gamesPlayed : 0;
+
+        // Calculate OMW% (Opponent's Match Win Percentage)
         let totalOpponentMW = 0;
-        let opponentsPlayed = 0;
-        for (const opponentId of player.opponentIds) {
-            if (opponentId === 'bye') continue;
+        const opponentsPlayed = player.opponentIds.filter(id => id !== 'bye');
+        for (const opponentId of opponentsPlayed) {
             const opponent = playerMap.get(opponentId);
             if (opponent) {
-                opponentsPlayed++;
                 const opponentMatchWins = opponent.matches.filter(m => m.result === 'win').length;
                 const opponentMatchesPlayed = opponent.matches.length;
                 const mwPercentage = opponentMatchesPlayed > 0 ? opponentMatchWins / opponentMatchesPlayed : 0;
                 totalOpponentMW += Math.max(0.33, mwPercentage);
             }
         }
-        const omwPercentage = opponentsPlayed > 0 ? totalOpponentMW / opponentsPlayed : 0;
+        const omwPercentage = opponentsPlayed.length > 0 ? totalOpponentMW / opponentsPlayed.length : 0;
 
         return {
             ...player,
+            gwPercentage,
             omwPercentage,
-            gwPercentage: 0, // Placeholder
-            ogwPercentage: 0, // Placeholder
+            ogwPercentage: 0, // Placeholder, calculated next
         };
-      });
+    });
+    
+    const standingsPlayerMap = new Map(standingsPlayers.map(p => [p.id, p]));
 
-      // Sort by points, then by OMW%
-      standingsPlayers.sort((a, b) => {
-          if (b.points !== a.points) {
-              return b.points - a.points;
-          }
-          return b.omwPercentage - a.omwPercentage;
-      });
+    // Calculate OGW% (Opponent's Game Win Percentage)
+    standingsPlayers.forEach(player => {
+        let totalOpponentGW = 0;
+        const opponentsPlayed = player.opponentIds.filter(id => id !== 'bye');
+        for (const opponentId of opponentsPlayed) {
+            const opponent = standingsPlayerMap.get(opponentId);
+            if (opponent) {
+                totalOpponentGW += opponent.gwPercentage;
+            }
+        }
+        player.ogwPercentage = opponentsPlayed.length > 0 ? totalOpponentGW / opponentsPlayed.length : 0;
+    });
 
-      return standingsPlayers;
+
+    // Sort by points, then by OMW%, then GW%, then OGW%
+    standingsPlayers.sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.omwPercentage !== a.omwPercentage) return b.omwPercentage - a.omwPercentage;
+        if (b.gwPercentage !== a.gwPercentage) return b.gwPercentage - a.gwPercentage;
+        return b.ogwPercentage - a.ogwPercentage;
+    });
+
+    return standingsPlayers;
   };
 
 
-  const updateMatchResult = (playerId: string, result: MatchResult) => {
-      if (!result) return;
+  const updateMatchResult = (pairing: Pairing, p1Games: number, p2Games: number) => {
+      const p1Id = pairing.player1.id;
+      const p2Id = pairing.player2.id;
+      if (p2Id === 'bye') return;
       
-      const newState = produce(state, draft => {
-          const player = draft.players.find(p => p.id === playerId);
-          if (!player) return;
+      setState(
+        produce((draft: TournamentState) => {
+          const player1 = draft.players.find(p => p.id === p1Id);
+          const player2 = draft.players.find(p => p.id === p2Id);
 
-          const pairing = draft.pairings.find(p => p.player1.id === playerId || (p.player2 && p.player2.id === playerId));
-          if (!pairing) return;
-
+          if (!player1 || !player2) return;
+          
           // Check if result for this round already exists
-          const existingMatch = player.matches.find(m => m.round === draft.currentRound);
-          if(existingMatch) return; // Already reported
+          if (player1.matches.some(m => m.round === draft.currentRound) || player2.matches.some(m => m.round === draft.currentRound)) {
+              return; 
+          }
 
-          const opponent = pairing.player1.id === playerId ? pairing.player2 : pairing.player1;
+          let p1Result: MatchResult;
+          let p2Result: MatchResult;
+          let p1Points: number;
+          let p2Points: number;
 
-          const points = { win: 3, loss: 0, draw: 1 }[result];
-          player.points += points;
-          player.matches.push({ round: draft.currentRound, opponentId: opponent.id, result });
-          player.opponentIds.push(opponent.id);
-      });
-      setState(newState);
+          if (p1Games > p2Games) {
+              p1Result = 'win';
+              p2Result = 'loss';
+              p1Points = 3;
+              p2Points = 0;
+          } else if (p2Games > p1Games) {
+              p1Result = 'loss';
+              p2Result = 'win';
+              p1Points = 0;
+              p2Points = 3;
+          } else {
+              p1Result = 'draw';
+              p2Result = 'draw';
+              p1Points = 0; // Draw is 0 points
+              p2Points = 0; // Draw is 0 points
+          }
+
+          const gamesPlayed = p1Games + p2Games;
+
+          // Update Player 1
+          player1.points += p1Points;
+          player1.matches.push({ round: draft.currentRound, opponentId: p2Id, result: p1Result, gamesWon: p1Games, gamesLost: p2Games, gamesDrawn: 0 });
+          player1.opponentIds.push(p2Id);
+          player1.gameWins += p1Games;
+          player1.gamesPlayed += gamesPlayed;
+          
+          // Update Player 2
+          player2.points += p2Points;
+          player2.matches.push({ round: draft.currentRound, opponentId: p1Id, result: p2Result, gamesWon: p2Games, gamesLost: p1Games, gamesDrawn: 0 });
+          player2.opponentIds.push(p1Id);
+          player2.gameWins += p2Games;
+          player2.gamesPlayed += gamesPlayed;
+        })
+      );
   };
 
   const resetTournament = () => {

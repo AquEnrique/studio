@@ -34,20 +34,25 @@ export interface Interaction {
 }
 
 // Tournament Types
+export type MatchResult = 'win' | 'loss' | 'draw';
+
+export type Match = {
+  round: number;
+  opponentId: string;
+  result: MatchResult;
+  gamesWon: number;
+  gamesLost: number;
+  gamesDrawn: number;
+};
+
 export type Player = {
   id: string;
   name: string;
   points: number;
   matches: Match[];
   opponentIds: string[];
-};
-
-export type MatchResult = 'win' | 'loss' | 'draw' | null;
-
-export type Match = {
-  round: number;
-  opponentId: string | null; // null for a bye
-  result: MatchResult;
+  gameWins: number;
+  gamesPlayed: number;
 };
 
 export type Pairing = {

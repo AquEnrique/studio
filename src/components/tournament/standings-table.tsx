@@ -24,6 +24,8 @@ export function StandingsTable({ players }: StandingsTableProps) {
           <TableHead>Name</TableHead>
           <TableHead>Points</TableHead>
           <TableHead>OMW%</TableHead>
+          <TableHead>GW%</TableHead>
+          <TableHead>OGW%</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -32,7 +34,9 @@ export function StandingsTable({ players }: StandingsTableProps) {
             <TableCell>{index + 1}</TableCell>
             <TableCell>{player.name}</TableCell>
             <TableCell>{player.points}</TableCell>
-            <TableCell>{player.omwPercentage.toFixed(4)}</TableCell>
+            <TableCell>{player.omwPercentage.toFixed(3)}</TableCell>
+            <TableCell>{player.gwPercentage.toFixed(3)}</TableCell>
+            <TableCell>{player.ogwPercentage.toFixed(3)}</TableCell>
           </TableRow>
         ))}
       </TableBody>
