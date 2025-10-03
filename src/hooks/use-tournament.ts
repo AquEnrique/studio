@@ -29,6 +29,7 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export function useTournament() {
   const [state, setState] = useState<TournamentState>(initialTournamentState);
+  const [pendingImport, setPendingImport] = useState<string | null>(null);
 
   // Load state from local storage on initial render
   useEffect(() => {
@@ -359,6 +360,38 @@ export function useTournament() {
     setState(initialTournamentState);
   };
 
+  const exportTournament = (): string => {
+    return JSON.stringify(state, null, 2);
+  };
+
+  const importTournament = (fileContent: string) => {
+    setPendingImport(fileContent);
+  };
+
+  const confirmImport = () => {
+    if (pendingImport) {
+      try {
+        const newState = JSON.parse(pendingImport);
+        // Add basic validation
+        if (newState.players && newState.status && newState.history) {
+          setState(newState);
+        } else {
+          throw new Error("Invalid tournament file structure.");
+        }
+      } catch (e) {
+        console.error("Failed to parse imported file:", e);
+        // Optionally, show an error toast to the user
+      } finally {
+        setPendingImport(null);
+      }
+    }
+  };
+
+  const cancelImport = () => {
+    setPendingImport(null);
+  };
+
+
   const allResultsSubmitted = useMemo(() => {
     if (state.status !== 'running') return false;
     const activePairings = state.pairings.filter(p => p.player2.id !== 'bye');
@@ -375,6 +408,7 @@ export function useTournament() {
       players: calculateStandings(state.players),
       allResultsSubmitted,
     },
+    pendingImport,
     addPlayer,
     removePlayer,
     startTournament,
@@ -382,5 +416,9 @@ export function useTournament() {
     updateMatchResult,
     resetTournament,
     goToRound,
+    exportTournament,
+    importTournament,
+    confirmImport,
+    cancelImport,
   };
 }

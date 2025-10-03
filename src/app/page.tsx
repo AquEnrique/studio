@@ -11,10 +11,22 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal, List, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 export default function TournamentPage() {
   const {
     state,
+    pendingImport,
     addPlayer,
     removePlayer,
     startTournament,
@@ -22,6 +34,10 @@ export default function TournamentPage() {
     updateMatchResult,
     resetTournament,
     goToRound,
+    importTournament,
+    exportTournament,
+    confirmImport,
+    cancelImport,
   } = useTournament();
   
   const [standingsView, setStandingsView] = useState<'simple' | 'advanced'>('simple');
@@ -37,6 +53,21 @@ export default function TournamentPage() {
 
   return (
     <>
+       <AlertDialog open={!!pendingImport}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to import?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite the current tournament. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelImport}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmImport}>Import</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <main className="flex-grow p-4 md:p-6 space-y-4 md:space-y-6 pb-24">
         <h1 className="text-3xl font-bold tracking-tight">Tournament Manager</h1>
         {state.status === 'registration' && (
@@ -112,6 +143,8 @@ export default function TournamentPage() {
         onNextRound={generateNextRound}
         onReset={resetTournament}
         onGoToRound={goToRound}
+        onImport={importTournament}
+        onExport={exportTournament}
         allResultsSubmitted={state.allResultsSubmitted}
         isMobile={isMobile}
       />
