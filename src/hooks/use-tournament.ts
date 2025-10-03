@@ -90,25 +90,26 @@ export function useTournament() {
 
       const pairings: Pairing[] = [];
       const pairedIds = new Set<string>();
+      
       const availablePlayers = [...sortedPlayers];
 
       // Handle bye for odd number of players
       if (availablePlayers.length % 2 !== 0) {
-          let byePlayer: Player | undefined;
+          let byePlayerIndex = -1;
           // Find the lowest ranked player who hasn't had a bye
           for (let i = availablePlayers.length - 1; i >= 0; i--) {
-              const player = availablePlayers[i];
-              if (!player.opponentIds.includes('bye')) {
-                  byePlayer = player;
+              if (!availablePlayers[i].opponentIds.includes('bye')) {
+                  byePlayerIndex = i;
                   break;
               }
           }
           // If all have had a bye, give it to the lowest ranked player
-          if (!byePlayer) {
-              byePlayer = availablePlayers[availablePlayers.length - 1];
+          if (byePlayerIndex === -1 && availablePlayers.length > 0) {
+              byePlayerIndex = availablePlayers.length - 1;
           }
           
-          if (byePlayer) {
+          if (byePlayerIndex !== -1) {
+            const byePlayer = availablePlayers.splice(byePlayerIndex, 1)[0];
             pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
             pairedIds.add(byePlayer.id);
           }
@@ -121,32 +122,28 @@ export function useTournament() {
         let opponent: Player | null = null;
         let opponentIndex = -1;
     
-        // Try to find an opponent in the same point bracket
+        // Try to find an opponent, prioritizing players with the same score, then pairing down.
+        // The outer loop attempts to pair based on score, the inner one is a fallback.
         for (let i = 0; i < playerQueue.length; i++) {
           const potentialOpponent = playerQueue[i];
-          if (potentialOpponent.points === player1.points && !player1.opponentIds.includes(potentialOpponent.id)) {
-            opponent = potentialOpponent;
-            opponentIndex = i;
-            break;
-          }
-        }
-    
-        // If no opponent in the same bracket, pair down
-        if (!opponent) {
-          for (let i = 0; i < playerQueue.length; i++) {
-            const potentialOpponent = playerQueue[i];
-            if (!player1.opponentIds.includes(potentialOpponent.id)) {
-              opponent = potentialOpponent;
-              opponentIndex = i;
-              break;
+          if (!player1.opponentIds.includes(potentialOpponent.id)) {
+            // Prioritize same points, but if we're at the end of the list, just take this valid opponent
+            if (potentialOpponent.points === player1.points || !opponent) {
+                opponent = potentialOpponent;
+                opponentIndex = i;
+                if (potentialOpponent.points === player1.points) {
+                    break; // Found a perfect match, no need to look further
+                }
             }
           }
         }
     
-        // If still no opponent (everyone has been played), take the highest-ranked available player
+        // Fallback for extremely rare cases where no valid opponent can be found (e.g., in very small, final rounds)
+        // This is a safety net; the logic above should handle almost all scenarios.
         if (!opponent && playerQueue.length > 0) {
-          opponent = playerQueue[0];
-          opponentIndex = 0;
+            // Find the first available player, even if it's a rematch. This is a last resort.
+            opponent = playerQueue[0];
+            opponentIndex = 0;
         }
 
         if(opponent) {
@@ -274,7 +271,8 @@ export function useTournament() {
         if (b.points !== a.points) return b.points - a.points;
         if (b.omwPercentage !== a.omwPercentage) return b.omwPercentage - a.omwPercentage;
         if (b.gwPercentage !== a.gwPercentage) return b.gwPercentage - a.gwPercentage;
-        return b.ogwPercentage - a.ogwPercentage;
+        if (b.ogwPercentage !== a.ogwPercentage) return b.ogwPercentage - a.ogwPercentage;
+        return Math.random() - 0.5; // Randomize players with exact same stats
     });
 
     return standingsPlayers;
