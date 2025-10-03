@@ -77,7 +77,7 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
   });
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 mb-16 xl:mb-0">
       {pairings.map((pairing) => {
         const pairingId = pairing.player1.id;
         const player2IsBye = pairing.player2.id === 'bye';
