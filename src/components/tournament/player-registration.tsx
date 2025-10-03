@@ -44,11 +44,14 @@ export function PlayerRegistration({ addPlayer, removePlayer, players }: PlayerR
         <div className="space-y-2">
           <h3 className="font-semibold">Registered Players ({players.length})</h3>
           {players.length > 0 ? (
-            <div className="bg-muted/50 p-4 rounded-md">
-              <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2">
-                {players.map((player) => (
-                  <li key={player.id} className="flex justify-between items-center group">
-                    <span>{player.name}</span>
+            <div className="bg-muted/50 p-4 rounded-md max-h-60 overflow-y-auto">
+              <ul className="space-y-2">
+                {players.map((player, index) => (
+                  <li key={player.id} className="flex justify-between items-center group bg-background/50 p-2 rounded-md">
+                    <div>
+                      <span className="text-sm font-mono mr-2 text-muted-foreground">{index + 1}.</span>
+                      <span>{player.name}</span>
+                    </div>
                     <Button 
                       variant="ghost" 
                       size="icon" 
