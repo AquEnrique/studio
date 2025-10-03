@@ -43,15 +43,30 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
     }));
   };
 
-  const handleSubmit = (pairing: Pairing) => {
-    const p1Id = pairing.player1.id;
-    const p2Id = (pairing.player2 as Player).id;
-    const p1Games = parseInt(results[p1Id]?.p1 || '0', 10);
-    const p2Games = parseInt(results[p1Id]?.p2 || '0', 10);
-    if (!isNaN(p1Games) && !isNaN(p2Games)) {
-        updateMatchResult(roundNumber, p1Id, p2Id, p1Games, p2Games);
-    }
+  const handleSubmitAll = () => {
+    pairings.forEach(pairing => {
+      const p1Id = pairing.player1.id;
+      const result = results[p1Id];
+      if (result && result.p1 !== undefined && result.p2 !== undefined) {
+        const p2Id = (pairing.player2 as Player).id;
+        const p1Games = parseInt(result.p1, 10);
+        const p2Games = parseInt(result.p2, 10);
+
+        const player1 = pairing.player1 as Player;
+        const match = player1.matches.find(m => m.round === roundNumber && m.opponentId === p2Id);
+
+        if (!match && !isNaN(p1Games) && !isNaN(p2Games)) {
+          updateMatchResult(roundNumber, p1Id, p2Id, p1Games, p2Games);
+        }
+      }
+    });
   };
+
+  const allMatchesInRoundSubmitted = pairings.every(pairing => {
+    if (pairing.player2.id === 'bye') return true;
+    const player1 = pairing.player1 as Player;
+    return player1.matches.some(m => m.round === roundNumber && m.opponentId === (pairing.player2 as Player).id);
+  });
 
   return (
     <div className="space-y-2">
@@ -59,7 +74,7 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
         const pairingId = pairing.player1.id;
         const player2IsBye = pairing.player2.id === 'bye';
         const match = (pairing.player1 as Player).matches.find(m => m.round === roundNumber);
-        const isSubmitted = !!match && match.opponentId !== 'bye';
+        const isSubmitted = !!match && match.opponentId !== 'bye' && match.round === roundNumber;
 
         return (
             <Card key={pairingId}>
@@ -91,9 +106,6 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
                         onChange={(e) => handleResultChange(pairingId, 'p2', e.target.value)}
                         disabled={!isEditable || isSubmitted}
                     />
-                    <Button size="sm" onClick={() => handleSubmit(pairing)} disabled={!isEditable || isSubmitted}>
-                        {isSubmitted ? 'Submitted' : 'Submit'}
-                    </Button>
                 </div>
                 ) : (
                 <span className="text-sm font-bold text-primary pr-4">BYE (Win)</span>
@@ -102,6 +114,11 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
             </Card>
         )
       })}
+       {isEditable && !allMatchesInRoundSubmitted && (
+        <Button onClick={handleSubmitAll} className="w-full mt-4">
+          Submit All Results
+        </Button>
+      )}
     </div>
   );
 }
