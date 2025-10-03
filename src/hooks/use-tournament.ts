@@ -16,6 +16,17 @@ const initialTournamentState: TournamentState = {
 
 const TOURNAMENT_STORAGE_KEY = 'ygo-tournament-state';
 
+// Helper to shuffle an array
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
+
 export function useTournament() {
   const [state, setState] = useState<TournamentState>(initialTournamentState);
 
@@ -62,7 +73,20 @@ export function useTournament() {
   };
   
   const generatePairings = (players: Player[], round: number): Pairing[] => {
-      const sortedPlayers = calculateStandings(players);
+      let sortedPlayers: StandingsPlayer[];
+      if(round === 1) {
+          sortedPlayers = shuffleArray(calculateStandings(players));
+      } else {
+        const standings = calculateStandings(players);
+        // Group players by points, shuffle each group, then flatten
+        const groupedByPoints = standings.reduce((acc, player) => {
+            (acc[player.points] = acc[player.points] || []).push(player);
+            return acc;
+        }, {} as { [points: number]: StandingsPlayer[] });
+
+        sortedPlayers = Object.keys(groupedByPoints).sort((a,b) => Number(b) - Number(a)).flatMap(points => shuffleArray(groupedByPoints[Number(points)]));
+      }
+
       const pairings: Pairing[] = [];
       const pairedIds = new Set<string>();
 
@@ -320,12 +344,12 @@ export function useTournament() {
   };
 
   const resetTournament = () => {
-    setState(initialTournamentState);
     try {
         localStorage.removeItem(TOURNAMENT_STORAGE_KEY);
     } catch(error) {
         console.error("Failed to remove tournament state from localStorage", error);
     }
+    setState(initialTournamentState);
   };
 
   const allResultsSubmitted = useMemo(() => {
