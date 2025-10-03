@@ -25,6 +25,7 @@ interface TournamentControlsProps {
   onNextRound: () => void;
   onReset: () => void;
   onGoToRound: (round: number | null) => void;
+  isMobile: boolean;
 }
 
 export function TournamentControls({
@@ -37,62 +38,83 @@ export function TournamentControls({
   onNextRound,
   onReset,
   onGoToRound,
+  isMobile,
 }: TournamentControlsProps) {
   const displayedRound = viewingRound ?? currentRound;
 
-  return (
-    <div className="flex flex-wrap gap-2 items-center">
-      {status === 'registration' && (
-        <Button onClick={onStart} disabled={playerCount < 2}>
-          <Play className="mr-2 h-4 w-4" /> Start Tournament
-        </Button>
-      )}
-
-      {status === 'running' && (
-        <div className="flex gap-2">
-           <Button 
-            onClick={() => onGoToRound(displayedRound > 1 ? displayedRound - 1 : null)} 
-            disabled={displayedRound <= 1}
-            variant="outline"
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" /> Previous Round
-          </Button>
-
-          {viewingRound !== null && viewingRound < currentRound ? (
-            <Button onClick={() => onGoToRound(null)}>
-              Return to Current Round ({currentRound}) <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
-          ) : (
-             allResultsSubmitted && (
-                <Button onClick={onNextRound}>
-                  <SkipForward className="mr-2 h-4 w-4" /> Generate Next Round
-                </Button>
-              )
-          )}
-        </div>
-      )}
-      
-      {(status === 'running' || status === 'finished') && (
-         <AlertDialog>
+  const renderButton = (
+    icon: React.ReactNode,
+    text: string,
+    onClick: () => void,
+    props: React.ComponentProps<typeof Button> = {}
+  ) => {
+    return (
+      <Button onClick={onClick} {...props}>
+        {icon}
+        {!isMobile && <span>{text}</span>}
+      </Button>
+    );
+  };
+  
+  const renderAlertDialogButton = (
+    icon: React.ReactNode,
+    text: string,
+    dialogTitle: string,
+    dialogDescription: string,
+    onConfirm: () => void,
+    props: React.ComponentProps<typeof Button> = {}
+  ) => {
+     return (
+        <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive">
-              <RefreshCw className="mr-2 h-4 w-4" /> Reset Tournament
+             <Button {...props}>
+                {icon}
+                {!isMobile && <span>{text}</span>}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogTitle>{dialogTitle}</AlertDialogTitle>
               <AlertDialogDescription>
-                This will delete all players, rounds, and standings. This action cannot be undone.
+                {dialogDescription}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={onReset}>Reset</AlertDialogAction>
+              <AlertDialogAction onClick={onConfirm}>Reset</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      )}
-    </div>
+     )
+  }
+
+  return (
+    <footer className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t p-2 z-10">
+        <div className="container mx-auto flex items-center justify-center gap-2">
+            {status === 'registration' && renderButton(
+                <Play />, "Start Tournament", onStart, { disabled: playerCount < 2 }
+            )}
+
+            {status === 'running' && (
+                <>
+                {renderButton(
+                    <ChevronLeft />, "Previous Round", () => onGoToRound(displayedRound > 1 ? displayedRound - 1 : null), { variant: "outline", disabled: displayedRound <= 1 }
+                )}
+
+                {viewingRound !== null && viewingRound < currentRound ? (
+                     renderButton(<ChevronRight />, `To Round ${currentRound}`, () => onGoToRound(null))
+                ) : (
+                    allResultsSubmitted && renderButton(<SkipForward />, "Next Round", onNextRound)
+                )}
+                </>
+            )}
+            
+            {(status === 'running' || status === 'finished') && (
+                renderAlertDialogButton(
+                    <RefreshCw />, "Reset", "Are you sure?", "This will delete all players, rounds, and standings. This action cannot be undone.", onReset, { variant: "destructive" }
+                )
+            )}
+        </div>
+    </footer>
   );
 }
