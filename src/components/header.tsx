@@ -7,8 +7,8 @@ import { Dices, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
-    { href: '/', label: 'Deck Builder' },
-    { href: '/tournament', label: 'Tournament' },
+    { href: '/deck-builder', label: 'Deck Builder' },
+    { href: '/', label: 'Tournament' },
 ];
 
 export function Header() {

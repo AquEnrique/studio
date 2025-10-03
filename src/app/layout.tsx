@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { Header } from '@/components/header';
 
 export const metadata: Metadata = {
-  title: 'YGDeck Builder',
-  description: 'Search for Yu-Gi-Oh! cards and build your deck.',
+  title: 'YGDeck Builder - Tournament',
+  description: 'Manage your Yu-Gi-Oh! tournaments.',
   icons: {
     icon: '/favicon.ico',
   },
