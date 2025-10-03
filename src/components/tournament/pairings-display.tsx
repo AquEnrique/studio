@@ -34,23 +34,31 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
 
 
   const handleResultChange = (pairingId: string, player: 'p1' | 'p2', value: string) => {
-    setResults(prev => ({
-      ...prev,
-      [pairingId]: {
-        ...prev[pairingId],
-        [player]: value,
-      }
-    }));
+    if (value === '') {
+        setResults(prev => ({ ...prev, [pairingId]: { ...prev[pairingId], [player]: '' } }));
+        return;
+    }
+
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 2) {
+        setResults(prev => ({
+          ...prev,
+          [pairingId]: {
+            ...prev[pairingId],
+            [player]: value,
+          }
+        }));
+    }
   };
 
   const handleSubmitAll = () => {
     pairings.forEach(pairing => {
       const p1Id = pairing.player1.id;
       const result = results[p1Id];
-      if (result && result.p1 !== undefined && result.p2 !== undefined) {
+       if (result && (result.p1 !== undefined || result.p2 !== undefined)) {
         const p2Id = (pairing.player2 as Player).id;
-        const p1Games = parseInt(result.p1, 10);
-        const p2Games = parseInt(result.p2, 10);
+        const p1Games = parseInt(result.p1 || '0', 10);
+        const p2Games = parseInt(result.p2 || '0', 10);
 
         const player1 = pairing.player1 as Player;
         const match = player1.matches.find(m => m.round === roundNumber && m.opponentId === p2Id);
@@ -89,6 +97,8 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
                 <div className="flex items-center gap-2">
                     <Input
                         type="number"
+                        min="0"
+                        max="2"
                         className="w-16"
                         placeholder="P1"
                         aria-label={`${pairing.player1.name} score`}
@@ -99,6 +109,8 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
                     <span>-</span>
                     <Input
                         type="number"
+                        min="0"
+                        max="2"
                         className="w-16"
                         placeholder="P2"
                         aria-label={`${pairing.player2.name} score`}
