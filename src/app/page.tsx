@@ -1,24 +1,30 @@
 
 'use client';
 
+import { useState } from 'react';
 import { PlayerRegistration } from '@/components/tournament/player-registration';
 import { TournamentControls } from '@/components/tournament/tournament-controls';
 import { StandingsTable } from '@/components/tournament/standings-table';
 import { PairingsDisplay } from '@/components/tournament/pairings-display';
 import { useTournament } from '@/hooks/use-tournament';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Terminal } from 'lucide-react';
+import { Terminal, Users, List, BarChart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function TournamentPage() {
   const {
     state,
     addPlayer,
+    removePlayer,
     startTournament,
     generateNextRound,
     updateMatchResult,
     resetTournament,
     goToRound,
   } = useTournament();
+  
+  const [standingsView, setStandingsView] = useState<'simple' | 'advanced'>('simple');
 
   const displayedRound = state.viewingRound || state.currentRound;
   const pairingsForView = state.status === 'running' && state.history[displayedRound] 
@@ -29,10 +35,14 @@ export default function TournamentPage() {
 
 
   return (
-    <main className="flex-grow p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Tournament Manager</h1>
+    <main className="flex-grow p-4 md:p-6 space-y-4 md:space-y-6">
+      <h1 className="text-3xl font-bold tracking-tight">Tournament Manager</h1>
       {state.status === 'registration' && (
-        <PlayerRegistration addPlayer={addPlayer} players={state.players} />
+        <PlayerRegistration 
+          addPlayer={addPlayer} 
+          removePlayer={removePlayer}
+          players={state.players} 
+        />
       )}
 
       {(state.status === 'running' || state.status === 'finished') && (
@@ -46,13 +56,39 @@ export default function TournamentPage() {
                   </AlertDescription>
               </Alert>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h2 className="text-xl font-semibold mb-2">Standings</h2>
-              <StandingsTable players={state.players} />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Standings</h2>
+                 <div className="flex items-center gap-2 rounded-full bg-muted p-1">
+                    <Button 
+                        variant={standingsView === 'simple' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setStandingsView('simple')}
+                        className="rounded-full gap-2"
+                    >
+                        <List className="w-4 h-4"/>
+                        Simple
+                    </Button>
+                    <Button 
+                        variant={standingsView === 'advanced' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setStandingsView('advanced')}
+                        className="rounded-full gap-2"
+                    >
+                        <BarChart className="w-4 h-4"/>
+                        Advanced
+                    </Button>
+                </div>
+              </div>
+              <StandingsTable 
+                players={state.players} 
+                view={standingsView} 
+                maxRounds={state.currentRound}
+              />
             </div>
             <div>
-              <h2 className="text-xl font-semibold mb-2">Pairings - Round {displayedRound}</h2>
+              <h2 className="text-2xl font-semibold mb-4">Pairings - Round {displayedRound}</h2>
               <PairingsDisplay 
                 key={displayedRound} // Re-mount component on round change to clear state
                 pairings={pairingsForView} 

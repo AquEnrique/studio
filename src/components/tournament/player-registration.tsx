@@ -6,14 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { Player } from '@/lib/types';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, X } from 'lucide-react';
 
 interface PlayerRegistrationProps {
   addPlayer: (name: string) => void;
+  removePlayer: (id: string) => void;
   players: Player[];
 }
 
-export function PlayerRegistration({ addPlayer, players }: PlayerRegistrationProps) {
+export function PlayerRegistration({ addPlayer, removePlayer, players }: PlayerRegistrationProps) {
   const [newPlayerName, setNewPlayerName] = useState('');
 
   const handleAddPlayer = () => {
@@ -43,11 +44,23 @@ export function PlayerRegistration({ addPlayer, players }: PlayerRegistrationPro
         <div className="space-y-2">
           <h3 className="font-semibold">Registered Players ({players.length})</h3>
           {players.length > 0 ? (
-            <ul className="list-disc list-inside bg-muted/50 p-4 rounded-md">
-              {players.map((player) => (
-                <li key={player.id}>{player.name}</li>
-              ))}
-            </ul>
+            <div className="bg-muted/50 p-4 rounded-md">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2">
+                {players.map((player) => (
+                  <li key={player.id} className="flex justify-between items-center group">
+                    <span>{player.name}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                      onClick={() => removePlayer(player.id)}
+                    >
+                      <X className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : (
             <p className="text-muted-foreground text-sm">No players registered yet.</p>
           )}

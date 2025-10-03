@@ -72,6 +72,13 @@ export function useTournament() {
     setState(newState);
   };
   
+  const removePlayer = (id: string) => {
+    if (state.status !== 'registration') return;
+    setState(produce(draft => {
+      draft.players = draft.players.filter(p => p.id !== id);
+    }));
+  };
+
   const generatePairings = (players: Player[], round: number): Pairing[] => {
       let sortedPlayers: StandingsPlayer[];
       if(round === 1) {
@@ -369,6 +376,7 @@ export function useTournament() {
       allResultsSubmitted,
     },
     addPlayer,
+    removePlayer,
     startTournament,
     generateNextRound,
     updateMatchResult,
