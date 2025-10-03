@@ -82,34 +82,30 @@ export function useTournament() {
 
   const generatePairings = (players: Player[], round: number): Pairing[] => {
       let sortedPlayers: StandingsPlayer[];
-      if(round === 1) {
+      if (round === 1) {
           sortedPlayers = shuffleArray(calculateStandings(players));
       } else {
-        const standings = calculateStandings(players);
-        // Group players by points, shuffle each group, then flatten
-        const groupedByPoints = standings.reduce((acc, player) => {
-            (acc[player.points] = acc[player.points] || []).push(player);
-            return acc;
-        }, {} as { [points: number]: StandingsPlayer[] });
-
-        sortedPlayers = Object.keys(groupedByPoints).sort((a,b) => Number(b) - Number(a)).flatMap(points => shuffleArray(groupedByPoints[Number(points)]));
+        sortedPlayers = calculateStandings(players);
       }
 
       const pairings: Pairing[] = [];
       const pairedIds = new Set<string>();
+      const availablePlayers = [...sortedPlayers];
 
       // Handle bye for odd number of players
-      if (sortedPlayers.length % 2 !== 0) {
+      if (availablePlayers.length % 2 !== 0) {
           let byePlayer: Player | undefined;
-          for (let i = sortedPlayers.length - 1; i >= 0; i--) {
-              const player = sortedPlayers[i];
+          // Find the lowest ranked player who hasn't had a bye
+          for (let i = availablePlayers.length - 1; i >= 0; i--) {
+              const player = availablePlayers[i];
               if (!player.opponentIds.includes('bye')) {
                   byePlayer = player;
                   break;
               }
           }
+          // If all have had a bye, give it to the lowest ranked player
           if (!byePlayer) {
-              byePlayer = sortedPlayers[sortedPlayers.length - 1];
+              byePlayer = availablePlayers[availablePlayers.length - 1];
           }
           
           if (byePlayer) {
@@ -118,31 +114,45 @@ export function useTournament() {
           }
       }
 
-      const playerQueue = sortedPlayers.filter(p => !pairedIds.has(p.id));
+      const playerQueue = availablePlayers.filter(p => !pairedIds.has(p.id));
 
-      while(playerQueue.length > 1) {
-          const player1 = playerQueue.shift()!;
-          let opponent: Player | null = null;
-          let opponentIndex = -1;
-
-          // Find best opponent
+      while (playerQueue.length > 0) {
+        const player1 = playerQueue.shift()!;
+        let opponent: Player | null = null;
+        let opponentIndex = -1;
+    
+        // Try to find an opponent in the same point bracket
+        for (let i = 0; i < playerQueue.length; i++) {
+          const potentialOpponent = playerQueue[i];
+          if (potentialOpponent.points === player1.points && !player1.opponentIds.includes(potentialOpponent.id)) {
+            opponent = potentialOpponent;
+            opponentIndex = i;
+            break;
+          }
+        }
+    
+        // If no opponent in the same bracket, pair down
+        if (!opponent) {
           for (let i = 0; i < playerQueue.length; i++) {
-              const potentialOpponent = playerQueue[i];
-              if (!player1.opponentIds.includes(potentialOpponent.id)) {
-                  opponent = potentialOpponent;
-                  opponentIndex = i;
-                  break;
-              }
+            const potentialOpponent = playerQueue[i];
+            if (!player1.opponentIds.includes(potentialOpponent.id)) {
+              opponent = potentialOpponent;
+              opponentIndex = i;
+              break;
+            }
           }
+        }
+    
+        // If still no opponent (everyone has been played), take the highest-ranked available player
+        if (!opponent && playerQueue.length > 0) {
+          opponent = playerQueue[0];
+          opponentIndex = 0;
+        }
 
-          // If no new opponent found, find any available opponent
-          if (!opponent) {
-              opponent = playerQueue[0];
-              opponentIndex = 0;
-          }
-
-          pairings.push({ player1: player1, player2: opponent });
+        if(opponent) {
+          pairings.push({ player1, player2: opponent });
           playerQueue.splice(opponentIndex, 1);
+        }
       }
 
       return pairings;
