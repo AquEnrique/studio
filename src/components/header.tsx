@@ -3,12 +3,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Dices, Swords } from 'lucide-react';
+import { Dices } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
-    { href: '/deck-builder', label: 'Deck Builder' },
     { href: '/', label: 'Tournament' },
+    { href: '/deck-builder', label: 'Deck Builder' },
 ];
 
 export function Header() {
@@ -16,12 +16,9 @@ export function Header() {
   
   return (
     <header className="flex items-center h-14 px-4 border-b shrink-0 gap-4">
-      <div className="flex items-center gap-2">
+      <Link href="/" className="flex items-center gap-2">
         <Dices className="w-6 h-6 text-primary" />
-        <h1 className="text-lg font-semibold tracking-tight font-headline">
-          YGDeck Builder
-        </h1>
-      </div>
+      </Link>
       <nav className="flex items-center gap-4 text-sm font-medium">
         {navLinks.map(link => (
           <Link 
