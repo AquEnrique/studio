@@ -121,20 +121,14 @@ export function useTournament() {
         const player1 = playerQueue.shift()!;
         let opponent: Player | null = null;
         let opponentIndex = -1;
-    
+
         // Try to find an opponent, prioritizing players with the same score, then pairing down.
-        // The outer loop attempts to pair based on score, the inner one is a fallback.
         for (let i = 0; i < playerQueue.length; i++) {
           const potentialOpponent = playerQueue[i];
           if (!player1.opponentIds.includes(potentialOpponent.id)) {
-            // Prioritize same points, but if we're at the end of the list, just take this valid opponent
-            if (potentialOpponent.points === player1.points || !opponent) {
-                opponent = potentialOpponent;
-                opponentIndex = i;
-                if (potentialOpponent.points === player1.points) {
-                    break; // Found a perfect match, no need to look further
-                }
-            }
+            opponent = potentialOpponent;
+            opponentIndex = i;
+            break; // Found a valid opponent
           }
         }
     
