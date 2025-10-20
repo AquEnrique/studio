@@ -94,9 +94,9 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
             <TableCell>{index + 1}</TableCell>
             <TableCell className="font-medium">{player.name}</TableCell>
             <TableCell>{player.points}</TableCell>
-            <TableCell>{player.omwPercentage.toFixed(3)}</TableCell>
-            <TableCell>{player.gwPercentage.toFixed(3)}</TableCell>
-            <TableCell>{player.ogwPercentage.toFixed(3)}</TableCell>
+            <TableCell>{(player.omwPercentage * 100).toFixed(1)}%</TableCell>
+            <TableCell>{(player.gwPercentage * 100).toFixed(1)}%</TableCell>
+            <TableCell>{(player.ogwPercentage * 100).toFixed(1)}%</TableCell>
           </TableRow>
         ))}
       </TableBody>
