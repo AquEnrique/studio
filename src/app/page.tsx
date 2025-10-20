@@ -30,6 +30,7 @@ export default function TournamentPage() {
     addPlayer,
     removePlayer,
     startTournament,
+    startManualTournament,
     generateNextRound,
     updateMatchResult,
     resetTournament,
@@ -75,6 +76,7 @@ export default function TournamentPage() {
             addPlayer={addPlayer} 
             removePlayer={removePlayer}
             players={state.players} 
+            startManualTournament={startManualTournament}
           />
         )}
 

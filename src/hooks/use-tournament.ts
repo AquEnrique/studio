@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { TournamentState, Player, Pairing, StandingsPlayer } from '@/lib/types';
+import type { TournamentState, Player, Pairing, StandingsPlayer, ManualPairing } from '@/lib/types';
 import { produce } from 'immer';
 
 const initialTournamentState: TournamentState = {
@@ -91,7 +91,7 @@ export function useTournament() {
       const pairings: Pairing[] = [];
       const pairedIds = new Set<string>();
       
-      const availablePlayers = [...sortedPlayers];
+      let availablePlayers = [...sortedPlayers];
 
       // Handle bye for odd number of players
       if (availablePlayers.length % 2 !== 0) {
@@ -122,22 +122,32 @@ export function useTournament() {
         let opponent: Player | null = null;
         let opponentIndex = -1;
 
-        // Try to find an opponent, prioritizing players with the same score, then pairing down.
         for (let i = 0; i < playerQueue.length; i++) {
           const potentialOpponent = playerQueue[i];
           if (!player1.opponentIds.includes(potentialOpponent.id)) {
             opponent = potentialOpponent;
             opponentIndex = i;
-            break; // Found a valid opponent
+            break;
           }
         }
     
-        // Fallback for extremely rare cases where no valid opponent can be found (e.g., in very small, final rounds)
-        // This is a safety net; the logic above should handle almost all scenarios.
         if (!opponent && playerQueue.length > 0) {
-            // Find the first available player, even if it's a rematch. This is a last resort.
-            opponent = playerQueue[0];
-            opponentIndex = 0;
+            // Fallback: iterate through all remaining players to find anyone they haven't played.
+            // This is a safety net for complex scenarios where simple sliding fails.
+            for (let i = 0; i < playerQueue.length; i++) {
+                const potentialOpponent = playerQueue[i];
+                if (!player1.opponentIds.includes(potentialOpponent.id)) {
+                    opponent = potentialOpponent;
+                    opponentIndex = i;
+                    break;
+                }
+            }
+            // If still no opponent, it means we have to do a rematch, which is very rare.
+            // In this case, we just take the first available player.
+            if (!opponent) {
+                opponent = playerQueue[0];
+                opponentIndex = 0;
+            }
         }
 
         if(opponent) {
@@ -182,6 +192,45 @@ export function useTournament() {
     });
 
     setState(newState);
+  };
+
+  const startManualTournament = (manualPairings: ManualPairing[]) => {
+    if (state.status !== 'registration' || state.players.length < 2) return;
+
+    const nextRoundNumber = 1;
+
+    setState(
+      produce((draft: TournamentState) => {
+        draft.currentRound = nextRoundNumber;
+        draft.status = 'running';
+        draft.pairings = manualPairings;
+        draft.history[nextRoundNumber] = {
+          pairings: manualPairings,
+          players: draft.players,
+        };
+
+        const byePairing = manualPairings.find(p => p.player2.id === 'bye');
+        if (byePairing) {
+          const playerInDraft = draft.players.find(
+            p => p.id === byePairing.player1.id
+          );
+          if (playerInDraft) {
+            playerInDraft.points += 3;
+            playerInDraft.matches.push({
+              round: nextRoundNumber,
+              opponentId: 'bye',
+              result: 'win',
+              gamesWon: 2,
+              gamesLost: 0,
+              gamesDrawn: 0,
+            });
+            playerInDraft.opponentIds.push('bye');
+            playerInDraft.gameWins += 2;
+            playerInDraft.gamesPlayed += 2;
+          }
+        }
+      })
+    );
   };
   
   const generateNextRound = () => {
@@ -414,6 +463,7 @@ export function useTournament() {
     addPlayer,
     removePlayer,
     startTournament,
+    startManualTournament,
     generateNextRound,
     updateMatchResult,
     resetTournament,

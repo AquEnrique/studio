@@ -56,6 +56,11 @@ export type Player = {
   gamesPlayed: number;
 };
 
+export type ManualPairing = {
+    player1: Player;
+    player2: Player | { id: 'bye'; name: 'BYE' };
+};
+
 export type Pairing = {
   player1: Player | StandingsPlayer;
   player2: Player | StandingsPlayer | { id: 'bye'; name: 'BYE' };
