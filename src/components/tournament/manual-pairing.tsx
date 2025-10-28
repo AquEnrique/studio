@@ -4,9 +4,10 @@
 import { useState, useMemo } from 'react';
 import type { Player, ManualPairing } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Hand, Shuffle, Play } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Hand, Shuffle, Play, Ban } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 interface ManualPairingProps {
   players: Player[];
@@ -16,61 +17,62 @@ interface ManualPairingProps {
 export function ManualPairing({ players, onStartTournament }: ManualPairingProps) {
   const [unpairedPlayers, setUnpairedPlayers] = useState<Player[]>(players);
   const [pairings, setPairings] = useState<ManualPairing[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   // Memoize to avoid re-renders when parent state changes but players prop does not
   useMemo(() => {
-    setUnpairedPlayers(players);
+    setUnpairedPlayers(players.sort((a, b) => a.name.localeCompare(b.name)));
     setPairings([]);
+    setSelectedPlayer(null);
   }, [players]);
 
-  const handleDragStart = (e: React.DragEvent, player: Player) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(player));
+  const handlePlayerClick = (player: Player) => {
+    if (selectedPlayer) {
+      if (selectedPlayer.id === player.id) {
+        // Deselect player
+        setSelectedPlayer(null);
+      } else {
+        // Create a pair
+        setPairings(prev => [...prev, { player1: selectedPlayer, player2: player }]);
+        setUnpairedPlayers(prev => prev.filter(p => p.id !== selectedPlayer.id && p.id !== player.id));
+        setSelectedPlayer(null);
+      }
+    } else {
+      // Select first player
+      setSelectedPlayer(player);
+    }
   };
 
-  const handleDropOnPlayer = (e: React.DragEvent, player2: Player) => {
-    e.preventDefault();
-    const data = e.dataTransfer.getData('application/json');
-    if (!data) return;
+  const handleAssignBye = () => {
+    if (!selectedPlayer) return;
 
-    const player1 = JSON.parse(data) as Player;
-    if (player1.id === player2.id) return;
-
-    setPairings(prev => [...prev, { player1, player2 }]);
-    setUnpairedPlayers(prev => prev.filter(p => p.id !== player1.id && p.id !== player2.id));
-  };
-
-  const handleDropOnBye = (e: React.DragEvent) => {
-    e.preventDefault();
-    const data = e.dataTransfer.getData('application/json');
-    if (!data) return;
-    const player1 = JSON.parse(data) as Player;
-
-    // Check if there's already a bye
     if (pairings.some(p => p.player2.id === 'bye')) {
-      return; // only one bye allowed
+      return; // Only one bye allowed
     }
 
-    setPairings(prev => [...prev, { player1, player2: { id: 'bye', name: 'BYE' } }]);
-    setUnpairedPlayers(prev => prev.filter(p => p.id !== player1.id));
+    setPairings(prev => [...prev, { player1: selectedPlayer, player2: { id: 'bye', name: 'BYE' } }]);
+    setUnpairedPlayers(prev => prev.filter(p => p.id !== selectedPlayer.id));
+    setSelectedPlayer(null);
   };
-
 
   const removePairing = (index: number) => {
     const pairingToRemove = pairings[index];
     const newPairings = pairings.filter((_, i) => i !== index);
     
-    let playersToAddBack = [pairingToRemove.player1];
+    let playersToAddBack = [pairingToRemove.player1 as Player];
     if (pairingToRemove.player2.id !== 'bye') {
         playersToAddBack.push(pairingToRemove.player2 as Player);
     }
     
     setPairings(newPairings);
-    setUnpairedPlayers(prev => [...prev, ...playersToAddBack]);
+    setUnpairedPlayers(prev => [...prev, ...playersToAddBack].sort((a, b) => a.name.localeCompare(b.name)));
+    setSelectedPlayer(null);
   };
   
   const resetPairings = () => {
-    setUnpairedPlayers(players);
+    setUnpairedPlayers(players.sort((a,b) => a.name.localeCompare(b.name)));
     setPairings([]);
+    setSelectedPlayer(null);
   };
 
   const isTournamentReady = unpairedPlayers.length === 0 && players.length > 1;
@@ -81,22 +83,34 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
           <Hand className="h-4 w-4" />
           <AlertTitle>Create First Round Pairings</AlertTitle>
           <AlertDescription>
-            Drag and drop players to create manual pairings for the first round. If you have an odd number of players, one player can be assigned a bye.
+            Click a player, then click another to create a pair. To assign a bye, select a player and click 'Assign Bye'.
           </AlertDescription>
         </Alert>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <h4 className="font-semibold mb-2">Unpaired Players ({unpairedPlayers.length})</h4>
+           <div className="flex items-center justify-between mb-2">
+             <h4 className="font-semibold">Unpaired Players ({unpairedPlayers.length})</h4>
+             {players.length % 2 !== 0 && !pairings.some(p => p.player2.id === 'bye') && (
+                <Button 
+                    size="sm" 
+                    variant="secondary" 
+                    disabled={!selectedPlayer || pairings.some(p => p.player2.id === 'bye')}
+                    onClick={handleAssignBye}
+                >
+                    <Ban className="mr-2 h-4 w-4"/> Assign Bye
+                </Button>
+             )}
+           </div>
           <div className="p-2 bg-muted/50 rounded-md min-h-[100px] space-y-2">
             {unpairedPlayers.map(player => (
               <div
                 key={player.id}
-                draggable
-                onDragStart={e => handleDragStart(e, player)}
-                onDrop={e => handleDropOnPlayer(e, player)}
-                onDragOver={e => e.preventDefault()}
-                className="p-2 bg-background rounded-md shadow-sm cursor-grab active:cursor-grabbing"
+                onClick={() => handlePlayerClick(player)}
+                className={cn(
+                    "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all",
+                    selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                )}
               >
                 {player.name}
               </div>
@@ -120,15 +134,6 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
                 </CardContent>
               </Card>
             ))}
-             {players.length % 2 !== 0 && !pairings.some(p=>p.player2.id==='bye') && (
-                 <div
-                    onDrop={handleDropOnBye}
-                    onDragOver={e => e.preventDefault()}
-                    className="p-4 border-2 border-dashed border-border rounded-md text-center text-muted-foreground"
-                 >
-                    Drag a player here for a BYE
-                 </div>
-             )}
           </div>
         </div>
       </div>
