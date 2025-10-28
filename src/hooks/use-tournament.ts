@@ -26,7 +26,6 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
-
 export function useTournament() {
   const [state, setState] = useState<TournamentState>(initialTournamentState);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
@@ -85,12 +84,12 @@ export function useTournament() {
     if (round === 1) {
         sortedPlayers = shuffleArray(calculateStandings(players));
     } else {
-      sortedPlayers = calculateStandings(players);
+        sortedPlayers = calculateStandings(players);
     }
-  
+
     const pairings: Pairing[] = [];
     let availablePlayers = [...sortedPlayers];
-  
+
     // Handle bye for odd number of players
     if (availablePlayers.length % 2 !== 0) {
         let byePlayerIndex = -1;
@@ -111,67 +110,79 @@ export function useTournament() {
           pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
         }
     }
-  
-    function findPairings(playersToPair: StandingsPlayer[]): Pairing[] | null {
-        if (playersToPair.length === 0) {
-            return [];
+
+    // Group players by points
+    const pointBrackets = new Map<number, StandingsPlayer[]>();
+    for (const player of availablePlayers) {
+        if (!pointBrackets.has(player.points)) {
+            pointBrackets.set(player.points, []);
         }
-  
-        const player1 = playersToPair[0];
-        const remainingPlayers = playersToPair.slice(1);
-  
-        for (let i = 0; i < remainingPlayers.length; i++) {
-            const player2 = remainingPlayers[i];
-  
-            if (!player1.opponentIds.includes(player2.id)) {
-                const nextPlayersToPair = remainingPlayers.filter((_, index) => index !== i);
-                const result = findPairings(nextPlayersToPair);
-  
-                if (result !== null) {
-                    return [{ player1, player2 }, ...result];
+        pointBrackets.get(player.points)!.push(player);
+    }
+    
+    let unpairedPlayers: StandingsPlayer[] = [];
+
+    // Sort brackets by points descending
+    const sortedBrackets = Array.from(pointBrackets.entries()).sort((a, b) => b[0] - a[0]);
+
+    for (const [, bracketPlayers] of sortedBrackets) {
+        let playersToPair = [...unpairedPlayers, ...bracketPlayers];
+        unpairedPlayers = []; // Clear for next iteration
+
+        if (playersToPair.length % 2 !== 0) {
+            // Pair down the lowest ranked player
+            unpairedPlayers.push(playersToPair.pop()!);
+        }
+        
+        // Swiss pairing within the bracket
+        const mid = playersToPair.length / 2;
+        const topHalf = playersToPair.slice(0, mid);
+        const bottomHalf = playersToPair.slice(mid);
+
+        let pairedInBracket = new Array(playersToPair.length).fill(false);
+
+        for (let i = 0; i < topHalf.length; i++) {
+            for (let j = 0; j < bottomHalf.length; j++) {
+                const p1Index = i;
+                const p2Index = j + mid;
+
+                if (!pairedInBracket[p1Index] && !pairedInBracket[p2Index]) {
+                    const p1 = playersToPair[p1Index];
+                    const p2 = playersToPair[p2Index];
+                    
+                    if (!p1.opponentIds.includes(p2.id)) {
+                        pairings.push({ player1: p1, player2: p2 });
+                        pairedInBracket[p1Index] = true;
+                        pairedInBracket[p2Index] = true;
+                        break; // p1 is paired, move to next in topHalf
+                    }
                 }
             }
         }
-  
-        return null; // No valid pairing found
-    }
-    
-    const finalPairings = findPairings(availablePlayers);
-
-    if (finalPairings) {
-        return [...pairings, ...finalPairings];
-    }
-    
-    // Fallback logic if the recursive search fails (should be rare)
-    console.warn("Could not find a perfect pairing without rematches. Using fallback pairing.");
-    const playerQueue = [...availablePlayers];
-    while(playerQueue.length > 0) {
-        const p1 = playerQueue.shift()!;
-        let opponent: Player | null = null;
-        let opponentIndex = -1;
-
-        // Find the best-ranked opponent they haven't played
-        for (let i = 0; i < playerQueue.length; i++) {
-            if (!p1.opponentIds.includes(playerQueue[i].id)) {
-                opponent = playerQueue[i];
-                opponentIndex = i;
-                break;
+        
+        // Handle any players left over due to rematches
+        const remainingInBracket = playersToPair.filter((_, index) => !pairedInBracket[index]);
+        if(remainingInBracket.length > 0) {
+            // This is a fallback, simple pairing for any leftovers.
+            // A more robust algorithm would handle this better.
+            console.warn("Fallback pairing used for remaining players in bracket.", remainingInBracket);
+            for(let i = 0; i < remainingInBracket.length; i += 2) {
+                if(i + 1 < remainingInBracket.length) {
+                    pairings.push({ player1: remainingInBracket[i], player2: remainingInBracket[i+1] });
+                } else {
+                     unpairedPlayers.push(remainingInBracket[i]);
+                }
             }
         }
-        // If all available opponents have been played, find the one played longest ago
-        if (opponent === null && playerQueue.length > 0) {
-            opponent = playerQueue[0];
-            opponentIndex = 0;
-        }
-
-        if (opponent) {
-            pairings.push({ player1: p1, player2: opponent });
-            playerQueue.splice(opponentIndex, 1);
-        }
     }
-
+    
+    // This should ideally be empty
+    if (unpairedPlayers.length > 0) {
+        console.error("Failed to pair all players:", unpairedPlayers);
+    }
+    
     return pairings;
-  };
+};
 
   const startTournament = () => {
     if (state.status !== 'registration' || state.players.length < 2) return;
@@ -277,6 +288,7 @@ export function useTournament() {
                 playerInDraft.gamesPlayed += 2;
             }
         }
+        draft.history[nextRoundNumber] = { pairings: newPairings, players: draft.players };
     });
 
     setState(newState);
@@ -410,6 +422,43 @@ export function useTournament() {
       );
   };
   
+    const updatePairings = (newPairings: ManualPairing[]) => {
+        if (state.status !== 'running') return;
+        
+        setState(produce(draft => {
+            draft.pairings = newPairings;
+            if (draft.history[draft.currentRound]) {
+                draft.history[draft.currentRound].pairings = newPairings;
+            }
+
+            // Reset bye player if pairings changed
+            const byePlayerId = draft.history[draft.currentRound]?.pairings.find(p => p.player2.id === 'bye')?.player1.id;
+            const newByePlayerId = newPairings.find(p => p.player2.id === 'bye')?.player1.id;
+
+            if (byePlayerId && byePlayerId !== newByePlayerId) {
+                const oldByePlayer = draft.players.find(p => p.id === byePlayerId);
+                if (oldByePlayer) {
+                    oldByePlayer.points -= 3;
+                    oldByePlayer.matches = oldByePlayer.matches.filter(m => m.opponentId !== 'bye' || m.round !== draft.currentRound);
+                    oldByePlayer.opponentIds = oldByePlayer.opponentIds.filter(id => id !== 'bye');
+                    oldByePlayer.gameWins -= 2;
+                    oldByePlayer.gamesPlayed -= 2;
+                }
+            }
+
+            if (newByePlayerId) {
+                const newByePlayer = draft.players.find(p => p.id === newByePlayerId);
+                if (newByePlayer && !newByePlayer.matches.some(m => m.round === draft.currentRound && m.opponentId === 'bye')) {
+                    newByePlayer.points += 3;
+                    newByePlayer.matches.push({ round: draft.currentRound, opponentId: 'bye', result: 'win', gamesWon: 2, gamesLost: 0, gamesDrawn: 0 });
+                    if (!newByePlayer.opponentIds.includes('bye')) newByePlayer.opponentIds.push('bye');
+                    newByePlayer.gameWins += 2;
+                    newByePlayer.gamesPlayed += 2;
+                }
+            }
+        }));
+    };
+
   const goToRound = (round: number | null) => {
     setState(produce(draft => {
         draft.viewingRound = round;
@@ -464,7 +513,7 @@ export function useTournament() {
         const player1 = state.players.find(pl => pl.id === p.player1.id);
         return player1?.matches.some(m => m.round === state.currentRound);
     });
-    return activePairings.length === submittedResults.length;
+    return activePairings.length > 0 && activePairings.length === submittedResults.length;
   }, [state.players, state.pairings, state.currentRound, state.status]);
 
   return {
@@ -480,6 +529,7 @@ export function useTournament() {
     startManualTournament,
     generateNextRound,
     updateMatchResult,
+    updatePairings,
     resetTournament,
     goToRound,
     exportTournament,

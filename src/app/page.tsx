@@ -33,6 +33,7 @@ export default function TournamentPage() {
     startManualTournament,
     generateNextRound,
     updateMatchResult,
+    updatePairings,
     resetTournament,
     goToRound,
     importTournament,
@@ -130,6 +131,8 @@ export default function TournamentPage() {
                   updateMatchResult={updateMatchResult} 
                   roundNumber={displayedRound}
                   isEditable={isLatestRound}
+                  allPlayers={state.players}
+                  onUpdatePairings={updatePairings}
                 />
               </div>
             </div>
