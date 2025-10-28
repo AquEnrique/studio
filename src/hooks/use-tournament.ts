@@ -81,82 +81,96 @@ export function useTournament() {
   };
 
   const generatePairings = (players: Player[], round: number): Pairing[] => {
-      let sortedPlayers: StandingsPlayer[];
-      if (round === 1) {
-          sortedPlayers = shuffleArray(calculateStandings(players));
-      } else {
-        sortedPlayers = calculateStandings(players);
-      }
+    let sortedPlayers: StandingsPlayer[];
+    if (round === 1) {
+        sortedPlayers = shuffleArray(calculateStandings(players));
+    } else {
+      sortedPlayers = calculateStandings(players);
+    }
+  
+    const pairings: Pairing[] = [];
+    let availablePlayers = [...sortedPlayers];
+  
+    // Handle bye for odd number of players
+    if (availablePlayers.length % 2 !== 0) {
+        let byePlayerIndex = -1;
+        // Find the lowest ranked player who hasn't had a bye
+        for (let i = availablePlayers.length - 1; i >= 0; i--) {
+            if (!availablePlayers[i].opponentIds.includes('bye')) {
+                byePlayerIndex = i;
+                break;
+            }
+        }
+        // If all have had a bye, give it to the lowest ranked player
+        if (byePlayerIndex === -1 && availablePlayers.length > 0) {
+            byePlayerIndex = availablePlayers.length - 1;
+        }
+        
+        if (byePlayerIndex !== -1) {
+          const byePlayer = availablePlayers.splice(byePlayerIndex, 1)[0];
+          pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
+        }
+    }
+  
+    function findPairings(playersToPair: StandingsPlayer[]): Pairing[] | null {
+        if (playersToPair.length === 0) {
+            return [];
+        }
+  
+        const player1 = playersToPair[0];
+        const remainingPlayers = playersToPair.slice(1);
+  
+        for (let i = 0; i < remainingPlayers.length; i++) {
+            const player2 = remainingPlayers[i];
+  
+            if (!player1.opponentIds.includes(player2.id)) {
+                const nextPlayersToPair = remainingPlayers.filter((_, index) => index !== i);
+                const result = findPairings(nextPlayersToPair);
+  
+                if (result !== null) {
+                    return [{ player1, player2 }, ...result];
+                }
+            }
+        }
+  
+        return null; // No valid pairing found
+    }
+    
+    const finalPairings = findPairings(availablePlayers);
 
-      const pairings: Pairing[] = [];
-      const pairedIds = new Set<string>();
-      
-      let availablePlayers = [...sortedPlayers];
-
-      // Handle bye for odd number of players
-      if (availablePlayers.length % 2 !== 0) {
-          let byePlayerIndex = -1;
-          // Find the lowest ranked player who hasn't had a bye
-          for (let i = availablePlayers.length - 1; i >= 0; i--) {
-              if (!availablePlayers[i].opponentIds.includes('bye')) {
-                  byePlayerIndex = i;
-                  break;
-              }
-          }
-          // If all have had a bye, give it to the lowest ranked player
-          if (byePlayerIndex === -1 && availablePlayers.length > 0) {
-              byePlayerIndex = availablePlayers.length - 1;
-          }
-          
-          if (byePlayerIndex !== -1) {
-            const byePlayer = availablePlayers.splice(byePlayerIndex, 1)[0];
-            pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
-            pairedIds.add(byePlayer.id);
-          }
-      }
-
-      const playerQueue = availablePlayers.filter(p => !pairedIds.has(p.id));
-
-      while (playerQueue.length > 0) {
-        const player1 = playerQueue.shift()!;
+    if (finalPairings) {
+        return [...pairings, ...finalPairings];
+    }
+    
+    // Fallback logic if the recursive search fails (should be rare)
+    console.warn("Could not find a perfect pairing without rematches. Using fallback pairing.");
+    const playerQueue = [...availablePlayers];
+    while(playerQueue.length > 0) {
+        const p1 = playerQueue.shift()!;
         let opponent: Player | null = null;
         let opponentIndex = -1;
 
+        // Find the best-ranked opponent they haven't played
         for (let i = 0; i < playerQueue.length; i++) {
-          const potentialOpponent = playerQueue[i];
-          if (!player1.opponentIds.includes(potentialOpponent.id)) {
-            opponent = potentialOpponent;
-            opponentIndex = i;
-            break;
-          }
-        }
-    
-        if (!opponent && playerQueue.length > 0) {
-            // Fallback: iterate through all remaining players to find anyone they haven't played.
-            // This is a safety net for complex scenarios where simple sliding fails.
-            for (let i = 0; i < playerQueue.length; i++) {
-                const potentialOpponent = playerQueue[i];
-                if (!player1.opponentIds.includes(potentialOpponent.id)) {
-                    opponent = potentialOpponent;
-                    opponentIndex = i;
-                    break;
-                }
-            }
-            // If still no opponent, it means we have to do a rematch, which is very rare.
-            // In this case, we just take the first available player.
-            if (!opponent) {
-                opponent = playerQueue[0];
-                opponentIndex = 0;
+            if (!p1.opponentIds.includes(playerQueue[i].id)) {
+                opponent = playerQueue[i];
+                opponentIndex = i;
+                break;
             }
         }
-
-        if(opponent) {
-          pairings.push({ player1, player2: opponent });
-          playerQueue.splice(opponentIndex, 1);
+        // If all available opponents have been played, find the one played longest ago
+        if (opponent === null && playerQueue.length > 0) {
+            opponent = playerQueue[0];
+            opponentIndex = 0;
         }
-      }
 
-      return pairings;
+        if (opponent) {
+            pairings.push({ player1: p1, player2: opponent });
+            playerQueue.splice(opponentIndex, 1);
+        }
+    }
+
+    return pairings;
   };
 
   const startTournament = () => {
