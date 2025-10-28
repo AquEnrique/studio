@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import type { Player, ManualPairing } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Hand, Shuffle, Play, Ban } from 'lucide-react';
+import { Hand, Play, Ban, RefreshCcw } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
@@ -69,7 +69,7 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
     setSelectedPlayer(null);
   };
   
-  const resetPairings = () => {
+  const cleanPairings = () => {
     setUnpairedPlayers(players.sort((a,b) => a.name.localeCompare(b.name)));
     setPairings([]);
     setSelectedPlayer(null);
@@ -138,8 +138,8 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
         </div>
       </div>
       <div className="flex justify-end gap-2 mt-4">
-        <Button variant="outline" onClick={resetPairings} disabled={pairings.length === 0}>
-          <Shuffle className="mr-2 h-4 w-4" /> Reset Pairings
+        <Button variant="outline" onClick={cleanPairings} disabled={pairings.length === 0}>
+          <RefreshCcw className="mr-2 h-4 w-4" /> Clean
         </Button>
         <Button onClick={() => onStartTournament(pairings)} disabled={!isTournamentReady}>
            <Play className="mr-2 h-4 w-4" /> Start Manual Tournament

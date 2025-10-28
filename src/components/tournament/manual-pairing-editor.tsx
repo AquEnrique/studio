@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import type { Player, ManualPairing, Pairing } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shuffle, Save, X, Ban } from 'lucide-react';
+import { RefreshCcw, Save, X, Ban } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
@@ -71,13 +71,16 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
     setSelectedPlayer(null);
   };
   
-  const resetPairings = () => {
-    const pairedPlayerIds = new Set(initialPairings.flatMap(p => [p.player1.id, (p.player2 as Player)?.id]).filter(Boolean));
-    setUnpairedPlayers(players.filter(p => !pairedPlayerIds.has(p.id)).sort((a,b) => a.name.localeCompare(b.name)));
-    setPairings(initialPairings.map(p => ({
-        player1: p.player1 as Player,
-        player2: p.player2 as Player | { id: 'bye', name: 'BYE' },
-    })));
+  const cleanPairings = () => {
+    const allPairedPlayers = pairings.flatMap(p => {
+        const playersInPair = [p.player1];
+        if (p.player2.id !== 'bye') {
+            playersInPair.push(p.player2 as Player);
+        }
+        return playersInPair;
+    });
+    setUnpairedPlayers(prev => [...prev, ...allPairedPlayers].sort((a,b) => a.name.localeCompare(b.name)));
+    setPairings([]);
     setSelectedPlayer(null);
   };
 
@@ -146,8 +149,8 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
         <Button variant="ghost" onClick={onCancel}>
           <X className="mr-2 h-4 w-4" /> Cancel
         </Button>
-        <Button variant="outline" onClick={resetPairings} disabled={pairings.length === 0}>
-          <Shuffle className="mr-2 h-4 w-4" /> Reset
+        <Button variant="outline" onClick={cleanPairings} disabled={pairings.length === 0}>
+          <RefreshCcw className="mr-2 h-4 w-4" /> Clean
         </Button>
         <Button onClick={() => onSave(pairings)} disabled={!isSaveReady}>
            <Save className="mr-2 h-4 w-4" /> Save Pairings
