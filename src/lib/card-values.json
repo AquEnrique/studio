@@ -1,3 +1,4 @@
+
 [
     {
         "cardName": "Abyss Dweller",
@@ -12,12 +13,20 @@
         "value": 50
     },
     {
+        "cardName": "Albion the Branded Dragon",
+        "value": 20
+    },
+    {
         "cardName": "Albion the Sanctifire Dragon",
         "value": 33
     },
     {
         "cardName": "Allure of Darkness",
         "value": 5
+    },
+    {
+        "cardName": "Ame no Habakiri no Mitsurugi",
+        "value": 100
     },
     {
         "cardName": "Amorphactor Pain, the Imagination Dracoverlord",
@@ -104,8 +113,12 @@
         "value": 81
     },
     {
+        "cardName": "Banquet of Millions",
+        "value": 51
+    },
+    {
         "cardName": "Baronne de Fleur",
-        "value": 85
+        "value": 80
     },
     {
         "cardName": "Barrier of the Voiceless Voice",
@@ -113,35 +126,47 @@
     },
     {
         "cardName": "Barrier Statue of the Abyss",
-        "value": 60
+        "value": 70
     },
     {
         "cardName": "Barrier Statue of the Drought",
-        "value": 60
+        "value": 70
     },
     {
         "cardName": "Barrier Statue of the Heavens",
-        "value": 60
+        "value": 70
     },
     {
         "cardName": "Barrier Statue of the Inferno",
-        "value": 60
+        "value": 70
     },
     {
         "cardName": "Barrier Statue of the Stormwinds",
-        "value": 60
+        "value": 70
     },
     {
         "cardName": "Barrier Statue of the Torrent",
-        "value": 60
+        "value": 70
     },
     {
         "cardName": "Beatrice, Lady of the Eternal",
         "value": 100
     },
     {
+        "cardName": "Beelze of the Diabolic Dragons",
+        "value": 100
+    },
+    {
         "cardName": "Big Welcome Labrynth",
         "value": 33
+    },
+    {
+        "cardName": "Black Garden",
+        "value": 51
+    },
+    {
+        "cardName": "Black-Winged Assault Dragon",
+        "value": 1
     },
     {
         "cardName": "Blackwing - Boreastorm the Wicked Wind",
@@ -188,20 +213,32 @@
         "value": 100
     },
     {
+        "cardName": "Bramble Rose Dragon",
+        "value": 1
+    },
+    {
         "cardName": "Branded Expulsion",
         "value": 33
     },
     {
         "cardName": "Branded Fusion",
-        "value": 33
+        "value": 40
     },
     {
         "cardName": "Branded Lost",
         "value": 66
     },
     {
+        "cardName": "Brigrand the Glory Dragon",
+        "value": 10
+    },
+    {
         "cardName": "Brilliant Fusion",
         "value": 33
+    },
+    {
+        "cardName": "Broww, Huntsman of Dark World",
+        "value": 3
     },
     {
         "cardName": "Butterfly Dagger - Elma",
@@ -241,7 +278,7 @@
     },
     {
         "cardName": "Card of Safe Return",
-        "value": 40
+        "value": 33
     },
     {
         "cardName": "Catapult Turtle",
@@ -313,7 +350,7 @@
     },
     {
         "cardName": "Cosmic Blazar Dragon",
-        "value": 1
+        "value": 21
     },
     {
         "cardName": "Creature Swap",
@@ -321,7 +358,7 @@
     },
     {
         "cardName": "Crimson Dragon",
-        "value": 100
+        "value": 80
     },
     {
         "cardName": "Crossout Designator",
@@ -358,6 +395,10 @@
     {
         "cardName": "Cyber-Stein",
         "value": 27
+    },
+    {
+        "cardName": "D.D. Dynamite",
+        "value": 51
     },
     {
         "cardName": "D/D/D Duo-Dawn King Kali Yuga",
@@ -488,6 +529,14 @@
         "value": 100
     },
     {
+        "cardName": "Dinomorphia Domain",
+        "value": 1
+    },
+    {
+        "cardName": "Dinomorphia Frenzy",
+        "value": 1
+    },
+    {
         "cardName": "Dinomorphia Intact",
         "value": 1
     },
@@ -512,6 +561,10 @@
         "value": 100
     },
     {
+        "cardName": "Dodododo Warrior",
+        "value": 7
+    },
+    {
         "cardName": "Dogmatika Ecclesia, the Virtuous",
         "value": 3
     },
@@ -521,7 +574,7 @@
     },
     {
         "cardName": "Dominus Impulse",
-        "value": 30
+        "value": 25
     },
     {
         "cardName": "Dominus Purge",
@@ -529,7 +582,7 @@
     },
     {
         "cardName": "Dominus Spiral",
-        "value": 10
+        "value": 5
     },
     {
         "cardName": "Dracotail Arthalion",
@@ -568,6 +621,10 @@
         "value": 7
     },
     {
+        "cardName": "Dragon's Mind",
+        "value": 7
+    },
+    {
         "cardName": "Droll & Lock Bird",
         "value": 5
     },
@@ -582,6 +639,10 @@
     {
         "cardName": "Duality",
         "value": 10
+    },
+    {
+        "cardName": "Earthbound Immortal Aslla piscu",
+        "value": 51
     },
     {
         "cardName": "Eclipse Wyvern",
@@ -617,7 +678,7 @@
     },
     {
         "cardName": "Emergency Teleport",
-        "value": 40
+        "value": 35
     },
     {
         "cardName": "EMERGENCY!",
@@ -632,8 +693,28 @@
         "value": 10
     },
     {
+        "cardName": "Evigishki Gustkraken",
+        "value": 100
+    },
+    {
+        "cardName": "Evigishki Mind Augus",
+        "value": 1
+    },
+    {
         "cardName": "Evilswarm Ouroboros",
-        "value": 67
+        "value": 100
+    },
+    {
+        "cardName": "Evolzar Lars",
+        "value": 20
+    },
+    {
+        "cardName": "Exosister Mikalis",
+        "value": 10
+    },
+    {
+        "cardName": "Exosister Pax",
+        "value": 10
     },
     {
         "cardName": "Ext Ryzeal",
@@ -657,7 +738,7 @@
     },
     {
         "cardName": "Fire Formation - Tenki",
-        "value": 40
+        "value": 35
     },
     {
         "cardName": "Fire King Courtier Ulcanix",
@@ -684,6 +765,10 @@
         "value": 33
     },
     {
+        "cardName": "Flying \"C\"",
+        "value": 7
+    },
+    {
         "cardName": "Foolish Burial",
         "value": 33
     },
@@ -705,7 +790,7 @@
     },
     {
         "cardName": "Fossil Dig",
-        "value": 40
+        "value": 35
     },
     {
         "cardName": "Fossil Dyna Pachycephalo",
@@ -728,6 +813,10 @@
         "value": 100
     },
     {
+        "cardName": "Gem-Knight Lapis Lazuli",
+        "value": 51
+    },
+    {
         "cardName": "Gem-Knight Master Diamond",
         "value": 66
     },
@@ -741,11 +830,11 @@
     },
     {
         "cardName": "Ghost Mourner & Moonlit Chill",
-        "value": 7
+        "value": 3
     },
     {
         "cardName": "Ghost Ogre & Snow Rabbit",
-        "value": 5
+        "value": 3
     },
     {
         "cardName": "Ghost Sister & Spooky Dogwood",
@@ -764,28 +853,40 @@
         "value": 70
     },
     {
+        "cardName": "Gishki Aquamirror",
+        "value": 1
+    },
+    {
+        "cardName": "Gishki Nekromirror",
+        "value": 1
+    },
+    {
         "cardName": "Give and Take",
         "value": 91
     },
     {
         "cardName": "Gladiator Beast Gyzarus",
-        "value": 20
+        "value": 0
     },
     {
         "cardName": "Gladiator Beast Tamer Editor",
-        "value": 20
-    },
-    {
-        "cardName": "Gladiator Proving Ground",
         "value": 33
     },
     {
+        "cardName": "Gladiator Proving Ground",
+        "value": 25
+    },
+    {
         "cardName": "Gladiator Rejection",
-        "value": 15
+        "value": 10
     },
     {
         "cardName": "Glow-Up Bulb",
         "value": 21
+    },
+    {
+        "cardName": "Goblin Biker Grand Breakout",
+        "value": 7
     },
     {
         "cardName": "Goblin Biker Grand Entrance",
@@ -804,6 +905,10 @@
         "value": 40
     },
     {
+        "cardName": "Granguignol the Dusk Dragon",
+        "value": 10
+    },
+    {
         "cardName": "Grapha, Dragon Lord of Dark World",
         "value": 5
     },
@@ -812,8 +917,12 @@
         "value": 5
     },
     {
+        "cardName": "Grisaille Prison",
+        "value": 10
+    },
+    {
         "cardName": "Gruesome Grave Squirmer",
-        "value": 1
+        "value": 0
     },
     {
         "cardName": "Guardian Chimera",
@@ -825,7 +934,7 @@
     },
     {
         "cardName": "Harpie's Feather Duster",
-        "value": 30
+        "value": 15
     },
     {
         "cardName": "Harpie's Feather Storm",
@@ -841,15 +950,19 @@
     },
     {
         "cardName": "Heavy Storm",
-        "value": 20
+        "value": 10
     },
     {
         "cardName": "Herald of the Arc Light",
         "value": 50
     },
     {
+        "cardName": "Hot Red Dragon Archfiend Abyss",
+        "value": 20
+    },
+    {
         "cardName": "Hot Red Dragon Archfiend King Calamity",
-        "value": 1
+        "value": 21
     },
     {
         "cardName": "Hyper Rank-Up-Magic Utopiforce",
@@ -858,6 +971,10 @@
     {
         "cardName": "Ice Ryzeal",
         "value": 20
+    },
+    {
+        "cardName": "Ichika Sayori-Hime",
+        "value": 5
     },
     {
         "cardName": "Ido the Supreme Magical Force",
@@ -909,7 +1026,11 @@
     },
     {
         "cardName": "Invoked Caliga",
-        "value": 90
+        "value": 100
+    },
+    {
+        "cardName": "Iron Thunder",
+        "value": 5
     },
     {
         "cardName": "Jet Synchron",
@@ -925,7 +1046,7 @@
     },
     {
         "cardName": "K9-04 Noroi",
-        "value": 10
+        "value": 15
     },
     {
         "cardName": "K9-17 \"Ripper\"",
@@ -937,7 +1058,11 @@
     },
     {
         "cardName": "K9-66a Jokul",
-        "value": 13
+        "value": 15
+    },
+    {
+        "cardName": "K9-X \"Werewolf\"",
+        "value": 10
     },
     {
         "cardName": "K9-ØØ Lupis",
@@ -1016,8 +1141,12 @@
         "value": 20
     },
     {
+        "cardName": "Laevatein, Generaider Boss of Shadows",
+        "value": 1
+    },
+    {
         "cardName": "Last Turn",
-        "value": 75
+        "value": 100
     },
     {
         "cardName": "Last Will",
@@ -1065,7 +1194,7 @@
     },
     {
         "cardName": "Lightning Storm",
-        "value": 40
+        "value": 20
     },
     {
         "cardName": "Lightsworn Dragonling",
@@ -1081,7 +1210,7 @@
     },
     {
         "cardName": "Lubellion the Searing Dragon",
-        "value": 33
+        "value": 10
     },
     {
         "cardName": "Lyrilusc - Beryl Canary",
@@ -1116,12 +1245,20 @@
         "value": 100
     },
     {
+        "cardName": "Manju of the Ten Thousand Hands",
+        "value": 1
+    },
+    {
         "cardName": "Mansion of the Dreadful Dolls",
         "value": 100
     },
     {
         "cardName": "Masked HERO Dark Law",
         "value": 70
+    },
+    {
+        "cardName": "Masquerade the Blazing Dragon",
+        "value": 16
     },
     {
         "cardName": "Mass Driver",
@@ -1140,8 +1277,12 @@
         "value": 50
     },
     {
+        "cardName": "Megalith Anastasis",
+        "value": 33
+    },
+    {
         "cardName": "Meizen the Battle Ninja",
-        "value": 20
+        "value": 5
     },
     {
         "cardName": "Mementomictlan Tecuhtlica - Creation King",
@@ -1157,7 +1298,7 @@
     },
     {
         "cardName": "Metamorphosis",
-        "value": 10
+        "value": 5
     },
     {
         "cardName": "Metaverse",
@@ -1181,11 +1322,11 @@
     },
     {
         "cardName": "Mirage of Nightmare",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Mirrorjade the Iceblade Dragon",
-        "value": 33
+        "value": 10
     },
     {
         "cardName": "Miscellaneousaurus",
@@ -1197,11 +1338,11 @@
     },
     {
         "cardName": "Mitsurugi Prayers",
-        "value": 60
+        "value": 51
     },
     {
         "cardName": "Mitsurugi Ritual",
-        "value": 60
+        "value": 51
     },
     {
         "cardName": "Monster Gate",
@@ -1209,7 +1350,7 @@
     },
     {
         "cardName": "Monster Reborn",
-        "value": 15
+        "value": 10
     },
     {
         "cardName": "Morphing Jar",
@@ -1252,6 +1393,10 @@
         "value": 100
     },
     {
+        "cardName": "N.As.H. Knight",
+        "value": 10
+    },
+    {
         "cardName": "Nadir Servant",
         "value": 33
     },
@@ -1276,16 +1421,24 @@
         "value": 33
     },
     {
+        "cardName": "Nerva the Power Patron of Creation",
+        "value": 5
+    },
+    {
         "cardName": "Nibiru, the Primal Being",
-        "value": 10
+        "value": 5
     },
     {
         "cardName": "Nightmare Apprentice",
-        "value": 33
+        "value": 20
     },
     {
         "cardName": "Nightmare Throne",
-        "value": 50
+        "value": 25
+    },
+    {
+        "cardName": "Noh-P.U.N.K. Foxy Tune",
+        "value": 5
     },
     {
         "cardName": "Number 1: Infection Buzzking",
@@ -1297,7 +1450,7 @@
     },
     {
         "cardName": "Number 100: Numeron Dragon",
-        "value": 1
+        "value": 21
     },
     {
         "cardName": "Number 16: Shock Master",
@@ -1306,6 +1459,10 @@
     {
         "cardName": "Number 2: Numeron Gate Dve",
         "value": 10
+    },
+    {
+        "cardName": "Number 3: Cicada King",
+        "value": 5
     },
     {
         "cardName": "Number 3: Numeron Gate Trini",
@@ -1344,6 +1501,10 @@
         "value": 67
     },
     {
+        "cardName": "Number 69: Heraldry Crest",
+        "value": 1
+    },
+    {
         "cardName": "Number 75: Bamboozling Gossip Shadow",
         "value": 70
     },
@@ -1365,7 +1526,11 @@
     },
     {
         "cardName": "Number 97: Draglubion",
-        "value": 100
+        "value": 80
+    },
+    {
+        "cardName": "Number 99: Utopia Dragonar",
+        "value": 80
     },
     {
         "cardName": "Number C1: Numeron Chaos Gate Sunya",
@@ -1436,12 +1601,16 @@
         "value": 95
     },
     {
+        "cardName": "Phantom Fortress Enterblathnir",
+        "value": 13
+    },
+    {
         "cardName": "Phantom Knights' Rank-Up-Magic Force",
         "value": 1
     },
     {
         "cardName": "Phantom of Yubel",
-        "value": 50
+        "value": 76
     },
     {
         "cardName": "Pilgrim Reaper",
@@ -1454,6 +1623,10 @@
     {
         "cardName": "Pot of Desires",
         "value": 20
+    },
+    {
+        "cardName": "Pot of Extravagance",
+        "value": 10
     },
     {
         "cardName": "Pot of Greed",
@@ -1469,7 +1642,7 @@
     },
     {
         "cardName": "Premature Burial",
-        "value": 25
+        "value": 7
     },
     {
         "cardName": "Preparation of Rites",
@@ -1536,12 +1709,20 @@
         "value": 10
     },
     {
+        "cardName": "QQ Enneagon",
+        "value": 1
+    },
+    {
+        "cardName": "Question",
+        "value": 11
+    },
+    {
         "cardName": "Quick Launch",
         "value": 33
     },
     {
         "cardName": "Raidraptor - Vanishing Lanius",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Raigeki",
@@ -1632,6 +1813,10 @@
         "value": 100
     },
     {
+        "cardName": "Red-Eyes Flare Metal Dragon",
+        "value": 1
+    },
+    {
         "cardName": "Redox, Dragon Ruler of Boulders",
         "value": 7
     },
@@ -1641,15 +1826,23 @@
     },
     {
         "cardName": "Reinforcement of the Army",
-        "value": 40
+        "value": 35
     },
     {
         "cardName": "Rescue-ACE Air Lifter",
-        "value": 10
+        "value": 5
+    },
+    {
+        "cardName": "Rescue-ACE Impulse",
+        "value": 5
     },
     {
         "cardName": "Rescue-ACE Preventer",
         "value": 10
+    },
+    {
+        "cardName": "Retaliating \"C\"",
+        "value": 5
     },
     {
         "cardName": "Return from the Different Dimension",
@@ -1658,6 +1851,10 @@
     {
         "cardName": "Return of the Dragon Lords",
         "value": 7
+    },
+    {
+        "cardName": "Reversal Quiz",
+        "value": 100
     },
     {
         "cardName": "Rise Rank-Up-Magic Raidraptor's Force",
@@ -1713,7 +1910,7 @@
     },
     {
         "cardName": "Sauravis, the Ancient and Ascended",
-        "value": 5
+        "value": 3
     },
     {
         "cardName": "Schwarzschild Infinity Dragon",
@@ -1730,6 +1927,10 @@
     {
         "cardName": "Sengenjin Wakes from a Millennium",
         "value": 33
+    },
+    {
+        "cardName": "Senju of the Thousand Hands",
+        "value": 1
     },
     {
         "cardName": "Set Rotation",
@@ -1788,6 +1989,10 @@
         "value": 7
     },
     {
+        "cardName": "Solemn Scolding",
+        "value": 5
+    },
+    {
         "cardName": "Solemn Strike",
         "value": 5
     },
@@ -1809,7 +2014,7 @@
     },
     {
         "cardName": "Speedroid Terrortop",
-        "value": 3
+        "value": 7
     },
     {
         "cardName": "Spell Canceller",
@@ -1820,8 +2025,12 @@
         "value": 10
     },
     {
+        "cardName": "Sprind the Irondash Dragon",
+        "value": 10
+    },
+    {
         "cardName": "Spright Starter",
-        "value": 20
+        "value": 10
     },
     {
         "cardName": "Stand Up Centur-Ion!",
@@ -1837,7 +2046,7 @@
     },
     {
         "cardName": "Stardust Sifr Divine Dragon",
-        "value": 1
+        "value": 21
     },
     {
         "cardName": "Starliege Seyfert",
@@ -1861,7 +2070,7 @@
     },
     {
         "cardName": "Super Polymerization",
-        "value": 10
+        "value": 13
     },
     {
         "cardName": "Super Starslayer TY-PHON - Sky Crisis",
@@ -1881,7 +2090,7 @@
     },
     {
         "cardName": "Swordsoul Emergence",
-        "value": 33
+        "value": 25
     },
     {
         "cardName": "Swordsoul Grandmaster - Chixiao",
@@ -1941,7 +2150,7 @@
     },
     {
         "cardName": "Tenyi Spirit - Ashuna",
-        "value": 33
+        "value": 13
     },
     {
         "cardName": "Terraforming",
@@ -1960,6 +2169,14 @@
         "value": 30
     },
     {
+        "cardName": "The Dragon that Devours the Dogma",
+        "value": 10
+    },
+    {
+        "cardName": "The Fallen & The Virtuous",
+        "value": 15
+    },
+    {
         "cardName": "The Forceful Sentry",
         "value": 100
     },
@@ -1969,7 +2186,7 @@
     },
     {
         "cardName": "The Hidden City",
-        "value": 33
+        "value": 13
     },
     {
         "cardName": "The Last Warrior from Another Planet",
@@ -2016,8 +2233,16 @@
         "value": 7
     },
     {
+        "cardName": "Titaniklad the Ash Dragon",
+        "value": 10
+    },
+    {
         "cardName": "Toadally Awesome",
         "value": 20
+    },
+    {
+        "cardName": "Totem Bird",
+        "value": 3
     },
     {
         "cardName": "Tour Guide From the Underworld",
@@ -2036,8 +2261,20 @@
         "value": 7
     },
     {
+        "cardName": "Trap Trick",
+        "value": 3
+    },
+    {
         "cardName": "Traptrix Rafflesia",
         "value": 10
+    },
+    {
+        "cardName": "Treasures of the Kings",
+        "value": 5
+    },
+    {
+        "cardName": "Tri-Brigade Mercourier",
+        "value": 5
     },
     {
         "cardName": "Triple Tactics Talent",
@@ -2049,7 +2286,7 @@
     },
     {
         "cardName": "Trishula, Dragon of the Ice Barrier",
-        "value": 3
+        "value": 13
     },
     {
         "cardName": "True King of All Calamities",
@@ -2065,7 +2302,11 @@
     },
     {
         "cardName": "Union Hangar",
-        "value": 33
+        "value": 25
+    },
+    {
+        "cardName": "Upstart Goblin",
+        "value": 3
     },
     {
         "cardName": "Vanity's Emptiness",
@@ -2081,7 +2322,15 @@
     },
     {
         "cardName": "Vanquish Soul Hollie Sue",
-        "value": 10
+        "value": 33
+    },
+    {
+        "cardName": "Vanquish Soul Jiaolong",
+        "value": 11
+    },
+    {
+        "cardName": "Vanquish Soul Razen",
+        "value": 11
     },
     {
         "cardName": "Varudras, the Final Bringer of the End Times",
@@ -2128,8 +2377,12 @@
         "value": 33
     },
     {
+        "cardName": "World Legacy Monstrosity",
+        "value": 1
+    },
+    {
         "cardName": "Yaguramaru the Armor Ninja",
-        "value": 20
+        "value": 5
     },
     {
         "cardName": "Zaborg the Mega Monarch",
