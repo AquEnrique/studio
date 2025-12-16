@@ -80,109 +80,80 @@ export function useTournament() {
   };
 
   const generatePairings = (players: Player[], round: number): Pairing[] => {
-    let sortedPlayers: StandingsPlayer[];
     if (round === 1) {
-        sortedPlayers = shuffleArray(calculateStandings(players));
-    } else {
-        sortedPlayers = calculateStandings(players);
+      const shuffledPlayers = shuffleArray([...players]);
+      const pairings: Pairing[] = [];
+      for (let i = 0; i < shuffledPlayers.length; i += 2) {
+        if (i + 1 < shuffledPlayers.length) {
+          pairings.push({ player1: shuffledPlayers[i], player2: shuffledPlayers[i+1] });
+        } else {
+          pairings.push({ player1: shuffledPlayers[i], player2: { id: 'bye', name: 'BYE' } });
+        }
+      }
+      return pairings;
     }
-
+  
+    // For rounds > 1, use swiss pairing
+    const sortedPlayers = calculateStandings(players);
     const pairings: Pairing[] = [];
+    const pairedPlayerIds = new Set<string>();
+  
     let availablePlayers = [...sortedPlayers];
-
-    // Handle bye for odd number of players
+  
+    // Handle bye first
     if (availablePlayers.length % 2 !== 0) {
-        let byePlayerIndex = -1;
-        // Find the lowest ranked player who hasn't had a bye
-        for (let i = availablePlayers.length - 1; i >= 0; i--) {
-            if (!availablePlayers[i].opponentIds.includes('bye')) {
-                byePlayerIndex = i;
+      let byePlayerAssigned = false;
+      // Try to give bye to lowest ranked player who hasn't had one
+      for (let i = availablePlayers.length - 1; i >= 0; i--) {
+        if (!availablePlayers[i].opponentIds.includes('bye')) {
+          const byePlayer = availablePlayers.splice(i, 1)[0];
+          pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
+          pairedPlayerIds.add(byePlayer.id);
+          byePlayerAssigned = true;
+          break;
+        }
+      }
+      // If all remaining have had a bye, give to the lowest ranked player
+      if (!byePlayerAssigned) {
+        const byePlayer = availablePlayers.pop()!;
+        pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
+        pairedPlayerIds.add(byePlayer.id);
+      }
+    }
+  
+    let playersToPair = [...availablePlayers];
+    
+    while(playersToPair.length > 1) {
+        const p1 = playersToPair.shift()!;
+        let paired = false;
+        
+        for (let i = 0; i < playersToPair.length; i++) {
+            const p2 = playersToPair[i];
+            if (!p1.opponentIds.includes(p2.id)) {
+                pairings.push({ player1: p1, player2: p2 });
+                playersToPair.splice(i, 1);
+                paired = true;
                 break;
             }
         }
-        // If all have had a bye, give it to the lowest ranked player
-        if (byePlayerIndex === -1 && availablePlayers.length > 0) {
-            byePlayerIndex = availablePlayers.length - 1;
-        }
-        
-        if (byePlayerIndex !== -1) {
-          const byePlayer = availablePlayers.splice(byePlayerIndex, 1)[0];
-          pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
-        }
-    }
 
-    // Group players by points
-    const pointBrackets = new Map<number, StandingsPlayer[]>();
-    for (const player of availablePlayers) {
-        if (!pointBrackets.has(player.points)) {
-            pointBrackets.set(player.points, []);
-        }
-        pointBrackets.get(player.points)!.push(player);
-    }
-    
-    let unpairedPlayers: StandingsPlayer[] = [];
-
-    // Sort brackets by points descending
-    const sortedBrackets = Array.from(pointBrackets.entries()).sort((a, b) => b[0] - a[0]);
-
-    for (const [, bracketPlayers] of sortedBrackets) {
-        let playersToPair = [...unpairedPlayers, ...bracketPlayers];
-        unpairedPlayers = []; // Clear for next iteration
-
-        if (playersToPair.length % 2 !== 0) {
-            // Pair down the lowest ranked player
-            unpairedPlayers.push(playersToPair.pop()!);
-        }
-        
-        // Swiss pairing within the bracket
-        const mid = playersToPair.length / 2;
-        const topHalf = playersToPair.slice(0, mid);
-        const bottomHalf = playersToPair.slice(mid);
-
-        let pairedInBracket = new Array(playersToPair.length).fill(false);
-
-        for (let i = 0; i < topHalf.length; i++) {
-            for (let j = 0; j < bottomHalf.length; j++) {
-                const p1Index = i;
-                const p2Index = j + mid;
-
-                if (!pairedInBracket[p1Index] && !pairedInBracket[p2Index]) {
-                    const p1 = playersToPair[p1Index];
-                    const p2 = playersToPair[p2Index];
-                    
-                    if (!p1.opponentIds.includes(p2.id)) {
-                        pairings.push({ player1: p1, player2: p2 });
-                        pairedInBracket[p1Index] = true;
-                        pairedInBracket[p2Index] = true;
-                        break; // p1 is paired, move to next in topHalf
-                    }
-                }
-            }
-        }
-        
-        // Handle any players left over due to rematches
-        const remainingInBracket = playersToPair.filter((_, index) => !pairedInBracket[index]);
-        if(remainingInBracket.length > 0) {
-            // This is a fallback, simple pairing for any leftovers.
-            // A more robust algorithm would handle this better.
-            console.warn("Fallback pairing used for remaining players in bracket.", remainingInBracket);
-            for(let i = 0; i < remainingInBracket.length; i += 2) {
-                if(i + 1 < remainingInBracket.length) {
-                    pairings.push({ player1: remainingInBracket[i], player2: remainingInBracket[i+1] });
-                } else {
-                     unpairedPlayers.push(remainingInBracket[i]);
-                }
+        if (!paired) {
+            // This is a fallback if no valid opponent is found (e.g. last two players have played)
+            // This is rare in larger tournaments but can happen in small ones.
+            // We just pair them again.
+            console.warn(`Could not find a valid opponent for ${p1.name}. Forcing a rematch.`);
+            if(playersToPair.length > 0) {
+                const p2 = playersToPair.shift()!;
+                pairings.push({ player1: p1, player2: p2 });
+            } else {
+                // This should not happen in an even-sized group
+                console.error(`Lone player ${p1.name} could not be paired.`);
             }
         }
     }
-    
-    // This should ideally be empty
-    if (unpairedPlayers.length > 0) {
-        console.error("Failed to pair all players:", unpairedPlayers);
-    }
-    
+  
     return pairings;
-};
+  };
 
   const startTournament = () => {
     if (state.status !== 'registration' || state.players.length < 2) return;
@@ -538,3 +509,5 @@ export function useTournament() {
     cancelImport,
   };
 }
+
+    
