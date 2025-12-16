@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCcw, Save, X, Ban } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface ManualPairingEditorProps {
   players: Player[];
@@ -39,6 +40,10 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
       if (selectedPlayer.id === player.id) {
         setSelectedPlayer(null);
       } else {
+        // Prevent pairing with a previous opponent
+        if(selectedPlayer.opponentIds.includes(player.id)) {
+            return;
+        }
         setPairings(prev => [...prev, { player1: selectedPlayer, player2: player }]);
         setUnpairedPlayers(prev => prev.filter(p => p.id !== selectedPlayer.id && p.id !== player.id));
         setSelectedPlayer(null);
@@ -85,6 +90,7 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
   };
 
   const isSaveReady = unpairedPlayers.length === 0 && players.length > 1;
+  const previousOpponentIds = useMemo(() => new Set(selectedPlayer?.opponentIds || []), [selectedPlayer]);
 
   return (
     <div className="py-4 space-y-4 border rounded-lg p-4 bg-background/50">
@@ -111,18 +117,23 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
             )}
           </div>
           <div className="p-2 bg-muted/50 rounded-md min-h-[100px] space-y-2">
-            {unpairedPlayers.map(player => (
-              <div
-                key={player.id}
-                onClick={() => handlePlayerClick(player)}
-                className={cn(
-                    "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all",
-                    selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                )}
-              >
-                {player.name}
-              </div>
-            ))}
+            {unpairedPlayers.map(player => {
+              const isPreviousOpponent = selectedPlayer && previousOpponentIds.has(player.id);
+              return (
+                <div
+                  key={player.id}
+                  onClick={() => handlePlayerClick(player)}
+                  className={cn(
+                      "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
+                      selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                      isPreviousOpponent && "bg-destructive/20 text-destructive-foreground cursor-not-allowed"
+                  )}
+                >
+                  <span>{player.name}</span>
+                  <Badge variant="secondary">{player.points} pts</Badge>
+                </div>
+              )
+            })}
           </div>
         </div>
         <div>
@@ -131,10 +142,15 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
             {pairings.map((pairing, index) => (
               <Card key={index} className="bg-background">
                 <CardContent className="p-2 flex items-center justify-between">
-                  <div className="font-medium">
-                    <span>{pairing.player1.name}</span>
-                    <span className="text-muted-foreground mx-2">vs</span>
-                    <span>{pairing.player2.name}</span>
+                  <div className="font-medium space-y-1">
+                    <div className="flex items-center justify-between">
+                        <span>{pairing.player1.name}</span>
+                        <Badge variant="secondary" className="ml-2">{pairing.player1.points} pts</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span>{pairing.player2.name}</span>
+                        {pairing.player2.id !== 'bye' && <Badge variant="secondary" className="ml-2">{(pairing.player2 as Player).points} pts</Badge>}
+                    </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => removePairing(index)}>
                     Remove

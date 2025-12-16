@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Hand, Play, Ban, RefreshCcw } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface ManualPairingProps {
   players: Player[];
@@ -76,6 +77,8 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
   };
 
   const isTournamentReady = unpairedPlayers.length === 0 && players.length > 1;
+  const previousOpponentIds = useMemo(() => new Set(selectedPlayer?.opponentIds || []), [selectedPlayer]);
+
 
   return (
     <div className="py-4 space-y-4">
@@ -103,18 +106,23 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
              )}
            </div>
           <div className="p-2 bg-muted/50 rounded-md min-h-[100px] space-y-2">
-            {unpairedPlayers.map(player => (
-              <div
-                key={player.id}
-                onClick={() => handlePlayerClick(player)}
-                className={cn(
-                    "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all",
-                    selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                )}
-              >
-                {player.name}
-              </div>
-            ))}
+            {unpairedPlayers.map(player => {
+              const isPreviousOpponent = selectedPlayer && previousOpponentIds.has(player.id);
+              return(
+                <div
+                  key={player.id}
+                  onClick={() => handlePlayerClick(player)}
+                  className={cn(
+                      "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
+                      selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                      isPreviousOpponent && "bg-destructive/20 text-destructive-foreground cursor-not-allowed"
+                  )}
+                >
+                   <span>{player.name}</span>
+                  <Badge variant="secondary">{player.points} pts</Badge>
+                </div>
+              )
+            })}
           </div>
         </div>
         <div>
@@ -123,10 +131,15 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
             {pairings.map((pairing, index) => (
               <Card key={index} className="bg-background">
                 <CardContent className="p-2 flex items-center justify-between">
-                  <div className="font-medium">
-                    <span>{pairing.player1.name}</span>
-                    <span className="text-muted-foreground mx-2">vs</span>
-                    <span>{pairing.player2.name}</span>
+                   <div className="font-medium space-y-1">
+                     <div className="flex items-center justify-between">
+                        <span>{pairing.player1.name}</span>
+                        <Badge variant="secondary" className="ml-2">{pairing.player1.points} pts</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <span>{pairing.player2.name}</span>
+                        {pairing.player2.id !== 'bye' && <Badge variant="secondary" className="ml-2">{(pairing.player2 as Player).points} pts</Badge>}
+                    </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => removePairing(index)}>
                     Remove
