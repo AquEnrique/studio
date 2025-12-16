@@ -14,7 +14,7 @@
     },
     {
         "cardName": "Albion the Branded Dragon",
-        "value": 20
+        "value": 5
     },
     {
         "cardName": "Albion the Sanctifire Dragon",
@@ -82,7 +82,7 @@
     },
     {
         "cardName": "Asceticism of the Six Samurai",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Ash Blossom & Joyous Spring",
@@ -90,7 +90,7 @@
     },
     {
         "cardName": "Assault Synchron",
-        "value": 5
+        "value": 1
     },
     {
         "cardName": "Astral Kuriboh",
@@ -122,7 +122,7 @@
     },
     {
         "cardName": "Barrier of the Voiceless Voice",
-        "value": 33
+        "value": 20
     },
     {
         "cardName": "Barrier Statue of the Abyss",
@@ -158,7 +158,7 @@
     },
     {
         "cardName": "Big Welcome Labrynth",
-        "value": 33
+        "value": 20
     },
     {
         "cardName": "Black Garden",
@@ -230,7 +230,7 @@
     },
     {
         "cardName": "Brigrand the Glory Dragon",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Brilliant Fusion",
@@ -290,11 +290,11 @@
     },
     {
         "cardName": "Centur-Ion Primera",
-        "value": 5
+        "value": 2
     },
     {
         "cardName": "Centur-Ion Trudea",
-        "value": 3
+        "value": 1
     },
     {
         "cardName": "Chain Strike",
@@ -302,7 +302,7 @@
     },
     {
         "cardName": "Change of Heart",
-        "value": 10
+        "value": 7
     },
     {
         "cardName": "Chaofeng, Phantom of the Yang Zing",
@@ -314,7 +314,7 @@
     },
     {
         "cardName": "Chaos Dragon Levianeer",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Chaos Ruler, the Chaotic Magical Dragon",
@@ -326,7 +326,7 @@
     },
     {
         "cardName": "Charge of the Light Brigade",
-        "value": 33
+        "value": 25
     },
     {
         "cardName": "Chicken Game",
@@ -362,23 +362,23 @@
     },
     {
         "cardName": "Crossout Designator",
-        "value": 10
+        "value": 20
     },
     {
         "cardName": "Crystron Inclusion",
-        "value": 33
+        "value": 25
     },
     {
         "cardName": "Crystron Smiger",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Crystron Sulfador",
-        "value": 3
+        "value": 5
     },
     {
         "cardName": "Crystron Thystvern",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Cyber Angel Benten",
@@ -450,7 +450,7 @@
     },
     {
         "cardName": "Dark End Evaporation Dragon",
-        "value": 5
+        "value": 1
     },
     {
         "cardName": "Dark Hole",
@@ -466,7 +466,7 @@
     },
     {
         "cardName": "Deception of the Sinful Spoils",
-        "value": 33
+        "value": 40
     },
     {
         "cardName": "Deck Lockdown",
@@ -486,7 +486,7 @@
     },
     {
         "cardName": "Denglong, First of the Yang Zing",
-        "value": 33
+        "value": 20
     },
     {
         "cardName": "Denko Sekka",
@@ -502,7 +502,7 @@
     },
     {
         "cardName": "Destructive Daruma Karma Cannon",
-        "value": 5
+        "value": 3
     },
     {
         "cardName": "Diabell, Queen of the White Forest",
@@ -518,7 +518,7 @@
     },
     {
         "cardName": "Dimension Fusion",
-        "value": 45
+        "value": 40
     },
     {
         "cardName": "Dimension Shifter",
@@ -562,7 +562,7 @@
     },
     {
         "cardName": "Dodododo Warrior",
-        "value": 7
+        "value": 70
     },
     {
         "cardName": "Dogmatika Ecclesia, the Virtuous",
@@ -574,7 +574,7 @@
     },
     {
         "cardName": "Dominus Impulse",
-        "value": 25
+        "value": 20
     },
     {
         "cardName": "Dominus Purge",
@@ -582,7 +582,7 @@
     },
     {
         "cardName": "Dominus Spiral",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Dracotail Arthalion",
@@ -590,7 +590,7 @@
     },
     {
         "cardName": "Dracotail Faimena",
-        "value": 20
+        "value": 30
     },
     {
         "cardName": "Dracotail Mululu",
@@ -606,11 +606,11 @@
     },
     {
         "cardName": "Dragonmaid Sheou",
-        "value": 20
+        "value": 10
     },
     {
         "cardName": "Dragonmaid Tidying",
-        "value": 10
+        "value": 5
     },
     {
         "cardName": "Dragon's Bind",
@@ -618,7 +618,7 @@
     },
     {
         "cardName": "Dragon's Light and Darkness",
-        "value": 7
+        "value": 3
     },
     {
         "cardName": "Dragon's Mind",
@@ -626,7 +626,7 @@
     },
     {
         "cardName": "Droll & Lock Bird",
-        "value": 5
+        "value": 25
     },
     {
         "cardName": "Drytron Alpha Thuban",
@@ -638,7 +638,7 @@
     },
     {
         "cardName": "Duality",
-        "value": 10
+        "value": 3
     },
     {
         "cardName": "Earthbound Immortal Aslla piscu",
@@ -774,7 +774,7 @@
     },
     {
         "cardName": "Foolish Burial Goods",
-        "value": 3
+        "value": 7
     },
     {
         "cardName": "Forbidden Chalice",
@@ -870,15 +870,15 @@
     },
     {
         "cardName": "Gladiator Beast Tamer Editor",
-        "value": 33
+        "value": 80
     },
     {
         "cardName": "Gladiator Proving Ground",
-        "value": 25
+        "value": 0
     },
     {
         "cardName": "Gladiator Rejection",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Glow-Up Bulb",
@@ -890,7 +890,7 @@
     },
     {
         "cardName": "Goblin Biker Grand Entrance",
-        "value": 33
+        "value": 20
     },
     {
         "cardName": "Gold Sarcophagus",
@@ -906,7 +906,7 @@
     },
     {
         "cardName": "Granguignol the Dusk Dragon",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Grapha, Dragon Lord of Dark World",
@@ -990,7 +990,7 @@
     },
     {
         "cardName": "Incoming Machine!",
-        "value": 33
+        "value": 0
     },
     {
         "cardName": "Incredible Ecclesia, the Virtuous",
@@ -1050,7 +1050,7 @@
     },
     {
         "cardName": "K9-17 \"Ripper\"",
-        "value": 20
+        "value": 30
     },
     {
         "cardName": "K9-17 Izuna",
@@ -1058,7 +1058,7 @@
     },
     {
         "cardName": "K9-66a Jokul",
-        "value": 15
+        "value": 33
     },
     {
         "cardName": "K9-X \"Werewolf\"",
@@ -1094,7 +1094,7 @@
     },
     {
         "cardName": "Ketu Dracotail",
-        "value": 10
+        "value": 15
     },
     {
         "cardName": "King of the Feral Imps",
@@ -1134,11 +1134,11 @@
     },
     {
         "cardName": "Lady Labrynth of the Silver Castle",
-        "value": 33
+        "value": 40
     },
     {
         "cardName": "Lady's Dragonmaid",
-        "value": 20
+        "value": 10
     },
     {
         "cardName": "Laevatein, Generaider Boss of Shadows",
@@ -1190,7 +1190,7 @@
     },
     {
         "cardName": "Light End Sublimation Dragon",
-        "value": 5
+        "value": 1
     },
     {
         "cardName": "Lightning Storm",
@@ -1282,7 +1282,7 @@
     },
     {
         "cardName": "Meizen the Battle Ninja",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Mementomictlan Tecuhtlica - Creation King",
@@ -1350,7 +1350,7 @@
     },
     {
         "cardName": "Monster Reborn",
-        "value": 10
+        "value": 5
     },
     {
         "cardName": "Morphing Jar",
@@ -1394,11 +1394,11 @@
     },
     {
         "cardName": "N.As.H. Knight",
-        "value": 10
+        "value": 15
     },
     {
         "cardName": "Nadir Servant",
-        "value": 33
+        "value": 20
     },
     {
         "cardName": "Naturia Barkion",
@@ -1426,7 +1426,7 @@
     },
     {
         "cardName": "Nibiru, the Primal Being",
-        "value": 5
+        "value": 6
     },
     {
         "cardName": "Nightmare Apprentice",
@@ -1462,7 +1462,7 @@
     },
     {
         "cardName": "Number 3: Cicada King",
-        "value": 5
+        "value": 10
     },
     {
         "cardName": "Number 3: Numeron Gate Trini",
@@ -1510,7 +1510,7 @@
     },
     {
         "cardName": "Number 86: Heroic Champion - Rhongomyniad",
-        "value": 31
+        "value": 68
     },
     {
         "cardName": "Number 89: Diablosis the Mind Hacker",
@@ -1642,7 +1642,7 @@
     },
     {
         "cardName": "Premature Burial",
-        "value": 7
+        "value": 3
     },
     {
         "cardName": "Preparation of Rites",
@@ -1698,15 +1698,15 @@
     },
     {
         "cardName": "Purrely",
-        "value": 15
+        "value": 10
     },
     {
         "cardName": "Purrely Sleepy Memory",
-        "value": 15
+        "value": 10
     },
     {
         "cardName": "Purrelyly",
-        "value": 10
+        "value": 7
     },
     {
         "cardName": "QQ Enneagon",
@@ -1846,7 +1846,7 @@
     },
     {
         "cardName": "Return from the Different Dimension",
-        "value": 50
+        "value": 40
     },
     {
         "cardName": "Return of the Dragon Lords",
@@ -1862,7 +1862,7 @@
     },
     {
         "cardName": "Rite of Aramesir",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Ritual Beast Tamer Elder",
@@ -1942,7 +1942,7 @@
     },
     {
         "cardName": "Shien's Dojo",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Shien's Smoke Signal",
@@ -1970,15 +1970,15 @@
     },
     {
         "cardName": "Snake-Eye Ash",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Snake-Eyes Poplar",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Snatch Steal",
-        "value": 7
+        "value": 5
     },
     {
         "cardName": "Snoww, Unlight of Dark World",
@@ -2026,7 +2026,7 @@
     },
     {
         "cardName": "Sprind the Irondash Dragon",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Spright Starter",
@@ -2090,15 +2090,11 @@
     },
     {
         "cardName": "Swordsoul Emergence",
-        "value": 25
-    },
-    {
-        "cardName": "Swordsoul Grandmaster - Chixiao",
-        "value": 33
+        "value": 10
     },
     {
         "cardName": "Swordsoul of Mo Ye",
-        "value": 3
+        "value": 0
     },
     {
         "cardName": "Swordsoul Strategist Longyuan",
@@ -2150,7 +2146,7 @@
     },
     {
         "cardName": "Tenyi Spirit - Ashuna",
-        "value": 13
+        "value": 3
     },
     {
         "cardName": "Terraforming",
@@ -2170,11 +2166,11 @@
     },
     {
         "cardName": "The Dragon that Devours the Dogma",
-        "value": 10
+        "value": 5
     },
     {
         "cardName": "The Fallen & The Virtuous",
-        "value": 15
+        "value": 40
     },
     {
         "cardName": "The Forceful Sentry",
@@ -2186,7 +2182,7 @@
     },
     {
         "cardName": "The Hidden City",
-        "value": 13
+        "value": 0
     },
     {
         "cardName": "The Last Warrior from Another Planet",
@@ -2234,7 +2230,7 @@
     },
     {
         "cardName": "Titaniklad the Ash Dragon",
-        "value": 10
+        "value": 0
     },
     {
         "cardName": "Toadally Awesome",
@@ -2242,7 +2238,7 @@
     },
     {
         "cardName": "Totem Bird",
-        "value": 3
+        "value": 10
     },
     {
         "cardName": "Tour Guide From the Underworld",
@@ -2266,7 +2262,7 @@
     },
     {
         "cardName": "Traptrix Rafflesia",
-        "value": 10
+        "value": 20
     },
     {
         "cardName": "Treasures of the Kings",
@@ -2346,7 +2342,7 @@
     },
     {
         "cardName": "Wandering Gryphon Rider",
-        "value": 20
+        "value": 50
     },
     {
         "cardName": "WANTED: Seeker of Sinful Spoils",
@@ -2354,19 +2350,19 @@
     },
     {
         "cardName": "Water Enchantress of the Temple",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Welcome Labrynth",
-        "value": 33
+        "value": 20
     },
     {
         "cardName": "Wind-Up Carrier Zenmaity",
-        "value": 33
+        "value": 15
     },
     {
         "cardName": "Wind-Up Hunter",
-        "value": 75
+        "value": 86
     },
     {
         "cardName": "Wishes for Eyes of Blue",
@@ -2382,7 +2378,7 @@
     },
     {
         "cardName": "Yaguramaru the Armor Ninja",
-        "value": 5
+        "value": 0
     },
     {
         "cardName": "Zaborg the Mega Monarch",
@@ -2403,5 +2399,93 @@
     {
         "cardName": "Zoodiac Ratpier",
         "value": 50
+    },
+    {
+        "cardName": "Dracotail Flame",
+        "value": 3
+    },
+    {
+        "cardName": "Radiant Typhoon Chant",
+        "value": 10
+    },
+    {
+        "cardName": "Radiant Typhoon Eldam",
+        "value": 7
+    },
+    {
+        "cardName": "Runick Tip",
+        "value": 10
+    },
+    {
+        "cardName": "Hecahands Gaigas",
+        "value": 5
+    },
+    {
+        "cardName": "Hecahands Xeno",
+        "value": 10
+    },
+    {
+        "cardName": "Kewl Tune Clip",
+        "value": 5
+    },
+    {
+        "cardName": "Kewl Tune Cue",
+        "value": 5
+    },
+    {
+        "cardName": "“A Case for K9”",
+        "value": 20
+    },
+    {
+        "cardName": "Magicians’ Souls",
+        "value": 15
+    },
+    {
+        "cardName": "Mathmech Circular",
+        "value": 15
+    },
+    {
+        "cardName": "Therion “King” Regulus",
+        "value": 20
+    },
+    {
+        "cardName": "Lunalight Liger Dancer",
+        "value": 51
+    },
+    {
+        "cardName": "Super Quantal Mech King Great Magnus",
+        "value": 33
+    },
+    {
+        "cardName": "Expurrely Noir",
+        "value": 33
+    },
+    {
+        "cardName": "Gagagaga Girl",
+        "value": 15
+    },
+    {
+        "cardName": "Goblin Biker Big Gabonga",
+        "value": 15
+    },
+    {
+        "cardName": "P.U.N.K. JAM Dragon Drive",
+        "value": 15
+    },
+    {
+        "cardName": "Galaxy Photon Dragon",
+        "value": 15
+    },
+    {
+        "cardName": "Primathmech Alembertian",
+        "value": 20
+    },
+    {
+        "cardName": "Filia Regis",
+        "value": 10
+    },
+    {
+        "cardName": "Red-Eyes Black Fullmetal Dragon",
+        "value": 33
     }
 ]
