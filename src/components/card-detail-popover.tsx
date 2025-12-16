@@ -51,7 +51,7 @@ export function CardDetailPopover({ card, onRemoveCard, onAddCard, keepOpenOnRem
                     <Separator />
                 </>
             )}
-            <blockquote className="text-sm text-muted-foreground whitespace-pre-wrap max-h-36 overflow-y-auto bg-muted/50 p-2 rounded-md border-l-4 border-border italic">
+            <blockquote className="text-sm text-muted-foreground whitespace-pre-wrap max-h-52 overflow-y-auto bg-muted/50 p-2 rounded-md border-l-4 border-border italic">
               {card.desc}
             </blockquote>
             <Separator />
