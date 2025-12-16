@@ -115,7 +115,7 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
                   className={cn(
                       "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
                       selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-                      isPreviousOpponent && "bg-destructive/20 text-destructive-foreground cursor-not-allowed"
+                      isPreviousOpponent && "bg-destructive/20 text-destructive-foreground"
                   )}
                 >
                    <span>{player.name}</span>
