@@ -100,56 +100,57 @@ export function useTournament() {
   
     let availablePlayers = [...sortedPlayers];
   
-    // Handle bye first
+    // Handle bye first if there's an odd number of players
     if (availablePlayers.length % 2 !== 0) {
-      let byePlayerAssigned = false;
-      // Try to give bye to lowest ranked player who hasn't had one
-      for (let i = availablePlayers.length - 1; i >= 0; i--) {
-        if (!availablePlayers[i].opponentIds.includes('bye')) {
-          const byePlayer = availablePlayers.splice(i, 1)[0];
-          pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
-          pairedPlayerIds.add(byePlayer.id);
-          byePlayerAssigned = true;
-          break;
-        }
-      }
-      // If all remaining have had a bye, give to the lowest ranked player
-      if (!byePlayerAssigned) {
-        const byePlayer = availablePlayers.pop()!;
-        pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
-        pairedPlayerIds.add(byePlayer.id);
-      }
-    }
-  
-    let playersToPair = [...availablePlayers];
-    
-    while(playersToPair.length > 1) {
-        const p1 = playersToPair.shift()!;
-        let paired = false;
-        
-        for (let i = 0; i < playersToPair.length; i++) {
-            const p2 = playersToPair[i];
-            if (!p1.opponentIds.includes(p2.id)) {
-                pairings.push({ player1: p1, player2: p2 });
-                playersToPair.splice(i, 1);
-                paired = true;
+        let byePlayerAssigned = false;
+        // Try to give bye to lowest ranked player who hasn't had one and is not a top player
+        // We iterate from the bottom up, but skip index 0 (the top player)
+        for (let i = availablePlayers.length - 1; i > 0; i--) {
+            if (!availablePlayers[i].opponentIds.includes('bye')) {
+                const byePlayer = availablePlayers.splice(i, 1)[0];
+                pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
+                pairedPlayerIds.add(byePlayer.id);
+                byePlayerAssigned = true;
                 break;
             }
         }
-
-        if (!paired) {
-            // This is a fallback if no valid opponent is found (e.g. last two players have played)
-            // This is rare in larger tournaments but can happen in small ones.
-            // We just pair them again.
-            console.warn(`Could not find a valid opponent for ${p1.name}. Forcing a rematch.`);
-            if(playersToPair.length > 0) {
-                const p2 = playersToPair.shift()!;
-                pairings.push({ player1: p1, player2: p2 });
-            } else {
-                // This should not happen in an even-sized group
-                console.error(`Lone player ${p1.name} could not be paired.`);
-            }
+        
+        // If all remaining players (except top) have had a bye, give it to the lowest ranked non-top player
+        if (!byePlayerAssigned && availablePlayers.length > 1) {
+            const byePlayer = availablePlayers.pop()!; // The lowest ranked player is at the end
+            pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
+            pairedPlayerIds.add(byePlayer.id);
         }
+    }
+    
+    let playersToPair = [...availablePlayers];
+    let couldn_t_pair: Player[] = [];
+    
+    while (playersToPair.length > 1) {
+      const p1 = playersToPair.shift()!;
+      let paired = false;
+      for (let i = 0; i < playersToPair.length; i++) {
+        const p2 = playersToPair[i];
+        if (!p1.opponentIds.includes(p2.id)) {
+          pairings.push({ player1: p1, player2: p2 });
+          playersToPair.splice(i, 1);
+          paired = true;
+          break;
+        }
+      }
+      if (!paired) {
+        couldn_t_pair.push(p1);
+      }
+    }
+
+    playersToPair = [...couldn_t_pair, ...playersToPair];
+    
+    while(playersToPair.length > 1) {
+      const p1 = playersToPair.shift()!;
+      // Fallback: pair with the next available player, even if it is a rematch
+      const p2 = playersToPair.shift()!;
+      console.warn(`Could not find a valid opponent for ${p1.name}. Forcing a rematch with ${p2.name}.`);
+      pairings.push({ player1: p1, player2: p2 });
     }
   
     return pairings;
@@ -509,5 +510,3 @@ export function useTournament() {
     cancelImport,
   };
 }
-
-    
