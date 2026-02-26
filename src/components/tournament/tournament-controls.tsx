@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Play, SkipForward, RefreshCw, ChevronLeft, ChevronRight, Upload, Download, Gavel } from 'lucide-react';
+import { Play, SkipForward, RefreshCw, Upload, Download, Gavel } from 'lucide-react';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -47,7 +47,6 @@ export function TournamentControls({
   onExport,
   isMobile,
 }: TournamentControlsProps) {
-  const displayedRound = viewingRound ?? currentRound;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -143,6 +142,8 @@ export function TournamentControls({
      )
   }
 
+  const isViewingHistory = viewingRound !== null;
+
   return (
     <footer className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t p-2 z-10">
         <div className="container mx-auto flex items-center justify-center gap-2">
@@ -165,21 +166,13 @@ export function TournamentControls({
 
             {status === 'running' && (
                 <>
-                <Button asChild variant="outline">
-                  <Link href="/judge">
-                    <Gavel/>
-                    {!isMobile && <span>Juez</span>}
-                  </Link>
-                </Button>
-                {renderButton(
-                    <ChevronLeft />, "Ronda Anterior", () => onGoToRound(displayedRound > 1 ? displayedRound - 1 : null), { variant: "outline", disabled: displayedRound <= 1 }
-                )}
-
-                {viewingRound !== null && viewingRound < currentRound ? (
-                     renderButton(<ChevronRight />, `Ir a Ronda ${currentRound}`, () => onGoToRound(null))
-                ) : (
-                    allResultsSubmitted && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)
-                )}
+                  <Button asChild variant="outline">
+                    <Link href="/judge">
+                      <Gavel/>
+                      {!isMobile && <span>Juez</span>}
+                    </Link>
+                  </Button>
+                  {allResultsSubmitted && !isViewingHistory && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)}
                 </>
             )}
             
