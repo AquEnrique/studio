@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "Tournament": {
+      "title": "Tournament State",
+      "description": "Represents the complete state of a single tournament, including players, rounds, and pairings.",
+      "type": "object",
+      "properties": {
+        "players": {
+          "type": "array",
+          "description": "The list of all players in the tournament.",
+          "items": { "type": "object" }
+        },
+        "currentRound": {
+          "type": "number",
+          "description": "The current active round number."
+        },
+        "pairings": {
+          "type": "array",
+          "description": "The pairings for the current round.",
+          "items": { "type": "object" }
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the tournament.",
+          "enum": ["registration", "running", "finished"]
+        },
+        "history": {
+          "type": "object",
+          "description": "A record of the tournament state at the beginning of each round."
+        }
+      }
+    }
+  },
+  "auth": {
+    "providers": []
+  },
+  "firestore": {
+    "/tournaments/{tournamentId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Tournament"
+      },
+      "description": "Stores the state of a single tournament."
+    }
+  }
+}

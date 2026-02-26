@@ -4,6 +4,10 @@
 import { useState, useEffect, useMemo, createContext, useContext, ReactNode } from 'react';
 import type { TournamentState, Player, Pairing, StandingsPlayer, ManualPairing } from '@/lib/types';
 import { produce } from 'immer';
+import { useFirestore } from '@/firebase';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+
+const TOURNAMENT_DOC_ID = 'current';
 
 const initialTournamentState: TournamentState = {
   players: [],
@@ -11,10 +15,7 @@ const initialTournamentState: TournamentState = {
   pairings: [],
   status: 'registration',
   history: {},
-  viewingRound: null,
 };
-
-const TOURNAMENT_STORAGE_KEY = 'ygo-tournament-state';
 
 // Helper to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -82,14 +83,13 @@ export const calculateStandings = (players: Player[]): StandingsPlayer[] => {
 type ResultInput = { p1Id: string; p2Id: string; p1Games: number; p2Games: number };
 
 interface TournamentContextType {
-    state: TournamentState & { players: StandingsPlayer[]; allResultsSubmitted: boolean };
+    state: TournamentState & { players: StandingsPlayer[]; allResultsSubmitted: boolean; viewingRound: number | null };
     pendingImport: string | null;
     addPlayer: (name: string) => void;
     removePlayer: (id: string) => void;
     startTournament: () => void;
     startManualTournament: (pairings: ManualPairing[]) => void;
     generateNextRound: () => void;
-    updateMatchResult: (round: number, p1Id: string, p2Id: string, p1Games: number, p2Games: number) => void;
     submitMultipleResults: (round: number, results: ResultInput[]) => void;
     updatePairings: (newPairings: ManualPairing[]) => void;
     resetTournament: () => void;
@@ -103,36 +103,39 @@ interface TournamentContextType {
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
 
 export function TournamentProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<TournamentState>(initialTournamentState);
+  const [tournamentState, setTournamentState] = useState<TournamentState>(initialTournamentState);
+  const [viewingRound, setViewingRound] = useState<number | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
+  const firestore = useFirestore();
 
-  // Load state from local storage on initial render
   useEffect(() => {
-    try {
-      const savedState = localStorage.getItem(TOURNAMENT_STORAGE_KEY);
-      if (savedState) {
-        const parsedState = JSON.parse(savedState);
-        // Basic validation
-        if (parsedState.players && parsedState.status) {
-           setState(parsedState);
-        }
+    if (!firestore) return;
+
+    const tournamentRef = doc(firestore, 'tournaments', TOURNAMENT_DOC_ID);
+    
+    const unsubscribe = onSnapshot(tournamentRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setTournamentState(docSnap.data() as TournamentState);
+      } else {
+        setDoc(tournamentRef, initialTournamentState).catch(e => {
+            console.error("Failed to initialize tournament document:", e)
+        });
       }
-    } catch (error) {
-      console.error("Failed to load tournament state from localStorage", error);
-    }
-  }, []);
+    }, (error) => {
+        console.error("Error listening to tournament document:", error);
+    });
 
-  // Save state to local storage whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(TOURNAMENT_STORAGE_KEY, JSON.stringify(state));
-    } catch (error) {
-      console.error("Failed to save tournament state to localStorage", error);
-    }
-  }, [state]);
+    return () => unsubscribe();
+  }, [firestore]);
+
+  const updateFirestoreState = async (newState: TournamentState) => {
+      if (!firestore) return;
+      const tournamentRef = doc(firestore, 'tournaments', TOURNAMENT_DOC_ID);
+      await setDoc(tournamentRef, newState, { merge: true });
+  }
 
   const addPlayer = (name: string) => {
-    if (state.status !== 'registration') return;
+    if (tournamentState.status !== 'registration') return;
     const newPlayer: Player = {
       id: `player-${Date.now()}-${Math.random()}`,
       name,
@@ -142,32 +145,29 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       gameWins: 0,
       gamesPlayed: 0,
     };
-    const newState = produce(state, draft => {
+    const newState = produce(tournamentState, draft => {
         draft.players.push(newPlayer);
     });
-    setState(newState);
+    updateFirestoreState(newState);
   };
   
   const removePlayer = (id: string) => {
-    if (state.status !== 'registration') return;
-    setState(produce(draft => {
+    if (tournamentState.status !== 'registration') return;
+    const newState = produce(tournamentState, draft => {
       draft.players = draft.players.filter(p => p.id !== id);
-    }));
+    });
+    updateFirestoreState(newState);
   };
 
   const generatePairings = (players: Player[], round: number): Pairing[] => {
-    // For rounds > 1, use swiss pairing
     const sortedPlayers = calculateStandings(players);
     const pairings: Pairing[] = [];
     const pairedPlayerIds = new Set<string>();
   
     let availablePlayers = [...sortedPlayers];
   
-    // Handle bye first if there's an odd number of players
     if (availablePlayers.length % 2 !== 0) {
         let byePlayerAssigned = false;
-        // Try to give bye to lowest ranked player who hasn't had one and is not a top player
-        // We iterate from the bottom up, but skip index 0 (the top player)
         for (let i = availablePlayers.length - 1; i > 0; i--) {
             if (!availablePlayers[i].opponentIds.includes('bye')) {
                 const byePlayer = availablePlayers.splice(i, 1)[0];
@@ -178,9 +178,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             }
         }
         
-        // If all remaining players (except top) have had a bye, give it to the lowest ranked non-top player
         if (!byePlayerAssigned && availablePlayers.length > 1) {
-            const byePlayer = availablePlayers.pop()!; // The lowest ranked player is at the end
+            const byePlayer = availablePlayers.pop()!;
             pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
             pairedPlayerIds.add(byePlayer.id);
         }
@@ -210,7 +209,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     
     while(playersToPair.length > 1) {
       const p1 = playersToPair.shift()!;
-      // Fallback: pair with the next available player, even if it is a rematch
       const p2 = playersToPair.shift()!;
       console.warn(`Could not find a valid opponent for ${p1.name}. Forcing a rematch with ${p2.name}.`);
       pairings.push({ player1: p1, player2: p2 });
@@ -220,19 +218,18 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const startTournament = () => {
-    if (state.status !== 'registration' || state.players.length < 2) return;
+    if (tournamentState.status !== 'registration' || tournamentState.players.length < 2) return;
     
     const nextRoundNumber = 1;
     
-    setState(produce(state, draft => {
-        draft.history = {}; // Clear history on new start
+    const newState = produce(tournamentState, draft => {
+        draft.history = {};
         const firstRoundPairings = generatePairings(draft.players, nextRoundNumber);
 
         draft.currentRound = nextRoundNumber;
         draft.status = 'running';
         draft.pairings = firstRoundPairings;
         
-        // Save state at the beginning of round 1
         draft.history[nextRoundNumber] = { 
             pairings: firstRoundPairings, 
             players: JSON.parse(JSON.stringify(draft.players)) 
@@ -253,22 +250,21 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                 playerInDraft.opponentIds.push('bye');
             }
         }
-    }));
+    });
+    updateFirestoreState(newState);
   };
 
   const startManualTournament = (manualPairings: ManualPairing[]) => {
-    if (state.status !== 'registration' || state.players.length < 2) return;
+    if (tournamentState.status !== 'registration' || tournamentState.players.length < 2) return;
 
     const nextRoundNumber = 1;
 
-    setState(
-      produce((draft: TournamentState) => {
-        draft.history = {}; // Clear history on new start
+    const newState = produce(tournamentState, (draft: TournamentState) => {
+        draft.history = {};
         draft.currentRound = nextRoundNumber;
         draft.status = 'running';
         draft.pairings = manualPairings;
         
-        // Save state at the beginning of round 1
         draft.history[nextRoundNumber] = {
           pairings: manualPairings,
           players: JSON.parse(JSON.stringify(draft.players)),
@@ -276,9 +272,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
         const byePairing = manualPairings.find(p => p.player2.id === 'bye');
         if (byePairing) {
-          const playerInDraft = draft.players.find(
-            p => p.id === byePairing.player1.id
-          );
+          const playerInDraft = draft.players.find(p => p.id === byePairing.player1.id);
           if (playerInDraft) {
             playerInDraft.points += 3;
             playerInDraft.matches.push({
@@ -291,24 +285,24 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             playerInDraft.opponentIds.push('bye');
           }
         }
-      })
-    );
+    });
+    updateFirestoreState(newState);
   };
   
   const generateNextRound = () => {
-    if (state.status !== 'running') return;
+    if (tournamentState.status !== 'running') return;
     
-    const nextRoundNumber = state.currentRound + 1;
+    const nextRoundNumber = tournamentState.currentRound + 1;
     
-    const newState = produce(state, draft => {
+    const newState = produce(tournamentState, draft => {
+        draft.history[nextRoundNumber] = { pairings: [], players: JSON.parse(JSON.stringify(draft.players)) };
+
         const newPairings = generatePairings(draft.players, nextRoundNumber);
         
         draft.currentRound = nextRoundNumber;
         draft.pairings = newPairings;
-        draft.viewingRound = null;
         
-        // Save state for the beginning of the new round
-        draft.history[nextRoundNumber] = { pairings: newPairings, players: JSON.parse(JSON.stringify(draft.players)) };
+        draft.history[nextRoundNumber].pairings = newPairings;
         
         const byePairing = newPairings.find(p => p.player2.id === 'bye');
         if(byePairing) {
@@ -326,17 +320,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             }
         }
     });
-
-    setState(newState);
-  };
-
-  const updateMatchResult = (round: number, p1Id: string, p2Id: string, p1Games: number, p2Games: number) => {
-    submitMultipleResults(round, [{p1Id, p2Id, p1Games, p2Games}]);
+    setViewingRound(null);
+    updateFirestoreState(newState);
   };
   
   const submitMultipleResults = (round: number, results: ResultInput[]) => {
-      setState(
-        produce((draft: TournamentState) => {
+      const newState = produce(tournamentState, (draft: TournamentState) => {
           if (round < draft.currentRound) {
             if (!draft.history[round]) return;
             draft.players = JSON.parse(JSON.stringify(draft.history[round].players));
@@ -345,7 +334,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             }
             draft.currentRound = round;
             draft.pairings = draft.history[round].pairings as Pairing[];
-            draft.viewingRound = null;
           }
     
           results.forEach(({p1Id, p2Id, p1Games, p2Games}) => {
@@ -370,30 +358,25 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
               p1Result = 'draw'; p2Result = 'draw';
             }
   
-            const gamesPlayed = p1Games + p2Games;
-      
             player1.points += p1Points;
             player1.matches.push({ round, opponentId: p2Id, result: p1Result, gamesWon: p1Games, gamesLost: p2Games });
             if (!player1.opponentIds.includes(p2Id)) player1.opponentIds.push(p2Id);
-            player1.gameWins += p1Games;
-            player1.gamesPlayed += gamesPlayed;
             
             player2.points += p2Points;
             player2.matches.push({ round, opponentId: p1Id, result: p2Result, gamesWon: p2Games, gamesLost: p1Games });
             if (!player2.opponentIds.includes(p1Id)) player2.opponentIds.push(p1Id);
-            player2.gameWins += p2Games;
-            player2.gamesPlayed += gamesPlayed;
           });
-        })
-      );
+      });
+      setViewingRound(null);
+      updateFirestoreState(newState);
   };
   
     const updatePairings = (newPairings: ManualPairing[]) => {
-        if (state.status !== 'running') return;
+        if (tournamentState.status !== 'running') return;
 
-        const oldByePlayerId = state.pairings.find(p => p.player2.id === 'bye')?.player1.id;
+        const oldByePlayerId = tournamentState.pairings.find(p => p.player2.id === 'bye')?.player1.id;
         
-        setState(produce(draft => {
+        const newState = produce(tournamentState, draft => {
             draft.pairings = newPairings;
             if (draft.history[draft.currentRound]) {
                 draft.history[draft.currentRound].pairings = newPairings;
@@ -401,7 +384,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
             const newByePlayerId = newPairings.find(p => p.player2.id === 'bye')?.player1.id;
 
-            // If there was an old bye player and it's different from the new one, revert their stats.
             if (oldByePlayerId && oldByePlayerId !== newByePlayerId) {
                 const oldByePlayer = draft.players.find(p => p.id === oldByePlayerId);
                 if (oldByePlayer) {
@@ -418,7 +400,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                 }
             }
 
-            // If there's a new bye player, grant them the bye stats.
             if (newByePlayerId) {
                 const newByePlayer = draft.players.find(p => p.id === newByePlayerId);
                 if (newByePlayer && !newByePlayer.matches.some(m => m.round === draft.currentRound && m.opponentId === 'bye')) {
@@ -427,26 +408,21 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                     if (!newByePlayer.opponentIds.includes('bye')) newByePlayer.opponentIds.push('bye');
                 }
             }
-        }));
+        });
+        updateFirestoreState(newState);
     };
 
   const goToRound = (round: number | null) => {
-    setState(produce(draft => {
-        draft.viewingRound = round;
-    }));
+    setViewingRound(round);
   };
 
   const resetTournament = () => {
-    try {
-        localStorage.removeItem(TOURNAMENT_STORAGE_KEY);
-    } catch(error) {
-        console.error("Failed to remove tournament state from localStorage", error);
-    }
-    setState(initialTournamentState);
+    updateFirestoreState(initialTournamentState);
+    setViewingRound(null);
   };
 
   const exportTournament = (): string => {
-    return JSON.stringify(state, null, 2);
+    return JSON.stringify(tournamentState, null, 2);
   };
 
   const importTournament = (fileContent: string) => {
@@ -457,15 +433,14 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     if (pendingImport) {
       try {
         const newState = JSON.parse(pendingImport);
-        // Add basic validation
         if (newState.players && newState.status && newState.history) {
-          setState(newState);
+          updateFirestoreState(newState);
+          setViewingRound(null);
         } else {
           throw new Error("Invalid tournament file structure.");
         }
       } catch (e) {
         console.error("Failed to parse imported file:", e);
-        // Optionally, show an error toast to the user
       } finally {
         setPendingImport(null);
       }
@@ -478,23 +453,24 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
   const processedState = useMemo(() => {
     const allResultsSubmitted = (() => {
-        if (state.status !== 'running') return false;
-        const activePairings = state.pairings.filter(p => p.player2.id !== 'bye');
-        if (activePairings.length === 0) return true; // No matches to submit
+        if (tournamentState.status !== 'running') return false;
+        const activePairings = tournamentState.pairings.filter(p => p.player2.id !== 'bye');
+        if (activePairings.length === 0) return true; 
         
         const submittedResults = activePairings.filter(p => {
-            const player1 = state.players.find(pl => pl.id === p.player1.id);
-            return player1?.matches.some(m => m.round === state.currentRound && m.opponentId !== 'bye');
+            const player1 = tournamentState.players.find(pl => pl.id === p.player1.id);
+            return player1?.matches.some(m => m.round === tournamentState.currentRound && m.opponentId !== 'bye');
         });
         return activePairings.length === submittedResults.length;
     })();
 
     return {
-        ...state,
-        players: calculateStandings(state.players),
+        ...tournamentState,
+        viewingRound,
+        players: calculateStandings(tournamentState.players),
         allResultsSubmitted,
     };
-  }, [state]);
+  }, [tournamentState, viewingRound]);
 
 
   const value: TournamentContextType = {
@@ -505,7 +481,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     startTournament,
     startManualTournament,
     generateNextRound,
-    updateMatchResult,
     submitMultipleResults,
     updatePairings,
     resetTournament,

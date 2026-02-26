@@ -41,7 +41,6 @@ export type TournamentState = {
   pairings: Pairing[];
   status: 'registration' | 'running' | 'finished';
   history: { [round: number]: RoundHistory };
-  viewingRound: number | null;
 };
 
 export type StandingsPlayer = Player & {
