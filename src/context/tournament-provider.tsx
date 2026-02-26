@@ -301,9 +301,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const nextRoundNumber = state.currentRound + 1;
     
     const newState = produce(state, draft => {
-        // Save final state of the current round before proceeding
-        draft.history[draft.currentRound] = { pairings: draft.pairings, players: JSON.parse(JSON.stringify(draft.players)) };
-        
         const newPairings = generatePairings(draft.players, nextRoundNumber);
         
         draft.currentRound = nextRoundNumber;
