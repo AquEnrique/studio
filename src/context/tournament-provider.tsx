@@ -79,6 +79,8 @@ export const calculateStandings = (players: Player[]): StandingsPlayer[] => {
     return standingsPlayers;
 };
 
+type ResultInput = { p1Id: string; p2Id: string; p1Games: number; p2Games: number };
+
 interface TournamentContextType {
     state: TournamentState & { players: StandingsPlayer[]; allResultsSubmitted: boolean };
     pendingImport: string | null;
@@ -88,6 +90,7 @@ interface TournamentContextType {
     startManualTournament: (pairings: ManualPairing[]) => void;
     generateNextRound: () => void;
     updateMatchResult: (round: number, p1Id: string, p2Id: string, p1Games: number, p2Games: number) => void;
+    submitMultipleResults: (round: number, results: ResultInput[]) => void;
     updatePairings: (newPairings: ManualPairing[]) => void;
     resetTournament: () => void;
     goToRound: (round: number | null) => void;
@@ -331,68 +334,59 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const updateMatchResult = (round: number, p1Id: string, p2Id: string, p1Games: number, p2Games: number) => {
+    submitMultipleResults(round, [{p1Id, p2Id, p1Games, p2Games}]);
+  };
+  
+  const submitMultipleResults = (round: number, results: ResultInput[]) => {
       setState(
         produce((draft: TournamentState) => {
-          // If we are editing a past round, we must rollback the state.
-          // This is a destructive action as warned by the UI. All subsequent rounds are erased.
           if (round < draft.currentRound) {
-            if (!draft.history[round]) return; // Safety check
-    
-            // Set the main player state to what it was at the START of the edited round.
+            if (!draft.history[round]) return;
             draft.players = JSON.parse(JSON.stringify(draft.history[round].players));
-            
-            // Erase all future history.
             for (let i = round + 1; i <= draft.currentRound; i++) {
               delete draft.history[i];
             }
-            
-            // Update the tournament's current round and pairings.
             draft.currentRound = round;
             draft.pairings = draft.history[round].pairings as Pairing[];
             draft.viewingRound = null;
           }
-          
-          // At this point, `draft.players` represents the state at the beginning of the round `round`.
-          // Any existing match results for `round` are NOT in this player data.
-          // So we can now safely add the new match result.
     
-          const player1 = draft.players.find(p => p.id === p1Id);
-          const player2 = draft.players.find(p => p.id === p2Id);
-    
-          if (!player1 || !player2) return;
-    
-          // Ensure this match result for this round hasn't already been added in this same operation.
-          // This prevents issues like double-clicks adding points twice.
-          const isAlreadyProcessed = player1.matches.some(m => m.round === round && m.opponentId === p2Id);
-          if (isAlreadyProcessed) return;
-    
-          let p1Points, p2Points;
-          let p1Result, p2Result;
-    
-          if (p1Games > p2Games) {
-            p1Points = 3; p2Points = 0;
-            p1Result = 'win'; p2Result = 'loss';
-          } else if (p2Games > p1Games) {
-            p1Points = 0; p2Points = 3;
-            p1Result = 'loss'; p2Result = 'win';
-          } else {
-            p1Points = 1; p2Points = 1;
-            p1Result = 'draw'; p2Result = 'draw';
-          }
-
-          const gamesPlayed = p1Games + p2Games;
-    
-          player1.points += p1Points;
-          player1.matches.push({ round, opponentId: p2Id, result: p1Result, gamesWon: p1Games, gamesLost: p2Games });
-          if (!player1.opponentIds.includes(p2Id)) player1.opponentIds.push(p2Id);
-          player1.gameWins += p1Games;
-          player1.gamesPlayed += gamesPlayed;
-          
-          player2.points += p2Points;
-          player2.matches.push({ round, opponentId: p1Id, result: p2Result, gamesWon: p2Games, gamesLost: p1Games });
-          if (!player2.opponentIds.includes(p1Id)) player2.opponentIds.push(p1Id);
-          player2.gameWins += p2Games;
-          player2.gamesPlayed += gamesPlayed;
+          results.forEach(({p1Id, p2Id, p1Games, p2Games}) => {
+            const player1 = draft.players.find(p => p.id === p1Id);
+            const player2 = draft.players.find(p => p.id === p2Id);
+            if (!player1 || !player2) return;
+      
+            const isAlreadyProcessed = player1.matches.some(m => m.round === round && m.opponentId === p2Id);
+            if (isAlreadyProcessed) return;
+      
+            let p1Points, p2Points;
+            let p1Result, p2Result;
+      
+            if (p1Games > p2Games) {
+              p1Points = 3; p2Points = 0;
+              p1Result = 'win'; p2Result = 'loss';
+            } else if (p2Games > p1Games) {
+              p1Points = 0; p2Points = 3;
+              p1Result = 'loss'; p2Result = 'win';
+            } else {
+              p1Points = 1; p2Points = 1;
+              p1Result = 'draw'; p2Result = 'draw';
+            }
+  
+            const gamesPlayed = p1Games + p2Games;
+      
+            player1.points += p1Points;
+            player1.matches.push({ round, opponentId: p2Id, result: p1Result, gamesWon: p1Games, gamesLost: p2Games });
+            if (!player1.opponentIds.includes(p2Id)) player1.opponentIds.push(p2Id);
+            player1.gameWins += p1Games;
+            player1.gamesPlayed += gamesPlayed;
+            
+            player2.points += p2Points;
+            player2.matches.push({ round, opponentId: p1Id, result: p2Result, gamesWon: p2Games, gamesLost: p1Games });
+            if (!player2.opponentIds.includes(p1Id)) player2.opponentIds.push(p1Id);
+            player2.gameWins += p2Games;
+            player2.gamesPlayed += gamesPlayed;
+          });
         })
       );
   };
@@ -515,6 +509,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     startManualTournament,
     generateNextRound,
     updateMatchResult,
+    submitMultipleResults,
     updatePairings,
     resetTournament,
     goToRound,

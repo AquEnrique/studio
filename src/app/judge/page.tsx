@@ -15,7 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 export default function JudgePage() {
   const {
     state,
-    updateMatchResult,
+    submitMultipleResults,
     updatePairings,
     goToRound,
     generateNextRound,
@@ -121,7 +121,7 @@ export default function JudgePage() {
                   <PairingsDisplay 
                       key={displayedRound}
                       pairings={pairingsForView} 
-                      updateMatchResult={updateMatchResult} 
+                      submitMultipleResults={submitMultipleResults} 
                       roundNumber={displayedRound}
                       isEditable={state.status === 'running'}
                       allPlayers={state.players}

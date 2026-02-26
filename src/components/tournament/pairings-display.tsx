@@ -11,14 +11,14 @@ import { Pencil } from 'lucide-react';
 
 interface PairingsDisplayProps {
   pairings: Pairing[];
-  updateMatchResult: (round: number, p1Id: string, p2Id: string, p1Games: number, p2Games: number) => void;
+  submitMultipleResults: (round: number, results: { p1Id: string; p2Id: string; p1Games: number; p2Games: number }[]) => void;
   roundNumber: number;
   isEditable: boolean;
   allPlayers: Player[];
   onUpdatePairings: (newPairings: ManualPairing[]) => void;
 }
 
-export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEditable, allPlayers, onUpdatePairings }: PairingsDisplayProps) {
+export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, isEditable, allPlayers, onUpdatePairings }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
 
@@ -58,22 +58,28 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
   };
 
   const handleSubmitAll = () => {
+    const resultsToSubmit: { p1Id: string; p2Id: string; p1Games: number; p2Games: number }[] = [];
     pairings.forEach(pairing => {
       const p1Id = pairing.player1.id;
       const result = results[p1Id];
       if (result && (result.p1 !== undefined || result.p2 !== undefined)) {
+        if(pairing.player2.id === 'bye') return;
         const p2Id = (pairing.player2 as Player).id;
         const p1Games = parseInt(result.p1 || '0', 10);
         const p2Games = parseInt(result.p2 || '0', 10);
 
-        const player1 = pairing.player1 as Player;
-        const match = player1.matches.find(m => m.round === roundNumber && m.opponentId === p2Id);
+        const player1inFullList = allPlayers.find(p => p.id === p1Id);
+        const match = player1inFullList?.matches.find(m => m.round === roundNumber && m.opponentId === p2Id);
 
         if (!match && !isNaN(p1Games) && !isNaN(p2Games)) {
-          updateMatchResult(roundNumber, p1Id, p2Id, p1Games, p2Games);
+          resultsToSubmit.push({p1Id, p2Id, p1Games, p2Games})
         }
       }
     });
+
+    if (resultsToSubmit.length > 0) {
+      submitMultipleResults(roundNumber, resultsToSubmit);
+    }
   };
 
   const handleSavePairings = (newPairings: ManualPairing[]) => {
@@ -83,8 +89,9 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
 
   const anyMatchSubmittedInRound = pairings.some(pairing => {
     if (pairing.player2.id === 'bye') return false; // Byes don't count as submitted results
-    const player1 = pairing.player1 as Player;
-    return player1.matches.some(m => m.round === roundNumber && m.opponentId === (pairing.player2 as Player).id);
+    // We need to check against allPlayers because the players in `pairings` might be from a historical round
+    const player1FromState = allPlayers.find(p => p.id === pairing.player1.id);
+    return player1FromState?.matches.some(m => m.round === roundNumber && m.opponentId === (pairing.player2 as Player).id);
   });
 
   if (isEditing) {
@@ -112,7 +119,8 @@ export function PairingsDisplay({ pairings, updateMatchResult, roundNumber, isEd
       {pairings.map((pairing) => {
         const pairingId = pairing.player1.id;
         const player2IsBye = pairing.player2.id === 'bye';
-        const match = (pairing.player1 as Player).matches.find(m => m.round === roundNumber);
+        const player1FromState = allPlayers.find(p => p.id === pairing.player1.id)
+        const match = player1FromState?.matches.find(m => m.round === roundNumber);
         const isSubmitted = !!match && match.opponentId !== 'bye' && match.round === roundNumber;
 
         return (
