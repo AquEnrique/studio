@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo, createContext, useContext, ReactNode } from 'react';
 import type { TournamentState, Player, Pairing, StandingsPlayer, ManualPairing } from '@/lib/types';
 import { produce } from 'immer';
 
@@ -26,7 +26,27 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
-export function useTournament() {
+interface TournamentContextType {
+    state: TournamentState & { players: StandingsPlayer[]; allResultsSubmitted: boolean };
+    pendingImport: string | null;
+    addPlayer: (name: string) => void;
+    removePlayer: (id: string) => void;
+    startTournament: () => void;
+    startManualTournament: (pairings: ManualPairing[]) => void;
+    generateNextRound: () => void;
+    updateMatchResult: (round: number, p1Id: string, p2Id: string, p1Games: number, p2Games: number) => void;
+    updatePairings: (newPairings: ManualPairing[]) => void;
+    resetTournament: () => void;
+    goToRound: (round: number | null) => void;
+    exportTournament: () => string;
+    importTournament: (fileContent: string) => void;
+    confirmImport: () => void;
+    cancelImport: () => void;
+}
+
+const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
+
+export function TournamentProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<TournamentState>(initialTournamentState);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
 
@@ -77,6 +97,55 @@ export function useTournament() {
     setState(produce(draft => {
       draft.players = draft.players.filter(p => p.id !== id);
     }));
+  };
+
+  const calculateStandings = (players: Player[]): StandingsPlayer[] => {
+    if (!players || players.length === 0) return [];
+    const playerMap = new Map(players.map(p => [p.id, p]));
+
+    const standingsPlayers: StandingsPlayer[] = players.map(player => {
+        const gwPercentage = player.gamesPlayed > 0 ? player.gameWins / player.gamesPlayed : 0;
+        
+        let opponentTotalPoints = 0;
+        const opponentsPlayed = player.opponentIds.filter(id => id !== 'bye');
+        for (const opponentId of opponentsPlayed) {
+            const opponent = playerMap.get(opponentId);
+            if (opponent) {
+                opponentTotalPoints += opponent.points;
+            }
+        }
+        
+        return {
+            ...player,
+            gwPercentage,
+            opponentTotalPoints,
+            ogwPercentage: 0,
+        };
+    });
+    
+    const standingsPlayerMap = new Map(standingsPlayers.map(p => [p.id, p]));
+
+    standingsPlayers.forEach(player => {
+        let totalOpponentGW = 0;
+        const opponentsPlayed = player.opponentIds.filter(id => id !== 'bye');
+        for (const opponentId of opponentsPlayed) {
+            const opponent = standingsPlayerMap.get(opponentId);
+            if (opponent) {
+                totalOpponentGW += opponent.gwPercentage;
+            }
+        }
+        player.ogwPercentage = opponentsPlayed.length > 0 ? totalOpponentGW / opponentsPlayed.length : 0;
+    });
+
+    standingsPlayers.sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.opponentTotalPoints !== a.opponentTotalPoints) return b.opponentTotalPoints - a.opponentTotalPoints;
+        if (b.gwPercentage !== a.gwPercentage) return b.gwPercentage - a.gwPercentage;
+        if (b.ogwPercentage !== a.ogwPercentage) return b.ogwPercentage - a.ogwPercentage;
+        return Math.random() - 0.5; // Randomize players with exact same stats
+    });
+
+    return standingsPlayers;
   };
 
   const generatePairings = (players: Player[], round: number): Pairing[] => {
@@ -265,59 +334,6 @@ export function useTournament() {
 
     setState(newState);
   };
-  
-  const calculateStandings = (players: Player[]): StandingsPlayer[] => {
-    if (!players || players.length === 0) return [];
-    const playerMap = new Map(players.map(p => [p.id, p]));
-
-    const standingsPlayers: StandingsPlayer[] = players.map(player => {
-        const gwPercentage = player.gamesPlayed > 0 ? player.gameWins / player.gamesPlayed : 0;
-        
-        let totalOpponentMW = 0;
-        const opponentsPlayed = player.opponentIds.filter(id => id !== 'bye');
-        for (const opponentId of opponentsPlayed) {
-            const opponent = playerMap.get(opponentId);
-            if (opponent) {
-                const opponentMatchWins = opponent.matches.filter(m => m.result === 'win').length;
-                const opponentMatchesPlayedThatCount = opponent.matches.filter(m => m.opponentId !== 'bye').length;
-                const mwPercentage = opponentMatchesPlayedThatCount > 0 ? opponentMatchWins / opponentMatchesPlayedThatCount : 0;
-                totalOpponentMW += Math.max(0.33, mwPercentage);
-            }
-        }
-        const omwPercentage = opponentsPlayed.length > 0 ? totalOpponentMW / opponentsPlayed.length : 0;
-
-        return {
-            ...player,
-            gwPercentage,
-            omwPercentage,
-            ogwPercentage: 0,
-        };
-    });
-    
-    const standingsPlayerMap = new Map(standingsPlayers.map(p => [p.id, p]));
-
-    standingsPlayers.forEach(player => {
-        let totalOpponentGW = 0;
-        const opponentsPlayed = player.opponentIds.filter(id => id !== 'bye');
-        for (const opponentId of opponentsPlayed) {
-            const opponent = standingsPlayerMap.get(opponentId);
-            if (opponent) {
-                totalOpponentGW += opponent.gwPercentage;
-            }
-        }
-        player.ogwPercentage = opponentsPlayed.length > 0 ? totalOpponentGW / opponentsPlayed.length : 0;
-    });
-
-    standingsPlayers.sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.omwPercentage !== a.omwPercentage) return b.omwPercentage - a.omwPercentage;
-        if (b.gwPercentage !== a.gwPercentage) return b.gwPercentage - a.gwPercentage;
-        if (b.ogwPercentage !== a.ogwPercentage) return b.ogwPercentage - a.ogwPercentage;
-        return Math.random() - 0.5; // Randomize players with exact same stats
-    });
-
-    return standingsPlayers;
-  };
 
   const updateMatchResult = (round: number, p1Id: string, p2Id: string, p1Games: number, p2Games: number) => {
       setState(
@@ -477,23 +493,29 @@ export function useTournament() {
     setPendingImport(null);
   };
 
+  const processedState = useMemo(() => {
+    const allResultsSubmitted = (() => {
+        if (state.status !== 'running') return false;
+        const activePairings = state.pairings.filter(p => p.player2.id !== 'bye');
+        if (activePairings.length === 0) return false;
+        
+        const submittedResults = activePairings.filter(p => {
+            const player1 = state.players.find(pl => pl.id === p.player1.id);
+            return player1?.matches.some(m => m.round === state.currentRound && m.opponentId !== 'bye');
+        });
+        return activePairings.length === submittedResults.length;
+    })();
 
-  const allResultsSubmitted = useMemo(() => {
-    if (state.status !== 'running') return false;
-    const activePairings = state.pairings.filter(p => p.player2.id !== 'bye');
-    const submittedResults = activePairings.filter(p => {
-        const player1 = state.players.find(pl => pl.id === p.player1.id);
-        return player1?.matches.some(m => m.round === state.currentRound);
-    });
-    return activePairings.length > 0 && activePairings.length === submittedResults.length;
-  }, [state.players, state.pairings, state.currentRound, state.status]);
+    return {
+        ...state,
+        players: calculateStandings(state.players),
+        allResultsSubmitted,
+    };
+  }, [state]);
 
-  return {
-    state: {
-      ...state,
-      players: calculateStandings(state.players),
-      allResultsSubmitted,
-    },
+
+  const value: TournamentContextType = {
+    state: processedState,
     pendingImport,
     addPlayer,
     removePlayer,
@@ -509,4 +531,18 @@ export function useTournament() {
     confirmImport,
     cancelImport,
   };
+
+  return (
+      <TournamentContext.Provider value={value}>
+          {children}
+      </TournamentContext.Provider>
+  );
 }
+
+export const useTournament = (): TournamentContextType => {
+    const context = useContext(TournamentContext);
+    if (context === undefined) {
+        throw new Error('useTournament must be used within a TournamentProvider');
+    }
+    return context;
+};

@@ -2,7 +2,7 @@
 
 import { StandingsTable } from '@/components/tournament/standings-table';
 import { PairingsDisplay } from '@/components/tournament/pairings-display';
-import { useTournament } from '@/hooks/use-tournament';
+import { useTournament } from '@/context/tournament-provider';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';

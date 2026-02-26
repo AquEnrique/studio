@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
-import type { StandingsPlayer, Player, Match } from '@/lib/types';
+import type { StandingsPlayer, Player } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -51,18 +51,17 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
       return { points, isBye: false };
   };
 
-  const showColumnInfo = (column: 'OMW' | 'GW' | 'OGW') => {
+  const showColumnInfo = (column: 'OTP' | 'GW' | 'OGW') => {
     let info: CalculationInfo = null;
     switch (column) {
-      case 'OMW':
+      case 'OTP':
         info = {
-          title: 'Opponent Match Win % (OMW%)',
+          title: 'Opponent Total Points (OTP)',
           description: (
             <>
-              <p>This is the first tiebreaker. It's the average of your opponents' match win percentages. A higher OMW% means you played against stronger opponents.</p>
+              <p>This is the first tiebreaker. It is the sum of the match points of all the opponents you have faced.</p>
               <br />
-              <p><strong>Formula:</strong> (Sum of all opponents' MW%) / (Number of opponents)</p>
-              <p className="text-xs text-muted-foreground mt-2">Note: An opponent's MW% is their total points / (matches played * 3). For this calculation, an opponent's MW% is never lower than 33%.</p>
+              <p>A higher OTP indicates you have played against opponents who have performed better in the tournament.</p>
             </>
           ),
         };
@@ -95,7 +94,7 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
     setCalculationInfo(info);
   };
 
-  const showPlayerCalcInfo = (player: StandingsPlayer, metric: 'OMW' | 'GW' | 'OGW') => {
+  const showPlayerCalcInfo = (player: StandingsPlayer, metric: 'OTP' | 'GW' | 'OGW') => {
     let info: CalculationInfo = null;
     
     switch (metric) {
@@ -113,27 +112,20 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
                 )
             };
             break;
-        case 'OMW':
+        case 'OTP':
             const opponents = player.opponentIds.map(id => playerMap.get(id)).filter((p): p is Player => !!p && p.id !== 'bye');
-            const omwDetails = opponents.map(opp => {
-              const oppMatchWins = opp.matches.filter(m => m.result === 'win').length;
-              const oppMatchesPlayed = opp.matches.filter(m => m.opponentId !== 'bye').length;
-              const mw = oppMatchesPlayed > 0 ? oppMatchWins / oppMatchesPlayed : 0;
-              return { name: opp.name, mw: Math.max(0.33, mw) };
-            });
-            const totalOmw = omwDetails.reduce((sum, opp) => sum + opp.mw, 0);
 
             info = {
-                title: `Opponent Match Win % for ${player.name}`,
+                title: `Opponent Total Points for ${player.name}`,
                 description: (
                     <div>
-                        <p><strong>Opponents' MW% (min 33%):</strong></p>
+                        <p><strong>Opponents' Points:</strong></p>
                         <ul className="list-disc pl-5 my-2 text-sm space-y-1">
-                            {omwDetails.map(opp => <li key={opp.name}>{opp.name}: {(opp.mw * 100).toFixed(1)}%</li>)}
+                            {opponents.map(opp => <li key={opp.id}>{opp.name}: {opp.points} pts</li>)}
                         </ul>
                         <p><strong>Calculation:</strong></p>
                          <p className="font-mono bg-muted p-2 rounded-md mt-2 text-xs overflow-auto">
-                           ({omwDetails.map(o => `${(o.mw * 100).toFixed(1)}%`).join(' + ')}) / {omwDetails.length} = <strong>{(player.omwPercentage * 100).toFixed(1)}%</strong>
+                           {opponents.map(o => `${o.points}`).join(' + ')} = <strong>{player.opponentTotalPoints}</strong>
                         </p>
                     </div>
                 )
@@ -145,7 +137,6 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
                 const gw = opp.gamesPlayed > 0 ? opp.gameWins / opp.gamesPlayed : 0;
                 return { name: opp.name, gw };
             });
-            const totalOgw = ogwDetails.reduce((sum, opp) => sum + opp.gw, 0);
             
             info = {
                 title: `Opponent Game Win % for ${player.name}`,
@@ -238,8 +229,8 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
             <TableHead>Points</TableHead>
             <TableHead>
                 <div className="flex items-center gap-1">
-                    OMW%
-                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('OMW')}>
+                    Opponent Points
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('OTP')}>
                         <Info className="w-3 h-3" />
                     </Button>
                 </div>
@@ -269,8 +260,8 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
               <TableCell className="font-medium">{player.name}</TableCell>
               <TableCell>{player.points}</TableCell>
               <TableCell>
-                  <button className="underline" onClick={() => showPlayerCalcInfo(player, 'OMW')}>
-                    {(player.omwPercentage * 100).toFixed(1)}%
+                  <button className="underline" onClick={() => showPlayerCalcInfo(player, 'OTP')}>
+                    {player.opponentTotalPoints}
                   </button>
               </TableCell>
               <TableCell>

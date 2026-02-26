@@ -46,7 +46,7 @@ export type TournamentState = {
 };
 
 export type StandingsPlayer = Player & {
-    omwPercentage: number;
+    opponentTotalPoints: number;
     gwPercentage: number;
     ogwPercentage: number;
 };

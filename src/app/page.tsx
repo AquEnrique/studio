@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { PlayerRegistration } from '@/components/tournament/player-registration';
 import { TournamentControls } from '@/components/tournament/tournament-controls';
 import { StandingsTable } from '@/components/tournament/standings-table';
-import { useTournament } from '@/hooks/use-tournament';
+import { useTournament } from '@/context/tournament-provider';
 import { List, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
