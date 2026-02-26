@@ -1,3 +1,4 @@
+
 'use client';
 
 import { StandingsTable } from '@/components/tournament/standings-table';
@@ -26,23 +27,23 @@ export default function JudgePage() {
 
   const displayedRound = state.viewingRound || state.currentRound;
 
-  const { playersForView, pairingsForView } = useMemo(() => {
-    if (state.status === 'registration') {
-      return { playersForView: [], pairingsForView: [] };
+  const playersForView = useMemo(() => {
+    if (state.status === 'registration') return [];
+    if (state.viewingRound !== null) {
+      // If viewing history, calculate standings from the historical player data
+      return calculateStandings(state.history[state.viewingRound]?.players || []);
     }
-    const isViewingHistory = state.viewingRound !== null;
-    const players = isViewingHistory 
-      ? state.history[displayedRound]?.players 
-      : state.players;
-    const pairings = isViewingHistory
-      ? state.history[displayedRound]?.pairings
+    // Otherwise, use the already calculated players from the current state
+    return state.players;
+  }, [state.status, state.viewingRound, state.history, state.players]);
+
+  const pairingsForView = useMemo(() => {
+     if (state.status === 'registration') return [];
+     return state.viewingRound !== null
+      ? state.history[state.viewingRound]?.pairings || []
       : state.pairings;
-    
-    return {
-      playersForView: calculateStandings(players || []),
-      pairingsForView: pairings || [],
-    };
-  }, [state.status, state.viewingRound, state.currentRound, state.history, state.players, state.pairings, displayedRound]);
+  }, [state.status, state.viewingRound, state.history, state.pairings]);
+
 
   const isViewingHistory = state.viewingRound !== null && state.viewingRound < state.currentRound;
 
