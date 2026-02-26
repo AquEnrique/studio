@@ -246,13 +246,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                     round: nextRoundNumber, 
                     opponentId: 'bye', 
                     result: 'win',
-                    gamesWon: 2,
+                    gamesWon: 0,
                     gamesLost: 0,
                     gamesDrawn: 0,
                 });
                 playerInDraft.opponentIds.push('bye');
-                playerInDraft.gameWins += 2;
-                playerInDraft.gamesPlayed += 2;
             }
         }
     });
@@ -286,13 +284,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
               round: nextRoundNumber,
               opponentId: 'bye',
               result: 'win',
-              gamesWon: 2,
+              gamesWon: 0,
               gamesLost: 0,
               gamesDrawn: 0,
             });
             playerInDraft.opponentIds.push('bye');
-            playerInDraft.gameWins += 2;
-            playerInDraft.gamesPlayed += 2;
           }
         }
       })
@@ -320,13 +316,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                     round: nextRoundNumber, 
                     opponentId: 'bye', 
                     result: 'win',
-                    gamesWon: 2,
+                    gamesWon: 0,
                     gamesLost: 0,
                     gamesDrawn: 0,
                 });
                 playerInDraft.opponentIds.push('bye');
-                playerInDraft.gameWins += 2;
-                playerInDraft.gamesPlayed += 2;
             }
         }
         draft.history[nextRoundNumber] = { pairings: newPairings, players: draft.players };
@@ -437,9 +431,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                         if (opponentIdIndex > -1) {
                             oldByePlayer.opponentIds.splice(opponentIdIndex, 1);
                         }
-                        
-                        oldByePlayer.gameWins -= 2;
-                        oldByePlayer.gamesPlayed -= 2;
                     }
                 }
             }
@@ -450,10 +441,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                 // Ensure we don't grant bye status twice if something goes wrong.
                 if (newByePlayer && !newByePlayer.matches.some(m => m.round === draft.currentRound && m.opponentId === 'bye')) {
                     newByePlayer.points += 3;
-                    newByePlayer.matches.push({ round: draft.currentRound, opponentId: 'bye', result: 'win', gamesWon: 2, gamesLost: 0, gamesDrawn: 0 });
+                    newByePlayer.matches.push({ round: draft.currentRound, opponentId: 'bye', result: 'win', gamesWon: 0, gamesLost: 0, gamesDrawn: 0 });
                     if (!newByePlayer.opponentIds.includes('bye')) newByePlayer.opponentIds.push('bye');
-                    newByePlayer.gameWins += 2;
-                    newByePlayer.gamesPlayed += 2;
                 }
             }
         }));
