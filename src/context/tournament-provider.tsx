@@ -412,6 +412,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   
     const updatePairings = (newPairings: ManualPairing[]) => {
         if (state.status !== 'running') return;
+
+        const oldByePlayerId = state.pairings.find(p => p.player2.id === 'bye')?.player1.id;
         
         setState(produce(draft => {
             draft.pairings = newPairings;
@@ -419,23 +421,33 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                 draft.history[draft.currentRound].pairings = newPairings;
             }
 
-            // Reset bye player if pairings changed
-            const byePlayerId = draft.history[draft.currentRound]?.pairings.find(p => p.player2.id === 'bye')?.player1.id;
             const newByePlayerId = newPairings.find(p => p.player2.id === 'bye')?.player1.id;
 
-            if (byePlayerId && byePlayerId !== newByePlayerId) {
-                const oldByePlayer = draft.players.find(p => p.id === byePlayerId);
+            // If there was an old bye player and it's different from the new one, revert their stats.
+            if (oldByePlayerId && oldByePlayerId !== newByePlayerId) {
+                const oldByePlayer = draft.players.find(p => p.id === oldByePlayerId);
                 if (oldByePlayer) {
-                    oldByePlayer.points -= 3;
-                    oldByePlayer.matches = oldByePlayer.matches.filter(m => m.opponentId !== 'bye' || m.round !== draft.currentRound);
-                    oldByePlayer.opponentIds = oldByePlayer.opponentIds.filter(id => id !== 'bye');
-                    oldByePlayer.gameWins -= 2;
-                    oldByePlayer.gamesPlayed -= 2;
+                    // Only revert if the bye was for the current round.
+                    const byeMatchIndex = oldByePlayer.matches.findIndex(m => m.round === draft.currentRound && m.opponentId === 'bye');
+                    if (byeMatchIndex > -1) {
+                        oldByePlayer.points -= 3;
+                        oldByePlayer.matches.splice(byeMatchIndex, 1);
+                        
+                        const opponentIdIndex = oldByePlayer.opponentIds.lastIndexOf('bye');
+                        if (opponentIdIndex > -1) {
+                            oldByePlayer.opponentIds.splice(opponentIdIndex, 1);
+                        }
+                        
+                        oldByePlayer.gameWins -= 2;
+                        oldByePlayer.gamesPlayed -= 2;
+                    }
                 }
             }
 
+            // If there's a new bye player, grant them the bye stats.
             if (newByePlayerId) {
                 const newByePlayer = draft.players.find(p => p.id === newByePlayerId);
+                // Ensure we don't grant bye status twice if something goes wrong.
                 if (newByePlayer && !newByePlayer.matches.some(m => m.round === draft.currentRound && m.opponentId === 'bye')) {
                     newByePlayer.points += 3;
                     newByePlayer.matches.push({ round: draft.currentRound, opponentId: 'bye', result: 'win', gamesWon: 2, gamesLost: 0, gamesDrawn: 0 });
