@@ -13,9 +13,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Play, SkipForward, RefreshCw, ChevronLeft, ChevronRight, Upload, Download } from 'lucide-react';
+import { Play, SkipForward, RefreshCw, ChevronLeft, ChevronRight, Upload, Download, Gavel } from 'lucide-react';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 interface TournamentControlsProps {
   status: 'registration' | 'running' | 'finished';
@@ -62,10 +63,10 @@ export function TournamentControls({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast({ title: "Success", description: "Tournament data exported successfully." });
+      toast({ title: "Éxito", description: "Datos del torneo exportados correctamente." });
     } catch (error) {
-      console.error("Export failed:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to export tournament data." });
+      console.error("Exportación fallida:", error);
+      toast({ variant: "destructive", title: "Error", description: "No se pudieron exportar los datos del torneo." });
     }
   };
 
@@ -83,8 +84,8 @@ export function TournamentControls({
           // Trigger confirmation dialog
           onImport(content);
         } catch (error) {
-           console.error("Import failed:", error);
-           toast({ variant: "destructive", title: "Import Failed", description: "The selected file is not a valid tournament file." });
+           console.error("Importación fallida:", error);
+           toast({ variant: "destructive", title: "Importación Fallida", description: "El archivo seleccionado no es un archivo de torneo válido." });
         }
       };
       reader.readAsText(file);
@@ -115,7 +116,7 @@ export function TournamentControls({
     dialogTitle: string,
     dialogDescription: string,
     onConfirm: () => void,
-    confirmText: string = "Confirm",
+    confirmText: string = "Confirmar",
     props: React.ComponentProps<typeof Button> = {}
   ) => {
      return (
@@ -134,7 +135,7 @@ export function TournamentControls({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={onConfirm}>{confirmText}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -153,32 +154,38 @@ export function TournamentControls({
               onChange={handleFileChange}
             />
 
-            {renderButton(<Upload />, "Import", handleImportClick, { variant: "outline" })}
-            {renderButton(<Download />, "Export", handleExport, { variant: "outline" })}
+            {renderButton(<Upload />, "Importar", handleImportClick, { variant: "outline" })}
+            {renderButton(<Download />, "Exportar", handleExport, { variant: "outline" })}
             
             <div className="flex-grow" />
 
             {status === 'registration' && renderButton(
-                <Play />, "Start Tournament", onStart, { disabled: playerCount < 2 }
+                <Play />, "Iniciar Torneo", onStart, { disabled: playerCount < 2 }
             )}
 
             {status === 'running' && (
                 <>
+                <Button asChild variant="outline">
+                  <Link href="/judge">
+                    <Gavel/>
+                    {!isMobile && <span>Juez</span>}
+                  </Link>
+                </Button>
                 {renderButton(
-                    <ChevronLeft />, "Previous Round", () => onGoToRound(displayedRound > 1 ? displayedRound - 1 : null), { variant: "outline", disabled: displayedRound <= 1 }
+                    <ChevronLeft />, "Ronda Anterior", () => onGoToRound(displayedRound > 1 ? displayedRound - 1 : null), { variant: "outline", disabled: displayedRound <= 1 }
                 )}
 
                 {viewingRound !== null && viewingRound < currentRound ? (
-                     renderButton(<ChevronRight />, `To Round ${currentRound}`, () => onGoToRound(null))
+                     renderButton(<ChevronRight />, `Ir a Ronda ${currentRound}`, () => onGoToRound(null))
                 ) : (
-                    allResultsSubmitted && renderButton(<SkipForward />, "Next Round", onNextRound)
+                    allResultsSubmitted && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)
                 )}
                 </>
             )}
             
             {(status === 'running' || status === 'finished') && (
                 renderAlertDialogButton(
-                    <RefreshCw />, "Reset", "Are you sure?", "This will delete all players, rounds, and standings. This action cannot be undone.", onReset, "Reset", { variant: "destructive" }
+                    <RefreshCw />, "Reiniciar", "¿Estás seguro?", "Esto eliminará todos los jugadores, rondas y clasificaciones. Esta acción no se puede deshacer.", onReset, "Reiniciar", { variant: "destructive" }
                 )
             )}
         </div>
