@@ -5,7 +5,7 @@ import { Header } from '@/components/header';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'YGDeck Builder - Tournament',
+  title: 'YGO Tournament Manager',
   description: 'Manage your Yu-Gi-Oh! tournaments.',
   icons: {
     icon: '/favicon.ico',

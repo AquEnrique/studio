@@ -3,33 +3,35 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-body">
-      <header className="flex items-center h-16 px-6 border-b shrink-0">
+    <div className="flex flex-col h-screen">
+      <header className="flex items-center h-14 px-4 border-b shrink-0 gap-4">
         <div className="flex items-center gap-2">
           <Dices className="w-6 h-6 text-primary" />
-          <h1 className="text-xl font-semibold tracking-tight font-headline">
-            YGDeck Builder
-          </h1>
+           <h1 className="text-lg font-semibold">YGO Tournament Manager</h1>
         </div>
       </header>
-      <main className="flex-grow grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 overflow-hidden">
-        <div className="lg:col-span-2 flex flex-col h-full space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <div className="space-y-2 flex-grow">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        </div>
-        <div className="lg:col-span-3 flex flex-col h-full space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-full w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-        </div>
+      <main className="flex-grow p-4 md:p-6 space-y-4 md:space-y-6 pb-24">
+         <Skeleton className="h-9 w-72" />
+         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div>
+              <Skeleton className="h-8 w-48 mb-4" />
+              <Skeleton className="h-80 w-full" />
+            </div>
+             <div>
+              <Skeleton className="h-8 w-64 mb-4" />
+              <Skeleton className="h-80 w-full" />
+            </div>
+         </div>
       </main>
+       <footer className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t p-2 z-10">
+            <div className="container mx-auto flex items-center justify-center gap-2 h-10">
+                <Skeleton className="h-full w-24" />
+                <Skeleton className="h-full w-24" />
+                <div className="flex-grow" />
+                <Skeleton className="h-full w-24" />
+                <Skeleton className="h-full w-24" />
+            </div>
+        </footer>
     </div>
   );
 }

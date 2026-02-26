@@ -28,12 +28,6 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'images.ygoprodeck.com',
-        port: '',
-        pathname: '/**',
-      },
     ],
   },
   devIndicators: {
