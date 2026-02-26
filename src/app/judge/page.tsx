@@ -126,6 +126,7 @@ export default function JudgePage() {
                       isEditable={state.status === 'running'}
                       allPlayers={state.players}
                       onUpdatePairings={updatePairings}
+                      isViewingHistory={isViewingHistory}
                   />
               </div>
           </div>

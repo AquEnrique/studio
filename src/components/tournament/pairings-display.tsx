@@ -16,9 +16,10 @@ interface PairingsDisplayProps {
   isEditable: boolean;
   allPlayers: Player[];
   onUpdatePairings: (newPairings: ManualPairing[]) => void;
+  isViewingHistory: boolean;
 }
 
-export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, isEditable, allPlayers, onUpdatePairings }: PairingsDisplayProps) {
+export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
 
@@ -69,7 +70,8 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
         const p2Games = parseInt(result.p2 || '0', 10);
 
         const player1inFullList = allPlayers.find(p => p.id === p1Id);
-        const match = player1inFullList?.matches.find(m => m.round === roundNumber && m.opponentId === p2Id);
+        // In a historical view, we always want to submit, the provider will check for idempotency.
+        const match = isViewingHistory ? undefined : player1inFullList?.matches.find(m => m.round === roundNumber && m.opponentId === p2Id);
 
         if (!match && !isNaN(p1Games) && !isNaN(p2Games)) {
           resultsToSubmit.push({p1Id, p2Id, p1Games, p2Games})
@@ -87,7 +89,7 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
     setIsEditing(false);
   }
 
-  const anyMatchSubmittedInRound = pairings.some(pairing => {
+  const anyMatchSubmittedInRound = !isViewingHistory && pairings.some(pairing => {
     if (pairing.player2.id === 'bye') return false; // Byes don't count as submitted results
     // We need to check against allPlayers because the players in `pairings` might be from a historical round
     const player1FromState = allPlayers.find(p => p.id === pairing.player1.id);
@@ -120,8 +122,11 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
         const pairingId = pairing.player1.id;
         const player2IsBye = pairing.player2.id === 'bye';
         const player1FromState = allPlayers.find(p => p.id === pairing.player1.id)
+        
         const match = player1FromState?.matches.find(m => m.round === roundNumber);
-        const isSubmitted = !!match && match.opponentId !== 'bye' && match.round === roundNumber;
+        
+        // If viewing history, inputs should be editable. The submit function handles the rollback.
+        const isSubmitted = !isViewingHistory && !!match && match.opponentId !== 'bye' && match.round === roundNumber;
 
         return (
           <Card key={pairingId}>
@@ -165,7 +170,7 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
           </Card>
         )
       })}
-      {isEditable && !anyMatchSubmittedInRound && (
+      {isEditable && (
         <Button onClick={handleSubmitAll} className="w-full mt-4">
           Submit All Results
         </Button>
