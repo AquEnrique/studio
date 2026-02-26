@@ -8,7 +8,6 @@ export type Match = {
   result: MatchResult;
   gamesWon: number;
   gamesLost: number;
-  gamesDrawn: number;
 };
 
 export type Player = {

@@ -153,19 +153,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const generatePairings = (players: Player[], round: number): Pairing[] => {
-    if (round === 1) {
-      const shuffledPlayers = shuffleArray([...players]);
-      const pairings: Pairing[] = [];
-      for (let i = 0; i < shuffledPlayers.length; i += 2) {
-        if (i + 1 < shuffledPlayers.length) {
-          pairings.push({ player1: shuffledPlayers[i], player2: shuffledPlayers[i+1] });
-        } else {
-          pairings.push({ player1: shuffledPlayers[i], player2: { id: 'bye', name: 'BYE' } });
-        }
-      }
-      return pairings;
-    }
-  
     // For rounds > 1, use swiss pairing
     const sortedPlayers = calculateStandings(players);
     const pairings: Pairing[] = [];
@@ -235,13 +222,18 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const nextRoundNumber = 1;
     
     setState(produce(state, draft => {
-        draft.history = { 1: { pairings: [], players: JSON.parse(JSON.stringify(draft.players)) }};
+        draft.history = {}; // Clear history on new start
         const firstRoundPairings = generatePairings(draft.players, nextRoundNumber);
 
         draft.currentRound = nextRoundNumber;
         draft.status = 'running';
         draft.pairings = firstRoundPairings;
-        draft.history[nextRoundNumber].pairings = firstRoundPairings;
+        
+        // Save state at the beginning of round 1
+        draft.history[nextRoundNumber] = { 
+            pairings: firstRoundPairings, 
+            players: JSON.parse(JSON.stringify(draft.players)) 
+        };
 
         const byePairing = firstRoundPairings.find(p => p.player2.id === 'bye');
         if(byePairing) {
@@ -254,7 +246,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                     result: 'win',
                     gamesWon: 0,
                     gamesLost: 0,
-                    gamesDrawn: 0,
                 });
                 playerInDraft.opponentIds.push('bye');
             }
@@ -269,9 +260,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
     setState(
       produce((draft: TournamentState) => {
+        draft.history = {}; // Clear history on new start
         draft.currentRound = nextRoundNumber;
         draft.status = 'running';
         draft.pairings = manualPairings;
+        
+        // Save state at the beginning of round 1
         draft.history[nextRoundNumber] = {
           pairings: manualPairings,
           players: JSON.parse(JSON.stringify(draft.players)),
@@ -290,7 +284,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
               result: 'win',
               gamesWon: 0,
               gamesLost: 0,
-              gamesDrawn: 0,
             });
             playerInDraft.opponentIds.push('bye');
           }
@@ -305,6 +298,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const nextRoundNumber = state.currentRound + 1;
     
     const newState = produce(state, draft => {
+        // Save final state of the current round before proceeding
         draft.history[draft.currentRound] = { pairings: draft.pairings, players: JSON.parse(JSON.stringify(draft.players)) };
         
         const newPairings = generatePairings(draft.players, nextRoundNumber);
@@ -312,6 +306,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         draft.currentRound = nextRoundNumber;
         draft.pairings = newPairings;
         draft.viewingRound = null;
+        
+        // Save state for the beginning of the new round
+        draft.history[nextRoundNumber] = { pairings: newPairings, players: JSON.parse(JSON.stringify(draft.players)) };
         
         const byePairing = newPairings.find(p => p.player2.id === 'bye');
         if(byePairing) {
@@ -324,12 +321,10 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                     result: 'win',
                     gamesWon: 0,
                     gamesLost: 0,
-                    gamesDrawn: 0,
                 });
                 playerInDraft.opponentIds.push('bye');
             }
         }
-        draft.history[nextRoundNumber] = { pairings: newPairings, players: JSON.parse(JSON.stringify(draft.players)) };
     });
 
     setState(newState);
@@ -338,59 +333,66 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const updateMatchResult = (round: number, p1Id: string, p2Id: string, p1Games: number, p2Games: number) => {
       setState(
         produce((draft: TournamentState) => {
-          let playersToUpdate = draft.players;
-          // If editing a past round, use historical player data
-          // We need the state as it was at the beginning of the round to apply the new results.
-          if (round < draft.currentRound && draft.history[round]) {
-              playersToUpdate = JSON.parse(JSON.stringify(draft.history[round].players));
+          // If we are editing a past round, we must rollback the state.
+          // This is a destructive action as warned by the UI. All subsequent rounds are erased.
+          if (round < draft.currentRound) {
+            if (!draft.history[round]) return; // Safety check
+    
+            // Set the main player state to what it was at the START of the edited round.
+            draft.players = JSON.parse(JSON.stringify(draft.history[round].players));
+            
+            // Erase all future history.
+            for (let i = round + 1; i <= draft.currentRound; i++) {
+              delete draft.history[i];
+            }
+            
+            // Update the tournament's current round and pairings.
+            draft.currentRound = round;
+            draft.pairings = draft.history[round].pairings as Pairing[];
+            draft.viewingRound = null;
           }
-
-          const player1 = playersToUpdate.find(p => p.id === p1Id);
-          const player2 = playersToUpdate.find(p => p.id === p2Id);
-
+          
+          // At this point, `draft.players` represents the state at the beginning of the round `round`.
+          // Any existing match results for `round` are NOT in this player data.
+          // So we can now safely add the new match result.
+    
+          const player1 = draft.players.find(p => p.id === p1Id);
+          const player2 = draft.players.find(p => p.id === p2Id);
+    
           if (!player1 || !player2) return;
-          
-          // We don't need to clear old results because we are starting from a clean slate for that round.
-          
+    
+          // Ensure this match result for this round hasn't already been added in this same operation.
+          // This prevents issues like double-clicks adding points twice.
+          const isAlreadyProcessed = player1.matches.some(m => m.round === round && m.opponentId === p2Id);
+          if (isAlreadyProcessed) return;
+    
           let p1Points, p2Points;
           let p1Result, p2Result;
-
-          if (p1Games === 2) {
+    
+          if (p1Games > p2Games) {
             p1Points = 3; p2Points = 0;
             p1Result = 'win'; p2Result = 'loss';
-          } else if (p2Games === 2) {
+          } else if (p2Games > p1Games) {
             p1Points = 0; p2Points = 3;
             p1Result = 'loss'; p2Result = 'win';
           } else {
-            p1Points = 0; p2Points = 0;
-            p1Result = 'loss'; p2Result = 'loss';
+            p1Points = 1; p2Points = 1;
+            p1Result = 'draw'; p2Result = 'draw';
           }
 
           const gamesPlayed = p1Games + p2Games;
-
+    
           player1.points += p1Points;
-          player1.matches.push({ round, opponentId: p2Id, result: p1Result, gamesWon: p1Games, gamesLost: p2Games, gamesDrawn: 0 });
+          player1.matches.push({ round, opponentId: p2Id, result: p1Result, gamesWon: p1Games, gamesLost: p2Games });
           if (!player1.opponentIds.includes(p2Id)) player1.opponentIds.push(p2Id);
           player1.gameWins += p1Games;
           player1.gamesPlayed += gamesPlayed;
           
           player2.points += p2Points;
-          player2.matches.push({ round, opponentId: p1Id, result: p2Result, gamesWon: p2Games, gamesLost: p1Games, gamesDrawn: 0 });
+          player2.matches.push({ round, opponentId: p1Id, result: p2Result, gamesWon: p2Games, gamesLost: p1Games });
           if (!player2.opponentIds.includes(p1Id)) player2.opponentIds.push(p1Id);
           player2.gameWins += p2Games;
           player2.gamesPlayed += gamesPlayed;
-          
-          // If we edited a past round, we make that the new current state and delete future history.
-          if (round < draft.currentRound) {
-            draft.players = playersToUpdate;
-            for (let i = round + 1; i <= draft.currentRound; i++) {
-                delete draft.history[i];
-            }
-            draft.currentRound = round;
-            const currentPairings = draft.history[round]?.pairings || [];
-            draft.pairings = currentPairings as Pairing[];
-            draft.viewingRound = null;
-          }
         })
       );
   };
@@ -430,7 +432,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                 const newByePlayer = draft.players.find(p => p.id === newByePlayerId);
                 if (newByePlayer && !newByePlayer.matches.some(m => m.round === draft.currentRound && m.opponentId === 'bye')) {
                     newByePlayer.points += 3;
-                    newByePlayer.matches.push({ round: draft.currentRound, opponentId: 'bye', result: 'win', gamesWon: 0, gamesLost: 0, gamesDrawn: 0 });
+                    newByePlayer.matches.push({ round: draft.currentRound, opponentId: 'bye', result: 'win', gamesWon: 0, gamesLost: 0 });
                     if (!newByePlayer.opponentIds.includes('bye')) newByePlayer.opponentIds.push('bye');
                 }
             }
