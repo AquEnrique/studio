@@ -13,10 +13,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Play, SkipForward, RefreshCw, Upload, Download, Gavel } from 'lucide-react';
+import { Play, SkipForward, RefreshCw, Upload, Download } from 'lucide-react';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
 
 interface TournamentControlsProps {
   status: 'registration' | 'running' | 'finished';
@@ -164,17 +163,7 @@ export function TournamentControls({
                 <Play />, "Iniciar Torneo", onStart, { disabled: playerCount < 2 }
             )}
 
-            {status === 'running' && (
-                <>
-                  <Button asChild variant="outline">
-                    <Link href="/judge">
-                      <Gavel/>
-                      {!isMobile && <span>Juez</span>}
-                    </Link>
-                  </Button>
-                  {allResultsSubmitted && !isViewingHistory && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)}
-                </>
-            )}
+            {status === 'running' && allResultsSubmitted && !isViewingHistory && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)}
             
             {(status === 'running' || status === 'finished') && (
                 renderAlertDialogButton(

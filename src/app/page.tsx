@@ -103,20 +103,22 @@ export default function TournamentPage() {
           </div>
         )}
       </main>
-      <TournamentControls
-        status={state.status}
-        playerCount={state.players.length}
-        currentRound={state.currentRound}
-        viewingRound={state.viewingRound}
-        onStart={startTournament}
-        onNextRound={generateNextRound}
-        onReset={resetTournament}
-        onGoToRound={goToRound}
-        onImport={importTournament}
-        onExport={exportTournament}
-        allResultsSubmitted={state.allResultsSubmitted}
-        isMobile={isMobile}
-      />
+      {state.status === 'registration' && (
+        <TournamentControls
+          status={state.status}
+          playerCount={state.players.length}
+          currentRound={state.currentRound}
+          viewingRound={state.viewingRound}
+          onStart={startTournament}
+          onNextRound={generateNextRound}
+          onReset={resetTournament}
+          onGoToRound={goToRound}
+          onImport={importTournament}
+          onExport={exportTournament}
+          allResultsSubmitted={state.allResultsSubmitted}
+          isMobile={isMobile}
+        />
+      )}
     </>
   );
 }
