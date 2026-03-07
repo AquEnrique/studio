@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Player, ManualPairing } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,8 +20,7 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
   const [pairings, setPairings] = useState<ManualPairing[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
-  // Memoize to avoid re-renders when parent state changes but players prop does not
-  useMemo(() => {
+  useEffect(() => {
     setUnpairedPlayers(players.sort((a, b) => a.name.localeCompare(b.name)));
     setPairings([]);
     setSelectedPlayer(null);
@@ -60,7 +59,7 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
     const pairingToRemove = pairings[index];
     const newPairings = pairings.filter((_, i) => i !== index);
     
-    let playersToAddBack = [pairingToRemove.player1 as Player];
+    let playersToAddBack = [pairingToRemove.player1];
     if (pairingToRemove.player2.id !== 'bye') {
         playersToAddBack.push(pairingToRemove.player2 as Player);
     }
@@ -77,8 +76,6 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
   };
 
   const isTournamentReady = unpairedPlayers.length === 0 && players.length > 1;
-  const previousOpponentIds = useMemo(() => new Set(selectedPlayer?.opponentIds || []), [selectedPlayer]);
-
 
   return (
     <div className="py-4 space-y-4">
@@ -106,23 +103,18 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
              )}
            </div>
           <div className="p-2 bg-muted/50 rounded-md min-h-[100px] space-y-2">
-            {unpairedPlayers.map(player => {
-              const isPreviousOpponent = selectedPlayer && previousOpponentIds.has(player.id);
-              return(
-                <div
-                  key={player.id}
-                  onClick={() => handlePlayerClick(player)}
-                  className={cn(
-                      "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
-                      selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-                      isPreviousOpponent && "bg-destructive/20 text-destructive-foreground"
-                  )}
-                >
-                   <span>{player.name}</span>
-                  <Badge variant="secondary">{player.points} pts</Badge>
-                </div>
-              )
-            })}
+            {unpairedPlayers.map(player => (
+              <div
+                key={player.id}
+                onClick={() => handlePlayerClick(player)}
+                className={cn(
+                    "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
+                    selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                )}
+              >
+                 <span>{player.name}</span>
+              </div>
+            ))}
           </div>
         </div>
         <div>
@@ -134,11 +126,9 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
                    <div className="font-medium space-y-1">
                      <div className="flex items-center justify-between">
                         <span>{pairing.player1.name}</span>
-                        <Badge variant="secondary" className="ml-2">{pairing.player1.points} pts</Badge>
                     </div>
                     <div className="flex items-center justify-between">
                         <span>{pairing.player2.name}</span>
-                        {pairing.player2.id !== 'bye' && <Badge variant="secondary" className="ml-2">{(pairing.player2 as Player).points} pts</Badge>}
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => removePairing(index)}>

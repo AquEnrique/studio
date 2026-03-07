@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
-import type { StandingsPlayer, Player } from '@/lib/types';
+import type { StandingsPlayer } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -38,20 +38,8 @@ interface StandingsTableProps {
 export function StandingsTable({ players, view, maxRounds }: StandingsTableProps) {
   
   const [calculationInfo, setCalculationInfo] = useState<CalculationInfo>(null);
-  const playerMap = new Map(players.map(p => [p.id, p]));
 
-  const getRoundPoints = (player: StandingsPlayer, round: number): { points: number; isBye: boolean } | null => {
-      const match = player.matches.find(m => m.round === round);
-      if (!match) return null;
-      if (match.opponentId === 'bye') return { points: 3, isBye: true };
-      
-      let points = 0;
-      if (match.result === 'win') points = 3;
-      
-      return { points, isBye: false };
-  };
-
-  const showColumnInfo = (column: 'OTP' | 'GW' | 'OGW') => {
+  const showColumnInfo = (column: 'OTP' | 'MWP') => {
     let info: CalculationInfo = null;
     switch (column) {
       case 'OTP':
@@ -59,33 +47,22 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
           title: 'Opponent Total Points (OTP)',
           description: (
             <>
-              <p>This is the first tiebreaker. It is the sum of the match points of all the opponents you have faced.</p>
+              <p>Este es el primer desempate. Es la suma de los puntos de partido de todos los oponentes que has enfrentado.</p>
               <br />
-              <p>A higher OTP indicates you have played against opponents who have performed better in the tournament.</p>
+              <p>Un OTP más alto indica que has jugado contra oponentes que han tenido un mejor desempeño en el torneo.</p>
             </>
           ),
         };
         break;
-      case 'GW':
+      case 'MWP':
         info = {
-          title: 'Game Win % (GW%)',
+          title: 'Match Win % (MWP)',
           description: (
             <>
-              <p>This is the second tiebreaker. It is your total number of game wins divided by the total number of games you played.</p>
+              <p>Este es el segundo desempate. Se calcula con una fórmula específica.</p>
               <br />
-              <p><strong>Formula:</strong> (Total Games Won) / (Total Games Played)</p>
-            </>
-          ),
-        };
-        break;
-      case 'OGW':
-        info = {
-          title: 'Opponent Game Win % (OGW%)',
-          description: (
-            <>
-              <p>This is the third and final tiebreaker. It is the average of all of your opponents' game win percentages.</p>
-              <br />
-              <p><strong>Formula:</strong> (Sum of all opponents' GW%) / (Number of opponents)</p>
+              <p><strong>Fórmula:</strong> (Victorias + Byes) / (Victorias + Derrotas + 2 * Byes)</p>
+              <p className="text-xs text-muted-foreground mt-2">Los empates no se incluyen en este cálculo.</p>
             </>
           ),
         };
@@ -93,71 +70,6 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
     }
     setCalculationInfo(info);
   };
-
-  const showPlayerCalcInfo = (player: StandingsPlayer, metric: 'OTP' | 'GW' | 'OGW') => {
-    let info: CalculationInfo = null;
-    
-    switch (metric) {
-        case 'GW':
-            info = {
-                title: `Game Win % for ${player.name}`,
-                description: (
-                    <div>
-                        <p><strong>Calculation:</strong></p>
-                        <p>Total Games Won / Total Games Played</p>
-                        <p className="font-mono bg-muted p-2 rounded-md mt-2">
-                           {player.gameWins} / {player.gamesPlayed} = <strong>{(player.gwPercentage * 100).toFixed(1)}%</strong>
-                        </p>
-                    </div>
-                )
-            };
-            break;
-        case 'OTP':
-            const opponents = player.opponentIds.map(id => playerMap.get(id)).filter((p): p is Player => !!p && p.id !== 'bye');
-
-            info = {
-                title: `Opponent Total Points for ${player.name}`,
-                description: (
-                    <div>
-                        <p><strong>Opponents' Points:</strong></p>
-                        <ul className="list-disc pl-5 my-2 text-sm space-y-1">
-                            {opponents.map(opp => <li key={opp.id}>{opp.name}: {opp.points} pts</li>)}
-                        </ul>
-                        <p><strong>Calculation:</strong></p>
-                         <p className="font-mono bg-muted p-2 rounded-md mt-2 text-xs overflow-auto">
-                           {opponents.map(o => `${o.points}`).join(' + ')} = <strong>{player.opponentTotalPoints}</strong>
-                        </p>
-                    </div>
-                )
-            };
-            break;
-         case 'OGW':
-            const ogwOpponents = player.opponentIds.map(id => playerMap.get(id)).filter((p): p is StandingsPlayer => !!p && p.id !== 'bye');
-             const ogwDetails = ogwOpponents.map(opp => {
-                const gw = opp.gamesPlayed > 0 ? opp.gameWins / opp.gamesPlayed : 0;
-                return { name: opp.name, gw };
-            });
-            
-            info = {
-                title: `Opponent Game Win % for ${player.name}`,
-                description: (
-                    <div>
-                        <p><strong>Opponents' GW%:</strong></p>
-                         <ul className="list-disc pl-5 my-2 text-sm space-y-1">
-                            {ogwDetails.map(opp => <li key={opp.name}>{opp.name}: {(opp.gw * 100).toFixed(1)}%</li>)}
-                        </ul>
-                        <p><strong>Calculation:</strong></p>
-                        <p className="font-mono bg-muted p-2 rounded-md mt-2 text-xs overflow-auto">
-                           ({ogwDetails.map(o => `${(o.gw * 100).toFixed(1)}%`).join(' + ')}) / {ogwDetails.length} = <strong>{(player.ogwPercentage * 100).toFixed(1)}%</strong>
-                        </p>
-                    </div>
-                )
-            };
-            break;
-    }
-    setCalculationInfo(info);
-  };
-
 
   if (view === 'simple') {
     return (
@@ -174,23 +86,25 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
         </TableHeader>
         <TableBody>
           {players.map((player, index) => (
-            <TableRow key={player.id}>
+            <TableRow key={player.playerId}>
               <TableCell>{index + 1}</TableCell>
-              <TableCell className="font-medium">{player.name}</TableCell>
-              <TableCell className="font-bold">{player.points}</TableCell>
-              {Array.from({ length: maxRounds }, (_, i) => i + 1).map(roundNum => {
-                const roundResult = getRoundPoints(player, roundNum);
-                const cellContent = roundResult !== null ? roundResult.points : '-';
+              <TableCell className="font-medium">{player.playerName}</TableCell>
+              <TableCell className="font-bold">{player.playerPoints}</TableCell>
+              {Array.from({ length: maxRounds }, (_, i) => i).map(roundIndex => {
+                const roundResult = player.roundResults[roundIndex];
+                const cellContent = roundResult !== null ? (roundResult === 'bye' ? 'BYE' : roundResult) : '-';
                 const cellColor = roundResult !== null 
-                  ? roundResult.isBye 
+                  ? roundResult === 'bye'
                     ? 'text-yellow-400' 
-                    : roundResult.points === 3 
+                    : roundResult === 3 
                       ? 'text-green-500' 
-                      : 'text-red-500' 
+                      : roundResult === 0
+                      ? 'text-red-500'
+                      : ''
                   : 'text-muted-foreground';
 
                 return (
-                  <TableCell key={`points-${player.id}-${roundNum}`} className={cn("text-center font-mono", cellColor)}>
+                  <TableCell key={`points-${player.playerId}-${roundIndex}`} className={cn("text-center font-mono", cellColor)}>
                     {cellContent}
                   </TableCell>
                 );
@@ -216,7 +130,7 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogCancel>Cerrar</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -225,11 +139,11 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
         <TableHeader>
           <TableRow>
             <TableHead className="w-[50px]">Rank</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Points</TableHead>
+            <TableHead>Nombre</TableHead>
+            <TableHead>Puntos</TableHead>
             <TableHead>
                 <div className="flex items-center gap-1">
-                    Opponent Points
+                    Puntos de Oponente
                     <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('OTP')}>
                         <Info className="w-3 h-3" />
                     </Button>
@@ -237,16 +151,8 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
             </TableHead>
             <TableHead>
                 <div className="flex items-center gap-1">
-                    GW%
-                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('GW')}>
-                        <Info className="w-3 h-3" />
-                    </Button>
-                </div>
-            </TableHead>
-            <TableHead>
-                <div className="flex items-center gap-1">
-                    OGW%
-                     <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('OGW')}>
+                    MW%
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('MWP')}>
                         <Info className="w-3 h-3" />
                     </Button>
                 </div>
@@ -255,24 +161,15 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
         </TableHeader>
         <TableBody>
           {players.map((player, index) => (
-            <TableRow key={player.id}>
+            <TableRow key={player.playerId}>
               <TableCell>{index + 1}</TableCell>
-              <TableCell className="font-medium">{player.name}</TableCell>
-              <TableCell>{player.points}</TableCell>
+              <TableCell className="font-medium">{player.playerName}</TableCell>
+              <TableCell>{player.playerPoints}</TableCell>
               <TableCell>
-                  <button className="underline" onClick={() => showPlayerCalcInfo(player, 'OTP')}>
-                    {player.opponentTotalPoints}
-                  </button>
+                  {player.opponentTotalPoints}
               </TableCell>
               <TableCell>
-                  <button className="underline" onClick={() => showPlayerCalcInfo(player, 'GW')}>
-                    {(player.gwPercentage * 100).toFixed(1)}%
-                  </button>
-              </TableCell>
-              <TableCell>
-                  <button className="underline" onClick={() => showPlayerCalcInfo(player, 'OGW')}>
-                    {(player.ogwPercentage * 100).toFixed(1)}%
-                  </button>
+                  {(player.matchWinPercentage * 100).toFixed(1)}%
               </TableCell>
             </TableRow>
           ))}

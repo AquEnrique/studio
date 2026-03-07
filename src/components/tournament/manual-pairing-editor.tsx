@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Player, ManualPairing, Pairing } from '@/lib/types';
+import type { Player, ManualPairing, DisplayPairing } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCcw, Save, X, Ban } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 
 interface ManualPairingEditorProps {
   players: Player[];
-  initialPairings: Pairing[];
+  initialPairings: DisplayPairing[];
   onSave: (pairings: ManualPairing[]) => void;
   onCancel: () => void;
   roundNumber: number;
@@ -25,11 +25,15 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   useEffect(() => {
-    const pairedPlayerIds = new Set(initialPairings.flatMap(p => [p.player1.id, (p.player2 as Player)?.id]).filter(Boolean));
+    const pairedPlayerIds = new Set(initialPairings.flatMap(p => {
+        const ids = [p.player1.id];
+        if (p.player2.id !== 'bye') ids.push(p.player2.id);
+        return ids;
+    }));
     setUnpairedPlayers(players.filter(p => !pairedPlayerIds.has(p.id)).sort((a,b) => a.name.localeCompare(b.name)));
     setPairings(initialPairings.map(p => ({
-        player1: p.player1 as Player,
-        player2: p.player2 as Player | { id: 'bye', name: 'BYE' },
+        player1: p.player1,
+        player2: p.player2,
     })));
     setSelectedPlayer(null);
   }, [players, initialPairings]);
@@ -62,7 +66,7 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
     const pairingToRemove = pairings[index];
     const newPairings = pairings.filter((_, i) => i !== index);
     
-    let playersToAddBack = [pairingToRemove.player1 as Player];
+    let playersToAddBack = [pairingToRemove.player1];
     if (pairingToRemove.player2.id !== 'bye') {
         playersToAddBack.push(pairingToRemove.player2 as Player);
     }
@@ -86,21 +90,20 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
   };
 
   const isSaveReady = unpairedPlayers.length === 0 && players.length > 1;
-  const previousOpponentIds = useMemo(() => new Set(selectedPlayer?.opponentIds || []), [selectedPlayer]);
 
   return (
     <div className="py-4 space-y-4 border rounded-lg p-4 bg-background/50">
        <Alert>
-          <AlertTitle>Manual Pairing Editor (Round {roundNumber})</AlertTitle>
+          <AlertTitle>Editor de Emparejamiento Manual (Ronda {roundNumber})</AlertTitle>
           <AlertDescription>
-            Click players to adjust pairings for this round. Changes will be saved for the current round only.
+            Haz clic en los jugadores para ajustar los emparejamientos de esta ronda. Los cambios se guardarán solo para la ronda actual.
           </AlertDescription>
         </Alert>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h4 className="font-semibold">Unpaired Players ({unpairedPlayers.length})</h4>
+            <h4 className="font-semibold">Jugadores no emparejados ({unpairedPlayers.length})</h4>
             {players.length % 2 !== 0 && !pairings.some(p => p.player2.id === 'bye') && (
               <Button 
                   size="sm" 
@@ -108,13 +111,12 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
                   disabled={!selectedPlayer || pairings.some(p => p.player2.id === 'bye')}
                   onClick={handleAssignBye}
               >
-                  <Ban className="mr-2 h-4 w-4"/> Assign Bye
+                  <Ban className="mr-2 h-4 w-4"/> Asignar Bye
               </Button>
             )}
           </div>
           <div className="p-2 bg-muted/50 rounded-md min-h-[100px] space-y-2">
             {unpairedPlayers.map(player => {
-              const isPreviousOpponent = selectedPlayer && previousOpponentIds.has(player.id);
               return (
                 <div
                   key={player.id}
@@ -122,18 +124,16 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
                   className={cn(
                       "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
                       selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-                      isPreviousOpponent && "bg-destructive/20 text-destructive-foreground"
                   )}
                 >
                   <span>{player.name}</span>
-                  <Badge variant="secondary">{player.points} pts</Badge>
                 </div>
               )
             })}
           </div>
         </div>
         <div>
-          <h4 className="font-semibold mb-2">Pairings ({pairings.length})</h4>
+          <h4 className="font-semibold mb-2">Emparejamientos ({pairings.length})</h4>
           <div className="p-2 bg-muted/50 rounded-md min-h-[100px] space-y-2">
             {pairings.map((pairing, index) => (
               <Card key={index} className="bg-background">
@@ -141,15 +141,13 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
                   <div className="font-medium space-y-1">
                     <div className="flex items-center justify-between">
                         <span>{pairing.player1.name}</span>
-                        <Badge variant="secondary" className="ml-2">{pairing.player1.points} pts</Badge>
                     </div>
                     <div className="flex items-center justify-between">
                         <span>{pairing.player2.name}</span>
-                        {pairing.player2.id !== 'bye' && <Badge variant="secondary" className="ml-2">{(pairing.player2 as Player).points} pts</Badge>}
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => removePairing(index)}>
-                    Remove
+                    Eliminar
                   </Button>
                 </CardContent>
               </Card>
@@ -159,13 +157,13 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
       </div>
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="ghost" onClick={onCancel}>
-          <X className="mr-2 h-4 w-4" /> Cancel
+          <X className="mr-2 h-4 w-4" /> Cancelar
         </Button>
         <Button variant="outline" onClick={cleanPairings} disabled={pairings.length === 0}>
-          <RefreshCcw className="mr-2 h-4 w-4" /> Clean
+          <RefreshCcw className="mr-2 h-4 w-4" /> Limpiar
         </Button>
         <Button onClick={() => onSave(pairings)} disabled={!isSaveReady}>
-           <Save className="mr-2 h-4 w-4" /> Save Pairings
+           <Save className="mr-2 h-4 w-4" /> Guardar Emparejamientos
         </Button>
       </div>
     </div>

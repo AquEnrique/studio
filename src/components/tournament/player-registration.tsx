@@ -31,29 +31,29 @@ export function PlayerRegistration({ addPlayer, removePlayer, players, startManu
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Player Registration</CardTitle>
-        <CardDescription>Add players to the tournament. Once registration is complete, you can start the tournament with random pairings or set them up manually.</CardDescription>
+        <CardTitle>Registro de Jugadores</CardTitle>
+        <CardDescription>Añade jugadores al torneo. Una vez completado el registro, puedes iniciar el torneo con emparejamientos aleatorios o configurarlos manualmente.</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="registration">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="registration">Registration</TabsTrigger>
-            <TabsTrigger value="manual-pairing">Manual Pairing</TabsTrigger>
+            <TabsTrigger value="registration">Registro</TabsTrigger>
+            <TabsTrigger value="manual-pairing">Emparejamiento Manual</TabsTrigger>
           </TabsList>
           <TabsContent value="registration">
               <div className="flex gap-2 my-4">
                 <Input
-                  placeholder="Enter player name"
+                  placeholder="Introduce el nombre del jugador"
                   value={newPlayerName}
                   onChange={(e) => setNewPlayerName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddPlayer()}
                 />
                 <Button onClick={handleAddPlayer}>
-                  <UserPlus className="mr-2 h-4 w-4" /> Add Player
+                  <UserPlus className="mr-2 h-4 w-4" /> Añadir Jugador
                 </Button>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold">Registered Players ({players.length})</h3>
+                <h3 className="font-semibold">Jugadores Registrados ({players.length})</h3>
                 {players.length > 0 ? (
                   <div className="bg-muted/50 p-4 rounded-md max-h-60 overflow-y-auto">
                     <ul className="space-y-2">
@@ -76,7 +76,7 @@ export function PlayerRegistration({ addPlayer, removePlayer, players, startManu
                     </ul>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm">No players registered yet.</p>
+                  <p className="text-muted-foreground text-sm">Aún no hay jugadores registrados.</p>
                 )}
               </div>
           </TabsContent>

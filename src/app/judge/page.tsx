@@ -3,7 +3,7 @@
 
 import { StandingsTable } from '@/components/tournament/standings-table';
 import { PairingsDisplay } from '@/components/tournament/pairings-display';
-import { useTournament, calculateStandings } from '@/context/tournament-provider';
+import { useTournament } from '@/context/tournament-provider';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,43 +11,42 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { TournamentControls } from '@/components/tournament/tournament-controls';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { calculateStandings } from '@/context/tournament-provider';
+import type { Tournament } from '@/lib/types';
 
 export default function JudgePage() {
   const {
-    state,
-    submitMultipleResults,
+    tournament,
+    standings,
+    currentPairings,
+    submitResults,
     updatePairings,
+    viewingRound,
     goToRound,
     generateNextRound,
     resetTournament,
     importTournament,
     exportTournament,
+    allResultsSubmitted,
   } = useTournament();
+
   const isMobile = useIsMobile();
 
-  const displayedRound = state.viewingRound || state.currentRound;
+  const currentRoundForView = viewingRound || (tournament?.rounds.length || 0);
 
-  const playersForView = useMemo(() => {
-    if (state.status === 'registration') return [];
-    if (state.viewingRound !== null) {
-      // If viewing history, calculate standings from the historical player data
-      return calculateStandings(state.history[state.viewingRound]?.players || []);
-    }
-    // Otherwise, use the already calculated players from the current state
-    return state.players;
-  }, [state.status, state.viewingRound, state.history, state.players]);
+  const isViewingHistory = viewingRound !== null && viewingRound < (tournament?.rounds.length || 0);
 
-  const pairingsForView = useMemo(() => {
-     if (state.status === 'registration') return [];
-     return state.viewingRound !== null
-      ? state.history[state.viewingRound]?.pairings || []
-      : state.pairings;
-  }, [state.status, state.viewingRound, state.history, state.pairings]);
+  const historicalStandings = useMemo(() => {
+    if (!tournament || !isViewingHistory) return standings;
+    const historicalTournament: Tournament = {
+      ...tournament,
+      rounds: tournament.rounds.slice(0, viewingRound),
+    };
+    return calculateStandings(historicalTournament);
+  }, [tournament, viewingRound, isViewingHistory, standings]);
 
 
-  const isViewingHistory = state.viewingRound !== null && state.viewingRound < state.currentRound;
-
-  if (state.status === 'registration') {
+  if (!tournament || tournament.status === 'registration') {
       return (
           <main className="flex-grow p-4 md:p-6 flex flex-col items-center justify-center text-center">
               <h1 className="text-2xl font-semibold mb-4">El torneo aún no ha comenzado.</h1>
@@ -68,19 +67,19 @@ export default function JudgePage() {
               <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => goToRound(displayedRound > 1 ? displayedRound - 1 : 1)} 
-                  disabled={displayedRound <= 1}
+                  onClick={() => goToRound(currentRoundForView > 1 ? currentRoundForView - 1 : 1)} 
+                  disabled={currentRoundForView <= 1}
                   className="rounded-full"
               >
                   <ChevronLeft className="h-4 w-4" />
                   <span className="sr-only">Ronda anterior</span>
               </Button>
-              <span className="font-semibold text-sm px-2">Ronda {displayedRound}</span>
+              <span className="font-semibold text-sm px-2">Ronda {currentRoundForView}</span>
               <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => goToRound(displayedRound < state.currentRound ? displayedRound + 1 : state.currentRound)} 
-                  disabled={displayedRound >= state.currentRound}
+                  onClick={() => goToRound(currentRoundForView < tournament.rounds.length ? currentRoundForView + 1 : tournament.rounds.length)} 
+                  disabled={currentRoundForView >= tournament.rounds.length}
                   className="rounded-full"
               >
                   <ChevronRight className="h-4 w-4"/>
@@ -103,7 +102,7 @@ export default function JudgePage() {
                   <Terminal className="h-4 w-4" />
                   <AlertTitle>¡Estás viendo una ronda pasada!</AlertTitle>
                   <AlertDescription>
-                      Estás viendo los datos de la ronda {displayedRound}. Cualquier resultado que ingreses hará que el torneo retroceda a este punto, eliminando todas las rondas futuras.
+                      Estás viendo los datos de la ronda {viewingRound}. Cualquier resultado que ingreses hará que el torneo retroceda a este punto, eliminando todas las rondas futuras.
                   </AlertDescription>
               </Alert>
           )}
@@ -111,20 +110,20 @@ export default function JudgePage() {
               <div className="flex flex-col gap-4">
                   <h2 className="text-2xl font-semibold">Clasificaciones (Simple)</h2>
                   <StandingsTable 
-                      players={playersForView} 
+                      players={isViewingHistory ? historicalStandings : standings}
                       view='simple'
-                      maxRounds={displayedRound}
+                      maxRounds={currentRoundForView}
                   />
               </div>
               <div>
-                  <h2 className="text-2xl font-semibold mb-4">Emparejamientos - Ronda {displayedRound}</h2>
+                  <h2 className="text-2xl font-semibold mb-4">Emparejamientos - Ronda {currentRoundForView}</h2>
                   <PairingsDisplay 
-                      key={displayedRound}
-                      pairings={pairingsForView} 
-                      submitMultipleResults={submitMultipleResults} 
-                      roundNumber={displayedRound}
-                      isEditable={state.status === 'running'}
-                      allPlayers={state.players}
+                      key={currentRoundForView}
+                      pairings={currentPairings}
+                      submitResults={submitResults} 
+                      roundNumber={currentRoundForView}
+                      isEditable={tournament.status === 'running'}
+                      allPlayers={tournament.players}
                       onUpdatePairings={updatePairings}
                       isViewingHistory={isViewingHistory}
                   />
@@ -132,18 +131,16 @@ export default function JudgePage() {
           </div>
       </main>
       <TournamentControls
-        status={state.status}
-        playerCount={state.players.length}
-        currentRound={state.currentRound}
-        viewingRound={state.viewingRound}
-        onStart={() => {}} // Not used in judge view
+        status={tournament.status}
+        playerCount={tournament.players.length}
+        currentRound={tournament.rounds.length}
         onNextRound={generateNextRound}
         onReset={resetTournament}
-        onGoToRound={goToRound}
         onImport={importTournament}
         onExport={exportTournament}
-        allResultsSubmitted={state.allResultsSubmitted}
+        allResultsSubmitted={allResultsSubmitted}
         isMobile={isMobile}
+        isViewingHistory={isViewingHistory}
       />
     </>
   );

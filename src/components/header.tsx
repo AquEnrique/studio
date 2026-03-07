@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export function Header() {
-  const { state } = useTournament();
+  const { tournament } = useTournament();
   const isMobile = useIsMobile();
 
   return (
@@ -18,7 +18,7 @@ export function Header() {
         <h1 className="text-lg font-semibold">YGO Tournament Manager</h1>
       </Link>
 
-      {state.status === 'running' && (
+      {tournament?.status === 'running' && (
         <Button asChild variant="outline">
           <Link href="/judge">
             <Gavel />

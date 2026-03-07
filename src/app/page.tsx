@@ -23,15 +23,14 @@ import {
 
 export default function TournamentPage() {
   const {
-    state,
+    tournament,
+    standings,
     pendingImport,
     addPlayer,
     removePlayer,
     startTournament,
     startManualTournament,
-    generateNextRound,
     resetTournament,
-    goToRound,
     importTournament,
     exportTournament,
     confirmImport,
@@ -41,6 +40,9 @@ export default function TournamentPage() {
   const [standingsView, setStandingsView] = useState<'simple' | 'advanced'>('simple');
   const isMobile = useIsMobile();
 
+  if (!tournament) {
+    return null; // Or a loading indicator
+  }
 
   return (
     <>
@@ -61,16 +63,16 @@ export default function TournamentPage() {
 
       <main className="flex-grow p-4 md:p-6 space-y-4 md:space-y-6 pb-24">
         <h1 className="text-3xl font-bold tracking-tight">Tournament Manager</h1>
-        {state.status === 'registration' && (
+        {tournament.status === 'registration' && (
           <PlayerRegistration 
             addPlayer={addPlayer} 
             removePlayer={removePlayer}
-            players={state.players} 
+            players={tournament.players} 
             startManualTournament={startManualTournament}
           />
         )}
 
-        {(state.status === 'running' || state.status === 'finished') && (
+        {(tournament.status === 'running' || tournament.status === 'finished') && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold">Clasificaciones</h2>
@@ -96,26 +98,21 @@ export default function TournamentPage() {
               </div>
             </div>
             <StandingsTable 
-              players={state.players} 
+              players={standings} 
               view={standingsView} 
-              maxRounds={state.currentRound}
+              maxRounds={tournament.rounds.length}
             />
           </div>
         )}
       </main>
-      {state.status === 'registration' && (
+      {tournament.status === 'registration' && (
         <TournamentControls
-          status={state.status}
-          playerCount={state.players.length}
-          currentRound={state.currentRound}
-          viewingRound={state.viewingRound}
+          status={tournament.status}
+          playerCount={tournament.players.length}
           onStart={startTournament}
-          onNextRound={generateNextRound}
           onReset={resetTournament}
-          onGoToRound={goToRound}
           onImport={importTournament}
           onExport={exportTournament}
-          allResultsSubmitted={state.allResultsSubmitted}
           isMobile={isMobile}
         />
       )}

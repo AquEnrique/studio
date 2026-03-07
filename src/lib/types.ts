@@ -1,50 +1,51 @@
 
-// Tournament Types
-export type MatchResult = 'win' | 'loss' | 'draw';
-
-export type Match = {
-  round: number;
-  opponentId: string;
-  result: MatchResult;
-  gamesWon: number;
-  gamesLost: number;
-};
-
+// Core data model for the tournament state
 export type Player = {
   id: string;
   name: string;
-  points: number;
-  matches: Match[];
-  opponentIds: string[];
-  gameWins: number;
-  gamesPlayed: number;
+};
+
+export type Match = {
+  playerId1: string;
+  // playerId2 being null means player1 has a bye for this match.
+  playerId2: string | null;
+  wonGamesPlayer1: number;
+  wonGamesPlayer2: number;
+};
+
+export type Round = Match[];
+
+export type Tournament = {
+  players: Player[];
+  rounds: Round[];
+  status: 'registration' | 'running' | 'finished';
+};
+
+
+// View model for the standings table, calculated from the Tournament object
+export type StandingsPlayer = {
+  playerId: string;
+  playerName: string;
+  playerPoints: number;
+  opponentTotalPoints: number;
+  matchWinPercentage: number; // User's custom winrate formula
+  // For simple standings table
+  roundResults: (number | 'bye' | null)[];
+};
+
+
+// Types used by components for displaying and creating pairings for a round
+export type DisplayPairing = {
+  player1: Player;
+  player2: Player | { id: 'bye'; name: 'BYE' };
+  result?: {
+    p1Games: string;
+    p2Games: string;
+  }
+  isSubmitted: boolean;
 };
 
 export type ManualPairing = {
-    player1: Player;
-    player2: Player | { id: 'bye'; name: 'BYE' };
-};
-
-export type Pairing = {
-  player1: Player | StandingsPlayer;
-  player2: Player | StandingsPlayer | { id: 'bye'; name: 'BYE' };
-};
-
-export interface RoundHistory {
-    pairings: Pairing[];
-    players: Player[];
-}
-
-export type TournamentState = {
-  players: Player[];
-  currentRound: number;
-  pairings: Pairing[];
-  status: 'registration' | 'running' | 'finished';
-  history: { [round: number]: RoundHistory };
-};
-
-export type StandingsPlayer = Player & {
-    opponentTotalPoints: number;
-    gwPercentage: number;
-    ogwPercentage: number;
+  player1: Player;
+  player2: Player | { id: 'bye'; name: 'BYE' };
 };

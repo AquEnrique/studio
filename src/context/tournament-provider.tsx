@@ -2,181 +2,237 @@
 'use client';
 
 import { useState, useEffect, useMemo, createContext, useContext, ReactNode } from 'react';
-import type { TournamentState, Player, Pairing, StandingsPlayer, ManualPairing } from '@/lib/types';
+import type { Tournament, Player, StandingsPlayer, ManualPairing, Match, Round, DisplayPairing } from '@/lib/types';
 import { produce } from 'immer';
 
-const LOCAL_STORAGE_KEY = 'ygo-tournament-state';
+const LOCAL_STORAGE_KEY = 'ygo-tournament-state-v2';
 
-const initialTournamentState: TournamentState = {
+const initialTournamentState: Tournament = {
   players: [],
-  currentRound: 0,
-  pairings: [],
+  rounds: [],
   status: 'registration',
-  history: {},
 };
 
-// Helper to shuffle an array
-function shuffleArray<T>(array: T[]): T[] {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-}
-
-export const calculateStandings = (players: Player[]): StandingsPlayer[] => {
-    if (!players || players.length === 0) return [];
-    const playerMap = new Map(players.map(p => [p.id, p]));
-
-    const standingsPlayers: StandingsPlayer[] = players.map(player => {
-        const gamesPlayed = player.matches.filter(m => m.opponentId !== 'bye').reduce((acc, m) => acc + m.gamesWon + m.gamesLost, 0);
-        const gameWins = player.matches.filter(m => m.opponentId !== 'bye').reduce((acc, m) => acc + m.gamesWon, 0);
-        const gwPercentage = gamesPlayed > 0 ? gameWins / gamesPlayed : 0;
-        
-        let opponentTotalPoints = 0;
-        const opponentsPlayed = player.opponentIds.filter(id => id !== 'bye');
-        for (const opponentId of opponentsPlayed) {
-            const opponent = playerMap.get(opponentId);
-            if (opponent) {
-                opponentTotalPoints += opponent.points;
-            }
-        }
-        
-        return {
-            ...player,
-            gamesPlayed,
-            gameWins,
-            gwPercentage,
-            opponentTotalPoints,
-            ogwPercentage: 0,
-        };
-    });
+// Helper to calculate standings from the tournament state
+export const calculateStandings = (tournament: Tournament | null): StandingsPlayer[] => {
+    if (!tournament || !tournament.players.length) return [];
     
-    const standingsPlayerMap = new Map(standingsPlayers.map(p => [p.id, p]));
+    const playerStats: { [key: string]: { points: number, wins: number, losses: number, draws: number, byes: number, opponentIds: string[] } } = {};
+    const playerMap = new Map(tournament.players.map(p => [p.id, p.name]));
 
-    standingsPlayers.forEach(player => {
-        let totalOpponentGW = 0;
-        const opponentsPlayed = player.opponentIds.filter(id => id !== 'bye');
-        for (const opponentId of opponentsPlayed) {
-            const opponent = standingsPlayerMap.get(opponentId);
-            if (opponent) {
-                totalOpponentGW += opponent.gwPercentage;
-            }
-        }
-        player.ogwPercentage = opponentsPlayed.length > 0 ? totalOpponentGW / opponentsPlayed.length : 0;
+    // 1. Initialize stats object for each player
+    tournament.players.forEach(p => {
+      playerStats[p.id] = { points: 0, wins: 0, losses: 0, draws: 0, byes: 0, opponentIds: [] };
     });
 
+    // 2. Iterate through rounds and matches to calculate base stats
+    tournament.rounds.forEach(round => {
+      round.forEach(match => {
+        // Handle bye
+        if (match.playerId2 === null) {
+          if(playerStats[match.playerId1]) {
+            playerStats[match.playerId1].points += 3;
+            playerStats[match.playerId1].byes += 1;
+          }
+          return;
+        }
+
+        const p1Id = match.playerId1;
+        const p2Id = match.playerId2;
+        
+        if (!playerStats[p1Id] || !playerStats[p2Id]) return;
+
+        playerStats[p1Id].opponentIds.push(p2Id);
+        playerStats[p2Id].opponentIds.push(p1Id);
+        
+        if (match.wonGamesPlayer1 > match.wonGamesPlayer2) { // p1 wins
+          playerStats[p1Id].points += 3;
+          playerStats[p1Id].wins += 1;
+          playerStats[p2Id].losses += 1;
+        } else if (match.wonGamesPlayer2 > match.wonGamesPlayer1) { // p2 wins
+          playerStats[p2Id].points += 3;
+          playerStats[p2Id].wins += 1;
+          playerStats[p1Id].losses += 1;
+        } else { // draw
+          playerStats[p1Id].points += 1;
+          playerStats[p2Id].points += 1;
+          playerStats[p1Id].draws += 1;
+          playerStats[p2Id].draws += 1;
+        }
+      });
+    });
+
+    // 3. Calculate opponent total points (requires all players' points to be calculated first)
+    const opponentTotalPoints: { [key: string]: number } = {};
+    tournament.players.forEach(p => {
+      opponentTotalPoints[p.id] = playerStats[p.id].opponentIds.reduce((total, oppId) => {
+        return total + (playerStats[oppId]?.points || 0);
+      }, 0);
+    });
+
+    // 4. Build the final StandingsPlayer array
+    const standingsPlayers: StandingsPlayer[] = tournament.players.map(p => {
+      const stats = playerStats[p.id];
+      const v = stats.wins;
+      const d = stats.losses;
+      const b = stats.byes;
+
+      // User's custom winrate formula: (v + b) / (v + d + 2b)
+      const winrateNumerator = v + b;
+      const winrateDenominator = v + d + (2 * b);
+      const matchWinPercentage = winrateDenominator > 0 ? winrateNumerator / winrateDenominator : 0;
+      
+      const roundResults = tournament.rounds.map(round => {
+          const match = round.find(m => m.playerId1 === p.id || m.playerId2 === p.id);
+          if (!match) return null;
+          if (match.playerId2 === null) return 'bye';
+          const isPlayer1 = match.playerId1 === p.id;
+          if (match.wonGamesPlayer1 > match.wonGamesPlayer2) return isPlayer1 ? 3 : 0;
+          if (match.wonGamesPlayer2 > match.wonGamesPlayer1) return isPlayer1 ? 0 : 3;
+          return 1;
+      });
+
+      return {
+        playerId: p.id,
+        playerName: playerMap.get(p.id) || 'Unknown',
+        playerPoints: stats.points,
+        opponentTotalPoints: opponentTotalPoints[p.id],
+        matchWinPercentage,
+        roundResults,
+      };
+    });
+
+    // 5. Sort players based on points and tiebreakers
     standingsPlayers.sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
+        if (b.playerPoints !== a.playerPoints) return b.playerPoints - a.playerPoints;
         if (b.opponentTotalPoints !== a.opponentTotalPoints) return b.opponentTotalPoints - a.opponentTotalPoints;
-        if (b.gwPercentage !== a.gwPercentage) return b.gwPercentage - a.gwPercentage;
-        if (b.ogwPercentage !== a.ogwPercentage) return b.ogwPercentage - a.ogwPercentage;
-        return Math.random() - 0.5; // Randomize players with exact same stats
+        if (b.matchWinPercentage !== a.matchWinPercentage) return b.matchWinPercentage - a.matchWinPercentage;
+        return Math.random() - 0.5; // Random tiebreaker at the end
     });
 
     return standingsPlayers;
 };
 
-type ResultInput = { p1Id: string; p2Id: string; p1Games: number; p2Games: number };
+type ResultInput = { p1Id: string; p2Id: string | null; p1Games: number; p2Games: number };
 
 interface TournamentContextType {
-    state: TournamentState & { players: StandingsPlayer[]; allResultsSubmitted: boolean; viewingRound: number | null };
-    pendingImport: string | null;
+    tournament: Tournament | null;
+    standings: StandingsPlayer[];
+    currentPairings: DisplayPairing[];
     addPlayer: (name: string) => void;
     removePlayer: (id: string) => void;
     startTournament: () => void;
     startManualTournament: (pairings: ManualPairing[]) => void;
     generateNextRound: () => void;
-    submitMultipleResults: (round: number, results: ResultInput[]) => void;
+    submitResults: (roundIndex: number, results: ResultInput[]) => void;
     updatePairings: (newPairings: ManualPairing[]) => void;
     resetTournament: () => void;
+    viewingRound: number | null;
     goToRound: (round: number | null) => void;
     exportTournament: () => string;
     importTournament: (fileContent: string) => void;
+    pendingImport: string | null;
     confirmImport: () => void;
     cancelImport: () => void;
+    allResultsSubmitted: boolean;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
 
 export function TournamentProvider({ children }: { children: ReactNode }) {
-  const [tournamentState, setTournamentState] = useState<TournamentState>(initialTournamentState);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
   const [viewingRound, setViewingRound] = useState<number | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
-  
+
   useEffect(() => {
     try {
       const savedState = window.localStorage.getItem(LOCAL_STORAGE_KEY);
       if (savedState) {
-        setTournamentState(JSON.parse(savedState));
+        setTournament(JSON.parse(savedState));
+      } else {
+        setTournament(initialTournamentState);
       }
     } catch (error) {
       console.error("Error loading state from localStorage", error);
+      setTournament(initialTournamentState);
     }
   }, []);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tournamentState));
-    } catch (error) {
-      console.error("Error saving state to localStorage", error);
+    if (tournament) {
+        try {
+            window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tournament));
+        } catch (error) {
+            console.error("Error saving state to localStorage", error);
+        }
     }
-  }, [tournamentState]);
+  }, [tournament]);
 
+  const standings = useMemo(() => calculateStandings(tournament), [tournament]);
 
   const addPlayer = (name: string) => {
-    if (tournamentState.status !== 'registration') return;
+    if (tournament?.status !== 'registration') return;
     const newPlayer: Player = {
       id: `player-${Date.now()}-${Math.random()}`,
       name,
-      points: 0,
-      matches: [],
-      opponentIds: [],
-      gameWins: 0,
-      gamesPlayed: 0,
     };
-    const newState = produce(tournamentState, draft => {
-        draft.players.push(newPlayer);
-    });
-    setTournamentState(newState);
+    setTournament(produce(tournament, draft => {
+        if(draft) draft.players.push(newPlayer);
+    }));
   };
   
   const removePlayer = (id: string) => {
-    if (tournamentState.status !== 'registration') return;
-    const newState = produce(tournamentState, draft => {
-      draft.players = draft.players.filter(p => p.id !== id);
-    });
-    setTournamentState(newState);
+    if (tournament?.status !== 'registration') return;
+    setTournament(produce(tournament, draft => {
+      if(draft) draft.players = draft.players.filter(p => p.id !== id);
+    }));
   };
 
-  const generatePairings = (players: Player[], round: number): Pairing[] => {
-    const sortedPlayers = calculateStandings(players);
-    const pairings: Pairing[] = [];
-    const pairedPlayerIds = new Set<string>();
-  
-    let availablePlayers = [...sortedPlayers];
-  
-    if (availablePlayers.length % 2 !== 0) {
-        let byePlayerAssigned = false;
-        for (let i = availablePlayers.length - 1; i > 0; i--) {
-            if (!availablePlayers[i].opponentIds.includes('bye')) {
-                const byePlayer = availablePlayers.splice(i, 1)[0];
-                pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
-                pairedPlayerIds.add(byePlayer.id);
-                byePlayerAssigned = true;
-                break;
+  const swissPair = (players: Player[], existingRounds: Round[]): Round => {
+    const playerStats = new Map(players.map(p => [p.id, { points: 0, opponentIds: new Set<string>() }]));
+
+    existingRounds.forEach(round => {
+        round.forEach(match => {
+            if (match.playerId2 === null) {
+                const p1Stats = playerStats.get(match.playerId1);
+                if(p1Stats) p1Stats.points += 3;
+            } else {
+                const p1Stats = playerStats.get(match.playerId1);
+                const p2Stats = playerStats.get(match.playerId2);
+                if(!p1Stats || !p2Stats) return;
+
+                p1Stats.opponentIds.add(match.playerId2);
+                p2Stats.opponentIds.add(match.playerId1);
+
+                if (match.wonGamesPlayer1 > match.wonGamesPlayer2) {
+                    p1Stats.points += 3;
+                } else if (match.wonGamesPlayer2 > match.wonGamesPlayer1) {
+                    p2Stats.points += 3;
+                } else {
+                    p1Stats.points += 1;
+                    p2Stats.points += 1;
+                }
             }
-        }
-        
-        if (!byePlayerAssigned && availablePlayers.length > 1) {
-            const byePlayer = availablePlayers.pop()!;
-            pairings.push({ player1: byePlayer, player2: { id: 'bye', name: 'BYE' } });
-            pairedPlayerIds.add(byePlayer.id);
-        }
+        });
+    });
+    
+    let sortedPlayers = [...players].sort((a, b) => {
+        const pointsA = playerStats.get(a.id)?.points || 0;
+        const pointsB = playerStats.get(b.id)?.points || 0;
+        if(pointsB !== pointsA) return pointsB - pointsA;
+        return Math.random() - 0.5;
+    });
+
+    const pairings: Round = [];
+    const pairedPlayerIds = new Set<string>();
+
+    if (sortedPlayers.length % 2 !== 0) {
+        const byePlayer = sortedPlayers.pop()!;
+        pairings.push({ playerId1: byePlayer.id, playerId2: null, wonGamesPlayer1: 0, wonGamesPlayer2: 0 });
+        pairedPlayerIds.add(byePlayer.id);
     }
     
-    let playersToPair = [...availablePlayers];
+    let playersToPair = [...sortedPlayers];
     let couldn_t_pair: Player[] = [];
     
     while (playersToPair.length > 1) {
@@ -184,8 +240,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       let paired = false;
       for (let i = 0; i < playersToPair.length; i++) {
         const p2 = playersToPair[i];
-        if (!p1.opponentIds.includes(p2.id)) {
-          pairings.push({ player1: p1, player2: p2 });
+        if (!playerStats.get(p1.id)?.opponentIds.has(p2.id)) {
+          pairings.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0 });
           playersToPair.splice(i, 1);
           paired = true;
           break;
@@ -202,205 +258,84 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       const p1 = playersToPair.shift()!;
       const p2 = playersToPair.shift()!;
       console.warn(`Could not find a valid opponent for ${p1.name}. Forcing a rematch with ${p2.name}.`);
-      pairings.push({ player1: p1, player2: p2 });
+      pairings.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0 });
     }
   
     return pairings;
   };
-
+  
   const startTournament = () => {
-    if (tournamentState.status !== 'registration' || tournamentState.players.length < 2) return;
-    
-    const nextRoundNumber = 1;
-    
-    const newState = produce(tournamentState, draft => {
-        draft.history = {};
-        const firstRoundPairings = generatePairings(draft.players, nextRoundNumber);
-
-        draft.currentRound = nextRoundNumber;
-        draft.status = 'running';
-        draft.pairings = firstRoundPairings;
-        
-        draft.history[nextRoundNumber] = { 
-            pairings: firstRoundPairings, 
-            players: JSON.parse(JSON.stringify(draft.players)) 
-        };
-
-        const byePairing = firstRoundPairings.find(p => p.player2.id === 'bye');
-        if(byePairing) {
-            const playerInDraft = draft.players.find(p => p.id === byePairing.player1.id);
-            if(playerInDraft) {
-                playerInDraft.points += 3;
-                playerInDraft.matches.push({ 
-                    round: nextRoundNumber, 
-                    opponentId: 'bye', 
-                    result: 'win',
-                    gamesWon: 0,
-                    gamesLost: 0,
-                });
-                playerInDraft.opponentIds.push('bye');
-            }
+    if (tournament?.status !== 'registration' || tournament.players.length < 2) return;
+    const firstRound = swissPair(tournament.players, []);
+    setTournament(produce(tournament, draft => {
+        if(draft){
+            draft.status = 'running';
+            draft.rounds = [firstRound];
         }
-    });
-    setTournamentState(newState);
+    }));
   };
 
   const startManualTournament = (manualPairings: ManualPairing[]) => {
-    if (tournamentState.status !== 'registration' || tournamentState.players.length < 2) return;
-
-    const nextRoundNumber = 1;
-
-    const newState = produce(tournamentState, (draft: TournamentState) => {
-        draft.history = {};
-        draft.currentRound = nextRoundNumber;
-        draft.status = 'running';
-        draft.pairings = manualPairings;
-        
-        draft.history[nextRoundNumber] = {
-          pairings: manualPairings,
-          players: JSON.parse(JSON.stringify(draft.players)),
-        };
-
-        const byePairing = manualPairings.find(p => p.player2.id === 'bye');
-        if (byePairing) {
-          const playerInDraft = draft.players.find(p => p.id === byePairing.player1.id);
-          if (playerInDraft) {
-            playerInDraft.points += 3;
-            playerInDraft.matches.push({
-              round: nextRoundNumber,
-              opponentId: 'bye',
-              result: 'win',
-              gamesWon: 0,
-              gamesLost: 0,
-            });
-            playerInDraft.opponentIds.push('bye');
-          }
+    if (tournament?.status !== 'registration' || tournament.players.length < 2) return;
+    const firstRound: Round = manualPairings.map(p => ({
+        playerId1: p.player1.id,
+        playerId2: p.player2.id === 'bye' ? null : p.player2.id,
+        wonGamesPlayer1: 0,
+        wonGamesPlayer2: 0,
+    }));
+    setTournament(produce(tournament, draft => {
+        if (draft) {
+            draft.status = 'running';
+            draft.rounds = [firstRound];
         }
-    });
-    setTournamentState(newState);
+    }));
   };
   
   const generateNextRound = () => {
-    if (tournamentState.status !== 'running') return;
-    
-    const nextRoundNumber = tournamentState.currentRound + 1;
-    
-    const newState = produce(tournamentState, draft => {
-        draft.history[nextRoundNumber] = { pairings: [], players: JSON.parse(JSON.stringify(draft.players)) };
-
-        const newPairings = generatePairings(draft.players, nextRoundNumber);
-        
-        draft.currentRound = nextRoundNumber;
-        draft.pairings = newPairings;
-        
-        draft.history[nextRoundNumber].pairings = newPairings;
-        
-        const byePairing = newPairings.find(p => p.player2.id === 'bye');
-        if(byePairing) {
-            const playerInDraft = draft.players.find(p => p.id === byePairing.player1.id);
-            if(playerInDraft) {
-                playerInDraft.points += 3;
-                playerInDraft.matches.push({ 
-                    round: nextRoundNumber, 
-                    opponentId: 'bye', 
-                    result: 'win',
-                    gamesWon: 0,
-                    gamesLost: 0,
-                });
-                playerInDraft.opponentIds.push('bye');
-            }
-        }
-    });
+    if (tournament?.status !== 'running') return;
+    const newRound = swissPair(tournament.players, tournament.rounds);
+    setTournament(produce(tournament, draft => {
+        if(draft) draft.rounds.push(newRound);
+    }));
     setViewingRound(null);
-    setTournamentState(newState);
   };
   
-  const submitMultipleResults = (round: number, results: ResultInput[]) => {
-      const newState = produce(tournamentState, (draft: TournamentState) => {
-          if (round < draft.currentRound) {
-            if (!draft.history[round]) return;
-            draft.players = JSON.parse(JSON.stringify(draft.history[round].players));
-            for (let i = round + 1; i <= draft.currentRound; i++) {
-              delete draft.history[i];
-            }
-            draft.currentRound = round;
-            draft.pairings = draft.history[round].pairings as Pairing[];
+  const submitResults = (roundIndex: number, results: ResultInput[]) => {
+      if (!tournament) return;
+      setTournament(produce(tournament, draft => {
+          if(!draft) return;
+          // Time machine: if editing a past round, slice the rounds array
+          if(roundIndex < draft.rounds.length -1) {
+              draft.rounds = draft.rounds.slice(0, roundIndex + 1);
           }
-    
-          results.forEach(({p1Id, p2Id, p1Games, p2Games}) => {
-            const player1 = draft.players.find(p => p.id === p1Id);
-            const player2 = draft.players.find(p => p.id === p2Id);
-            if (!player1 || !player2) return;
-      
-            const isAlreadyProcessed = player1.matches.some(m => m.round === round && m.opponentId === p2Id);
-            if (isAlreadyProcessed) return;
-      
-            let p1Points, p2Points;
-            let p1Result, p2Result;
-      
-            if (p1Games > p2Games) {
-              p1Points = 3; p2Points = 0;
-              p1Result = 'win'; p2Result = 'loss';
-            } else if (p2Games > p1Games) {
-              p1Points = 0; p2Points = 3;
-              p1Result = 'loss'; p2Result = 'win';
-            } else {
-              p1Points = 1; p2Points = 1;
-              p1Result = 'draw'; p2Result = 'draw';
-            }
-  
-            player1.points += p1Points;
-            player1.matches.push({ round, opponentId: p2Id, result: p1Result, gamesWon: p1Games, gamesLost: p2Games });
-            if (!player1.opponentIds.includes(p2Id)) player1.opponentIds.push(p2Id);
-            
-            player2.points += p2Points;
-            player2.matches.push({ round, opponentId: p1Id, result: p2Result, gamesWon: p2Games, gamesLost: p1Games });
-            if (!player2.opponentIds.includes(p1Id)) player2.opponentIds.push(p1Id);
+
+          const currentRound = draft.rounds[roundIndex];
+          if(!currentRound) return;
+
+          results.forEach(result => {
+              const matchIndex = currentRound.findIndex(m => m.playerId1 === result.p1Id && m.playerId2 === result.p2Id);
+              if (matchIndex !== -1) {
+                  currentRound[matchIndex].wonGamesPlayer1 = result.p1Games;
+                  currentRound[matchIndex].wonGamesPlayer2 = result.p2Games;
+              }
           });
-      });
+      }));
       setViewingRound(null);
-      setTournamentState(newState);
   };
   
     const updatePairings = (newPairings: ManualPairing[]) => {
-        if (tournamentState.status !== 'running') return;
+        if (!tournament || tournament.status !== 'running') return;
+        const currentRoundIndex = tournament.rounds.length - 1;
+        const newRound: Round = newPairings.map(p => ({
+            playerId1: p.player1.id,
+            playerId2: p.player2.id === 'bye' ? null : p.player2.id,
+            wonGamesPlayer1: 0,
+            wonGamesPlayer2: 0
+        }));
 
-        const oldByePlayerId = tournamentState.pairings.find(p => p.player2.id === 'bye')?.player1.id;
-        
-        const newState = produce(tournamentState, draft => {
-            draft.pairings = newPairings;
-            if (draft.history[draft.currentRound]) {
-                draft.history[draft.currentRound].pairings = newPairings;
-            }
-
-            const newByePlayerId = newPairings.find(p => p.player2.id === 'bye')?.player1.id;
-
-            if (oldByePlayerId && oldByePlayerId !== newByePlayerId) {
-                const oldByePlayer = draft.players.find(p => p.id === oldByePlayerId);
-                if (oldByePlayer) {
-                    const byeMatchIndex = oldByePlayer.matches.findIndex(m => m.round === draft.currentRound && m.opponentId === 'bye');
-                    if (byeMatchIndex > -1) {
-                        oldByePlayer.points -= 3;
-                        oldByePlayer.matches.splice(byeMatchIndex, 1);
-                        
-                        const opponentIdIndex = oldByePlayer.opponentIds.lastIndexOf('bye');
-                        if (opponentIdIndex > -1) {
-                            oldByePlayer.opponentIds.splice(opponentIdIndex, 1);
-                        }
-                    }
-                }
-            }
-
-            if (newByePlayerId) {
-                const newByePlayer = draft.players.find(p => p.id === newByePlayerId);
-                if (newByePlayer && !newByePlayer.matches.some(m => m.round === draft.currentRound && m.opponentId === 'bye')) {
-                    newByePlayer.points += 3;
-                    newByePlayer.matches.push({ round: draft.currentRound, opponentId: 'bye', result: 'win', gamesWon: 0, gamesLost: 0 });
-                    if (!newByePlayer.opponentIds.includes('bye')) newByePlayer.opponentIds.push('bye');
-                }
-            }
-        });
-        setTournamentState(newState);
+        setTournament(produce(tournament, draft => {
+            if(draft) draft.rounds[currentRoundIndex] = newRound;
+        }));
     };
 
   const goToRound = (round: number | null) => {
@@ -408,8 +343,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const resetTournament = () => {
-    const clearedState = {...initialTournamentState};
-    setTournamentState(clearedState);
+    setTournament(initialTournamentState);
     setViewingRound(null);
      try {
       window.localStorage.removeItem(LOCAL_STORAGE_KEY);
@@ -419,7 +353,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const exportTournament = (): string => {
-    return JSON.stringify(tournamentState, null, 2);
+    return JSON.stringify(tournament, null, 2);
   };
 
   const importTournament = (fileContent: string) => {
@@ -430,8 +364,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     if (pendingImport) {
       try {
         const newState = JSON.parse(pendingImport);
-        if (newState.players && newState.status && newState.history) {
-          setTournamentState(newState);
+        // Basic validation
+        if (newState.players && newState.status && newState.rounds) {
+          setTournament(newState);
           setViewingRound(null);
         } else {
           throw new Error("Invalid tournament file structure.");
@@ -448,44 +383,70 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setPendingImport(null);
   };
 
-  const processedState = useMemo(() => {
-    const allResultsSubmitted = (() => {
-        if (tournamentState.status !== 'running') return false;
-        const activePairings = tournamentState.pairings.filter(p => p.player2.id !== 'bye');
-        if (activePairings.length === 0) return true; 
-        
-        const submittedResults = activePairings.filter(p => {
-            const player1 = tournamentState.players.find(pl => pl.id === p.player1.id);
-            return player1?.matches.some(m => m.round === tournamentState.currentRound && m.opponentId !== 'bye');
-        });
-        return activePairings.length === submittedResults.length;
-    })();
+  const currentPairings = useMemo((): DisplayPairing[] => {
+    if (!tournament || tournament.status !== 'running') return [];
+    
+    const roundIndex = viewingRound !== null ? viewingRound - 1 : tournament.rounds.length - 1;
+    if (roundIndex < 0) return [];
+    
+    const currentRound = tournament.rounds[roundIndex];
+    if (!currentRound) return [];
 
-    return {
-        ...tournamentState,
-        viewingRound,
-        players: calculateStandings(tournamentState.players),
-        allResultsSubmitted,
-    };
-  }, [tournamentState, viewingRound]);
+    const playerMap = new Map(tournament.players.map(p => [p.id, p]));
+
+    return currentRound.map(match => {
+        const p1 = playerMap.get(match.playerId1);
+        if (!p1) return null; // Should not happen
+
+        const p2 = match.playerId2 ? playerMap.get(match.playerId2) : null;
+
+        const isSubmitted = match.wonGamesPlayer1 > 0 || match.wonGamesPlayer2 > 0;
+
+        return {
+            player1: p1,
+            player2: p2 ? p2 : { id: 'bye', name: 'BYE' },
+            isSubmitted,
+            result: {
+                p1Games: match.wonGamesPlayer1.toString(),
+                p2Games: match.wonGamesPlayer2.toString(),
+            }
+        };
+    }).filter((p): p is DisplayPairing => p !== null);
+
+  }, [tournament, viewingRound]);
+
+  const allResultsSubmitted = useMemo(() => {
+    if (!tournament || tournament.status !== 'running') return false;
+    const currentRound = tournament.rounds[tournament.rounds.length - 1];
+    if (!currentRound) return true;
+    return currentRound.every(match => {
+        if (match.playerId2 === null) return true; // Byes are auto-submitted
+        const totalGames = match.wonGamesPlayer1 + match.wonGamesPlayer2;
+        return totalGames > 0; // Simple check if any result is entered
+    });
+  }, [tournament]);
 
 
   const value: TournamentContextType = {
-    state: processedState,
-    pendingImport,
+    tournament,
+    standings,
+    currentPairings,
     addPlayer,
     removePlayer,
     startTournament,
     startManualTournament,
     generateNextRound,
-    submitMultipleResults,
+    submitResults,
     updatePairings,
     resetTournament,
+    viewingRound,
     goToRound,
     exportTournament,
     importTournament,
+    pendingImport,
     confirmImport,
     cancelImport,
+    allResultsSubmitted,
   };
 
   return (

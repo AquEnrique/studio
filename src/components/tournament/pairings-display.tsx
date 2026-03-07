@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Pairing, Player, ManualPairing } from '@/lib/types';
+import type { DisplayPairing, Player, ManualPairing } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,8 @@ import { ManualPairingEditor } from './manual-pairing-editor';
 import { Pencil } from 'lucide-react';
 
 interface PairingsDisplayProps {
-  pairings: Pairing[];
-  submitMultipleResults: (round: number, results: { p1Id: string; p2Id: string; p1Games: number; p2Games: number }[]) => void;
+  pairings: DisplayPairing[];
+  submitResults: (roundIndex: number, results: { p1Id: string; p2Id: string | null; p1Games: number; p2Games: number }[]) => void;
   roundNumber: number;
   isEditable: boolean;
   allPlayers: Player[];
@@ -19,21 +19,19 @@ interface PairingsDisplayProps {
   isViewingHistory: boolean;
 }
 
-export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory }: PairingsDisplayProps) {
+export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const initialResults: { [key: string]: { p1: string; p2: string } } = {};
     pairings.forEach(p => {
-      const player1 = p.player1 as Player;
-      const match = player1.matches.find(m => m.round === roundNumber);
-      if (match && match.opponentId !== 'bye') {
-        initialResults[player1.id] = {
-          p1: match.gamesWon.toString(),
-          p2: match.gamesLost.toString(),
-        };
-      }
+        if(p.result) {
+            initialResults[p.player1.id] = {
+                p1: p.result.p1Games,
+                p2: p.result.p2Games,
+            };
+        }
     });
     setResults(initialResults);
     // When pairings change (e.g. next round), exit editing mode
@@ -59,7 +57,7 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
   };
 
   const handleSubmitAll = () => {
-    const resultsToSubmit: { p1Id: string; p2Id: string; p1Games: number; p2Games: number }[] = [];
+    const resultsToSubmit: { p1Id: string; p2Id: string | null; p1Games: number; p2Games: number }[] = [];
     pairings.forEach(pairing => {
       const p1Id = pairing.player1.id;
       const result = results[p1Id];
@@ -69,18 +67,16 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
         const p1Games = parseInt(result.p1 || '0', 10);
         const p2Games = parseInt(result.p2 || '0', 10);
 
-        const player1inFullList = allPlayers.find(p => p.id === p1Id);
-        // In a historical view, we always want to submit, the provider will check for idempotency.
-        const match = isViewingHistory ? undefined : player1inFullList?.matches.find(m => m.round === roundNumber && m.opponentId === p2Id);
-
-        if (!match && !isNaN(p1Games) && !isNaN(p2Games)) {
-          resultsToSubmit.push({p1Id, p2Id, p1Games, p2Games})
+        if (!pairing.isSubmitted || isViewingHistory) {
+             if (!isNaN(p1Games) && !isNaN(p2Games)) {
+                resultsToSubmit.push({p1Id, p2Id, p1Games, p2Games})
+            }
         }
       }
     });
 
     if (resultsToSubmit.length > 0) {
-      submitMultipleResults(roundNumber, resultsToSubmit);
+      submitResults(roundNumber - 1, resultsToSubmit);
     }
   };
 
@@ -89,12 +85,7 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
     setIsEditing(false);
   }
 
-  const anyMatchSubmittedInRound = !isViewingHistory && pairings.some(pairing => {
-    if (pairing.player2.id === 'bye') return false; // Byes don't count as submitted results
-    // We need to check against allPlayers because the players in `pairings` might be from a historical round
-    const player1FromState = allPlayers.find(p => p.id === pairing.player1.id);
-    return player1FromState?.matches.some(m => m.round === roundNumber && m.opponentId === (pairing.player2 as Player).id);
-  });
+  const anyMatchSubmittedInRound = !isViewingHistory && pairings.some(p => p.isSubmitted && p.player2.id !== 'bye');
 
   if (isEditing) {
     return (
@@ -121,12 +112,9 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
       {pairings.map((pairing) => {
         const pairingId = pairing.player1.id;
         const player2IsBye = pairing.player2.id === 'bye';
-        const player1FromState = allPlayers.find(p => p.id === pairing.player1.id)
-        
-        const match = player1FromState?.matches.find(m => m.round === roundNumber);
         
         // If viewing history, inputs should be editable. The submit function handles the rollback.
-        const isSubmitted = !isViewingHistory && !!match && match.opponentId !== 'bye' && match.round === roundNumber;
+        const isSubmitted = !isViewingHistory && pairing.isSubmitted;
 
         return (
           <Card key={pairingId}>
@@ -157,7 +145,7 @@ export function PairingsDisplay({ pairings, submitMultipleResults, roundNumber, 
                     max="2"
                     className="w-16"
                     placeholder="P2"
-                    aria-label={`${pairing.player2.name} score`}
+                    aria-label={`${(pairing.player2 as Player).name} score`}
                     value={results[pairingId]?.p2 ?? ''}
                     onChange={(e) => handleResultChange(pairingId, 'p2', e.target.value)}
                     disabled={!isEditable || isSubmitted}

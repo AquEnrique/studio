@@ -2,31 +2,69 @@
   "entities": {
     "Tournament": {
       "title": "Tournament State",
-      "description": "Represents the complete state of a single tournament, including players, rounds, and pairings.",
+      "description": "Represents the complete state of a single tournament.",
       "type": "object",
       "properties": {
         "players": {
           "type": "array",
           "description": "The list of all players in the tournament.",
-          "items": { "type": "object" }
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
         },
-        "currentRound": {
-          "type": "number",
-          "description": "The current active round number."
-        },
-        "pairings": {
+        "rounds": {
           "type": "array",
-          "description": "The pairings for the current round.",
-          "items": { "type": "object" }
+          "description": "A list of rounds, where each round is a list of matches.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "playerId1": {
+                  "type": "string"
+                },
+                "playerId2": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "wonGamesPlayer1": {
+                  "type": "number"
+                },
+                "wonGamesPlayer2": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "playerId1",
+                "playerId2",
+                "wonGamesPlayer1",
+                "wonGamesPlayer2"
+              ]
+            }
+          }
         },
         "status": {
           "type": "string",
           "description": "The current status of the tournament.",
-          "enum": ["registration", "running", "finished"]
-        },
-        "history": {
-          "type": "object",
-          "description": "A record of the tournament state at the beginning of each round."
+          "enum": [
+            "registration",
+            "running",
+            "finished"
+          ]
         }
       }
     }
