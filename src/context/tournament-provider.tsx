@@ -158,7 +158,7 @@ interface TournamentContextType {
     confirmImport: () => void;
     cancelImport: () => void;
     allResultsSubmitted: boolean;
-    rollbackCurrentRound: () => void;
+    rollbackToRound: (roundIndex: number) => void;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
@@ -369,7 +369,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           if(!roundToUpdate) return;
 
           results.forEach(result => {
-              const match = roundToUpdate.matches.find(m => m.playerId1 === result.p1Id && m.playerId2 === result.p2Id);
+              const match = roundToUpdate.matches.find(m => m.playerId1 === result.p1Id && (m.playerId2 === result.p2Id || m.playerId2 === null));
               if (match) {
                   match.wonGamesPlayer1 = result.p1Games;
                   match.wonGamesPlayer2 = result.p2Games;
@@ -377,14 +377,14 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
               }
           });
 
-          roundToUpdate.matches.forEach(match => {
-            const resultExists = results.some(r => r.p1Id === match.playerId1);
-            if (resultExists) {
-                match.isSubmitted = true;
-            }
+          const allSubmitted = roundToUpdate.matches.every(m => {
+            const resultExists = results.some(r => r.p1Id === m.playerId1);
+            return resultExists || m.playerId2 === null;
           });
 
-          roundToUpdate.status = 'finished';
+          if(allSubmitted) {
+            roundToUpdate.status = 'finished';
+          }
       }));
 
       if(viewingRound !== null) {
@@ -463,24 +463,29 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setPendingImport(null);
   };
 
-  const rollbackCurrentRound = () => {
+  const rollbackToRound = (roundIndex: number) => {
     setTournament(produce(draft => {
-        if (!draft || draft.status !== 'running' || draft.rounds.length === 0) return;
+        if (!draft || roundIndex < 0 || roundIndex >= draft.rounds.length) return;
 
-        const currentRoundIndex = draft.rounds.length - 1;
-        const currentRound = draft.rounds[currentRoundIndex];
+        // Truncate future rounds
+        draft.rounds.length = roundIndex + 1;
 
-        if (currentRound) {
-            currentRound.matches.forEach(match => {
-                if (match.playerId2 !== null) {
-                    match.wonGamesPlayer1 = 0;
-                    match.wonGamesPlayer2 = 0;
-                }
-                match.isSubmitted = match.playerId2 === null;
-            });
-            currentRound.status = 'started';
-        }
+        const roundToEdit = draft.rounds[roundIndex];
+        if (!roundToEdit) return;
+
+        // Change round status
+        roundToEdit.status = 'started';
+
+        // Reset matches in that round
+        roundToEdit.matches.forEach(match => {
+            if (match.playerId2 !== null) { // Don't reset bye matches scores, just submitted status
+                match.wonGamesPlayer1 = 0;
+                match.wonGamesPlayer2 = 0;
+            }
+            match.isSubmitted = match.playerId2 === null;
+        });
     }));
+    setViewingRound(null);
   };
 
   const currentPairings = useMemo((): DisplayPairing[] => {
@@ -551,7 +556,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     confirmImport,
     cancelImport,
     allResultsSubmitted,
-    rollbackCurrentRound,
+    rollbackToRound,
   };
 
   return (

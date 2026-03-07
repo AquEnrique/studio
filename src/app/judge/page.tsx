@@ -28,7 +28,7 @@ export default function JudgePage() {
     importTournament,
     exportTournament,
     allResultsSubmitted,
-    rollbackCurrentRound,
+    rollbackToRound,
   } = useTournament();
 
   const isMobile = useIsMobile();
@@ -80,7 +80,7 @@ export default function JudgePage() {
                   variant="outline" 
                   size="sm"
                   onClick={() => goToRound(currentRoundForView < tournament.rounds.length ? currentRoundForView + 1 : tournament.rounds.length)} 
-                  disabled={currentRoundForView >= tournament.rounds.length}
+                  disabled={currentRoundForView >= tournament.rounds.length && !isViewingHistory}
                   className="rounded-full"
               >
                   <ChevronRight className="h-4 w-4"/>
@@ -99,11 +99,11 @@ export default function JudgePage() {
             </div>
           </div>
           {isViewingHistory && (
-              <Alert variant="destructive">
+              <Alert>
                   <Terminal className="h-4 w-4" />
                   <AlertTitle>¡Estás viendo una ronda pasada!</AlertTitle>
                   <AlertDescription>
-                      Estás viendo los datos de la ronda {viewingRound}. Cualquier resultado que ingreses hará que el torneo retroceda a este punto, eliminando todas las rondas futuras.
+                      Estás viendo los datos de la ronda {viewingRound}. Para editar, haz clic en "Editar Resultados", lo que eliminará todas las rondas futuras.
                   </AlertDescription>
               </Alert>
           )}
@@ -128,7 +128,7 @@ export default function JudgePage() {
                       onUpdatePairings={updatePairings}
                       isViewingHistory={isViewingHistory}
                       standings={isViewingHistory ? historicalStandings : standings}
-                      rollbackCurrentRound={rollbackCurrentRound}
+                      onRollbackRound={rollbackToRound}
                   />
               </div>
           </div>

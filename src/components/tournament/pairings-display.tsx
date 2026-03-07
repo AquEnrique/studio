@@ -27,7 +27,7 @@ interface PairingsDisplayProps {
   onUpdatePairings: (newPairings: ManualPairing[]) => void;
   isViewingHistory: boolean;
   standings: StandingsPlayer[];
-  rollbackCurrentRound: () => void;
+  onRollbackRound: (roundIndex: number) => void;
 }
 
 const ScoreSelector = ({
@@ -60,16 +60,13 @@ const ScoreSelector = ({
 };
 
 
-export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings, rollbackCurrentRound }: PairingsDisplayProps) {
+export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings, onRollbackRound }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
-  const [isEditingSubmitted, setIsEditingSubmitted] = useState(false);
   const [isHistoryAlertOpen, setIsHistoryAlertOpen] = useState(false);
 
   useEffect(() => {
-    // When round number changes, we are definitely not editing submitted results of the PREVIOUS round.
     setIsEditing(false);
-    setIsEditingSubmitted(false);
   }, [roundNumber]);
 
   useEffect(() => {
@@ -102,16 +99,10 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
       const result = results[p1Id];
       
       if(pairing.player2.id === 'bye') return;
-      if (!result && pairing.player2.id !== 'bye') {
-        // Handle case where result is not in state but should be submitted as 0-0
-        resultsToSubmit.push({ p1Id, p2Id: (pairing.player2 as Player).id, p1Games: 0, p2Games: 0 });
-        return;
-      }
-      if (!result) return;
 
       const p2Id = (pairing.player2 as Player).id;
-      const p1Games = parseInt(result.p1, 10);
-      const p2Games = parseInt(result.p2, 10);
+      const p1Games = result ? parseInt(result.p1, 10) : 0;
+      const p2Games = result ? parseInt(result.p2, 10) : 0;
       
       if (!isNaN(p1Games) && !isNaN(p2Games)) {
           if (p1Games === 2 && p2Games === 2) {
@@ -122,10 +113,9 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
       }
     });
 
-    if (resultsToSubmit.length > 0 || pairings.length > 0) {
+    if (resultsToSubmit.length > 0 || pairings.some(p => p.player2.id === 'bye')) {
       submitResults(roundNumber - 1, resultsToSubmit);
     }
-    setIsEditingSubmitted(false);
     setIsHistoryAlertOpen(false);
   };
 
@@ -144,11 +134,10 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
   }
 
   const handleEditClick = () => {
-    rollbackCurrentRound();
-    setIsEditingSubmitted(true);
+    onRollbackRound(roundNumber - 1);
   };
 
-  const anyMatchSubmittedInRound = !isViewingHistory && pairings.some(p => p.isSubmitted && p.player2.id !== 'bye');
+  const isRoundSubmitted = pairings.every(p => p.isSubmitted) && pairings.length > 0;
 
   if (isEditing) {
     return (
@@ -183,7 +172,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
       <div className="space-y-2 mb-16 xl:mb-0">
         {isEditable && (
           <div className="flex justify-end mb-2">
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} disabled={isRoundSubmitted}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Editar Emparejamientos
               </Button>
@@ -192,7 +181,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
         {pairings.map((pairing) => {
           const pairingId = pairing.player1.id;
           const player2IsBye = pairing.player2.id === 'bye';
-          const isMatchLocked = pairing.isSubmitted && !isEditingSubmitted && !isViewingHistory;
+          const isMatchLocked = pairing.isSubmitted;
 
           const p1Score = results[pairingId]?.p1 ?? '0';
           const p2Score = results[pairingId]?.p2 ?? '0';
@@ -231,13 +220,13 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
         })}
         {isEditable && (
           <div className="w-full mt-4">
-            {anyMatchSubmittedInRound && !isEditingSubmitted ? (
+            {isRoundSubmitted ? (
               <Button variant="outline" onClick={handleEditClick} className="w-full">
                 Editar Resultados
               </Button>
             ) : (
               <Button onClick={handleSubmitAll} className="w-full">
-                {isViewingHistory ? 'Confirmar Cambios' : (isEditingSubmitted ? 'Actualizar Todos los Resultados' : 'Enviar Todos los Resultados')}
+                {isViewingHistory ? 'Confirmar Cambios' : 'Enviar Todos los Resultados'}
               </Button>
             )}
           </div>
