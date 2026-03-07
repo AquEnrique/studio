@@ -39,7 +39,7 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
   
   const [calculationInfo, setCalculationInfo] = useState<CalculationInfo>(null);
 
-  const showColumnInfo = (column: 'OTP' | 'MWP') => {
+  const showColumnInfo = (column: 'OTP' | 'GWP') => {
     let info: CalculationInfo = null;
     switch (column) {
       case 'OTP':
@@ -54,15 +54,15 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
           ),
         };
         break;
-      case 'MWP':
+      case 'GWP':
         info = {
-          title: 'Match Win % (MWP)',
+          title: 'Game Win % (GW%)',
           description: (
             <>
-              <p>Este es el segundo desempate. Se calcula con una fórmula específica.</p>
+              <p>Este es el segundo desempate. Es el porcentaje de juegos individuales ganados a lo largo del torneo.</p>
               <br />
-              <p><strong>Fórmula:</strong> (Victorias + Byes) / (Victorias + Derrotas + 2 * Byes)</p>
-              <p className="text-xs text-muted-foreground mt-2">Los empates no se incluyen en este cálculo.</p>
+              <p><strong>Fórmula:</strong> (Juegos Ganados) / (Juegos Jugados)</p>
+              <p className="text-xs text-muted-foreground mt-2">Las rondas con bye no se incluyen en este cálculo.</p>
             </>
           ),
         };
@@ -151,8 +151,8 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
             </TableHead>
             <TableHead>
                 <div className="flex items-center gap-1">
-                    MW%
-                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('MWP')}>
+                    GW%
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('GWP')}>
                         <Info className="w-3 h-3" />
                     </Button>
                 </div>
@@ -169,7 +169,7 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
                   {player.opponentTotalPoints}
               </TableCell>
               <TableCell>
-                  {(player.matchWinPercentage * 100).toFixed(1)}%
+                  {(player.gameWinPercentage * 100).toFixed(1)}%
               </TableCell>
             </TableRow>
           ))}

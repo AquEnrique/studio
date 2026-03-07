@@ -28,7 +28,7 @@ export type StandingsPlayer = {
   playerName: string;
   playerPoints: number;
   opponentTotalPoints: number;
-  matchWinPercentage: number; // User's custom winrate formula
+  gameWinPercentage: number;
   // For simple standings table
   roundResults: (number | 'bye' | null)[];
 };
@@ -49,3 +49,4 @@ export type ManualPairing = {
   player1: Player;
   player2: Player | { id: 'bye'; name: 'BYE' };
 };
+
