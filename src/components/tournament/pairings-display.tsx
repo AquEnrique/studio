@@ -7,7 +7,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ManualPairingEditor } from './manual-pairing-editor';
 import { Pencil } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface PairingsDisplayProps {
   pairings: DisplayPairing[];
@@ -55,6 +64,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingSubmitted, setIsEditingSubmitted] = useState(false);
+  const [isHistoryAlertOpen, setIsHistoryAlertOpen] = useState(false);
 
   useEffect(() => {
     // When round number changes, we are definitely not editing submitted results of the PREVIOUS round.
@@ -84,15 +94,20 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
         }
     }));
   };
-
-  const handleSubmitAll = () => {
+  
+  const performSubmit = () => {
     const resultsToSubmit: { p1Id: string; p2Id: string | null; p1Games: number; p2Games: number }[] = [];
     pairings.forEach(pairing => {
       const p1Id = pairing.player1.id;
       const result = results[p1Id];
       
-      if (!result) return;
       if(pairing.player2.id === 'bye') return;
+      if (!result && pairing.player2.id !== 'bye') {
+        // Handle case where result is not in state but should be submitted as 0-0
+        resultsToSubmit.push({ p1Id, p2Id: (pairing.player2 as Player).id, p1Games: 0, p2Games: 0 });
+        return;
+      }
+      if (!result) return;
 
       const p2Id = (pairing.player2 as Player).id;
       const p1Games = parseInt(result.p1, 10);
@@ -107,10 +122,20 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
       }
     });
 
-    if (resultsToSubmit.length > 0) {
+    if (resultsToSubmit.length > 0 || pairings.length > 0) {
       submitResults(roundNumber - 1, resultsToSubmit);
     }
     setIsEditingSubmitted(false);
+    setIsHistoryAlertOpen(false);
+  };
+
+
+  const handleSubmitAll = () => {
+    if (isViewingHistory) {
+      setIsHistoryAlertOpen(true);
+    } else {
+      performSubmit();
+    }
   };
 
   const handleSavePairings = (newPairings: ManualPairing[]) => {
@@ -139,68 +164,85 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
   }
 
   return (
-    <div className="space-y-2 mb-16 xl:mb-0">
-      {isEditable && !anyMatchSubmittedInRound && (
-        <div className="flex justify-end mb-2">
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Pairings
-            </Button>
-        </div>
-      )}
-      {pairings.map((pairing) => {
-        const pairingId = pairing.player1.id;
-        const player2IsBye = pairing.player2.id === 'bye';
-        const isMatchLocked = !isViewingHistory && pairing.isSubmitted && !isEditingSubmitted;
+    <>
+       <AlertDialog open={isHistoryAlertOpen} onOpenChange={setIsHistoryAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Confirmar edición histórica?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Estás a punto de modificar la ronda {roundNumber}. Esto eliminará todas las rondas futuras y no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={performSubmit}>Confirmar y Continuar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        const p1Score = results[pairingId]?.p1 ?? '0';
-        const p2Score = results[pairingId]?.p2 ?? '0';
+      <div className="space-y-2 mb-16 xl:mb-0">
+        {isEditable && (
+          <div className="flex justify-end mb-2">
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Editar Emparejamientos
+              </Button>
+          </div>
+        )}
+        {pairings.map((pairing) => {
+          const pairingId = pairing.player1.id;
+          const player2IsBye = pairing.player2.id === 'bye';
+          const isMatchLocked = pairing.isSubmitted && !isEditingSubmitted && !isViewingHistory;
 
-        return (
-          <Card key={pairingId}>
-            <CardContent className="p-4">
-               <div className="flex justify-between items-center">
-                <div className="font-semibold truncate pr-2">{pairing.player1.name}</div>
-                <div className="text-muted-foreground mx-2">vs</div>
-                <div className="font-semibold truncate pl-2 text-right">{pairing.player2.name}</div>
-              </div>
-              
-              {!player2IsBye ? (
-                <div className="mt-4 flex justify-around items-center">
-                  <ScoreSelector 
-                    score={p1Score}
-                    onScoreChange={(score) => handleResultChange(pairingId, 'p1', score)}
-                    disabled={!isEditable || isMatchLocked}
-                    otherPlayerScore={p2Score}
-                  />
-                   <span className="text-muted-foreground">-</span>
-                  <ScoreSelector 
-                    score={p2Score}
-                    onScoreChange={(score) => handleResultChange(pairingId, 'p2', score)}
-                    disabled={!isEditable || isMatchLocked}
-                    otherPlayerScore={p1Score}
-                  />
+          const p1Score = results[pairingId]?.p1 ?? '0';
+          const p2Score = results[pairingId]?.p2 ?? '0';
+
+          return (
+            <Card key={pairingId}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div className="font-semibold truncate pr-2">{pairing.player1.name}</div>
+                  <div className="text-muted-foreground mx-2">vs</div>
+                  <div className="font-semibold truncate pl-2 text-right">{pairing.player2.name}</div>
                 </div>
-              ) : (
-                <div className="mt-4 text-center text-sm font-bold text-primary">BYE (Win)</div>
-              )}
-            </CardContent>
-          </Card>
-        )
-      })}
-      {isEditable && (
-        <div className="w-full mt-4">
-          {anyMatchSubmittedInRound && !isEditingSubmitted && !isViewingHistory ? (
-            <Button variant="outline" onClick={handleEditClick} className="w-full">
-              Edit Results
-            </Button>
-          ) : (
-            <Button onClick={handleSubmitAll} className="w-full">
-              {isEditingSubmitted ? 'Update All Results' : 'Submit All Results'}
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
+                
+                {!player2IsBye ? (
+                  <div className="mt-4 flex justify-around items-center">
+                    <ScoreSelector 
+                      score={p1Score}
+                      onScoreChange={(score) => handleResultChange(pairingId, 'p1', score)}
+                      disabled={!isEditable || isMatchLocked}
+                      otherPlayerScore={p2Score}
+                    />
+                    <span className="text-muted-foreground">-</span>
+                    <ScoreSelector 
+                      score={p2Score}
+                      onScoreChange={(score) => handleResultChange(pairingId, 'p2', score)}
+                      disabled={!isEditable || isMatchLocked}
+                      otherPlayerScore={p1Score}
+                    />
+                  </div>
+                ) : (
+                  <div className="mt-4 text-center text-sm font-bold text-primary">BYE (Win)</div>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })}
+        {isEditable && (
+          <div className="w-full mt-4">
+            {anyMatchSubmittedInRound && !isEditingSubmitted ? (
+              <Button variant="outline" onClick={handleEditClick} className="w-full">
+                Editar Resultados
+              </Button>
+            ) : (
+              <Button onClick={handleSubmitAll} className="w-full">
+                {isViewingHistory ? 'Confirmar Cambios' : (isEditingSubmitted ? 'Actualizar Todos los Resultados' : 'Enviar Todos los Resultados')}
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

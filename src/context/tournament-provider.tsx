@@ -361,11 +361,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       setTournament(produce(draft => {
           if(!draft) return;
           
-          const isRollback = roundIndex < draft.rounds.length - 1;
-
-          if (isRollback) {
-            console.warn("Editing past rounds is not fully supported and may lead to invalid tournament states.");
-            draft.rounds = draft.rounds.slice(0, roundIndex + 1);
+          if (roundIndex < draft.rounds.length - 1) {
+            draft.rounds.length = roundIndex + 1;
           }
 
           const roundToUpdate = draft.rounds[roundIndex];
@@ -410,11 +407,15 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         setTournament(produce(tournament, draft => {
             if(draft) {
               if (currentRoundIndex < draft.rounds.length - 1) {
-                  draft.rounds = draft.rounds.slice(0, currentRoundIndex);
+                  draft.rounds.length = currentRoundIndex + 1;
               }
               draft.rounds[currentRoundIndex] = { matches: newRoundMatches, status: 'started' };
             }
         }));
+        
+        if (viewingRound !== null) {
+          setViewingRound(null);
+        }
     };
 
   const goToRound = (round: number | null) => {
@@ -475,7 +476,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                     match.wonGamesPlayer1 = 0;
                     match.wonGamesPlayer2 = 0;
                 }
-                match.isSubmitted = false;
+                match.isSubmitted = match.playerId2 === null;
             });
             currentRound.status = 'started';
         }
