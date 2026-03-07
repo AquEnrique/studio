@@ -4,7 +4,6 @@ import { Toaster } from "@/components/ui/toaster"
 import { Header } from '@/components/header';
 import Script from 'next/script';
 import { TournamentProvider } from '@/context/tournament-provider';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'YGO Tournament Manager',
@@ -37,15 +36,13 @@ export default function RootLayout({
             gtag('config', 'G-RWTYRX82M3');
           `}
         </Script>
-        <FirebaseClientProvider>
-          <TournamentProvider>
-            <div className="flex flex-col h-screen">
-                <Header />
-                {children}
-            </div>
-            <Toaster />
-          </TournamentProvider>
-        </FirebaseClientProvider>
+        <TournamentProvider>
+          <div className="flex flex-col h-screen">
+              <Header />
+              {children}
+          </div>
+          <Toaster />
+        </TournamentProvider>
       </body>
     </html>
   );

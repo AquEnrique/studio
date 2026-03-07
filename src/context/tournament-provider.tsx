@@ -4,10 +4,8 @@
 import { useState, useEffect, useMemo, createContext, useContext, ReactNode } from 'react';
 import type { TournamentState, Player, Pairing, StandingsPlayer, ManualPairing } from '@/lib/types';
 import { produce } from 'immer';
-import { useFirestore } from '@/firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
-const TOURNAMENT_DOC_ID = 'current';
+const LOCAL_STORAGE_KEY = 'ygo-tournament-state';
 
 const initialTournamentState: TournamentState = {
   players: [],
@@ -106,33 +104,26 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [tournamentState, setTournamentState] = useState<TournamentState>(initialTournamentState);
   const [viewingRound, setViewingRound] = useState<number | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
-  const firestore = useFirestore();
+  
+  useEffect(() => {
+    try {
+      const savedState = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedState) {
+        setTournamentState(JSON.parse(savedState));
+      }
+    } catch (error) {
+      console.error("Error loading state from localStorage", error);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!firestore) return;
+    try {
+      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tournamentState));
+    } catch (error) {
+      console.error("Error saving state to localStorage", error);
+    }
+  }, [tournamentState]);
 
-    const tournamentRef = doc(firestore, 'tournaments', TOURNAMENT_DOC_ID);
-    
-    const unsubscribe = onSnapshot(tournamentRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setTournamentState(docSnap.data() as TournamentState);
-      } else {
-        setDoc(tournamentRef, initialTournamentState).catch(e => {
-            console.error("Failed to initialize tournament document:", e)
-        });
-      }
-    }, (error) => {
-        console.error("Error listening to tournament document:", error);
-    });
-
-    return () => unsubscribe();
-  }, [firestore]);
-
-  const updateFirestoreState = async (newState: TournamentState) => {
-      if (!firestore) return;
-      const tournamentRef = doc(firestore, 'tournaments', TOURNAMENT_DOC_ID);
-      await setDoc(tournamentRef, newState, { merge: true });
-  }
 
   const addPlayer = (name: string) => {
     if (tournamentState.status !== 'registration') return;
@@ -148,7 +139,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const newState = produce(tournamentState, draft => {
         draft.players.push(newPlayer);
     });
-    updateFirestoreState(newState);
+    setTournamentState(newState);
   };
   
   const removePlayer = (id: string) => {
@@ -156,7 +147,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const newState = produce(tournamentState, draft => {
       draft.players = draft.players.filter(p => p.id !== id);
     });
-    updateFirestoreState(newState);
+    setTournamentState(newState);
   };
 
   const generatePairings = (players: Player[], round: number): Pairing[] => {
@@ -251,7 +242,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             }
         }
     });
-    updateFirestoreState(newState);
+    setTournamentState(newState);
   };
 
   const startManualTournament = (manualPairings: ManualPairing[]) => {
@@ -286,7 +277,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           }
         }
     });
-    updateFirestoreState(newState);
+    setTournamentState(newState);
   };
   
   const generateNextRound = () => {
@@ -321,7 +312,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         }
     });
     setViewingRound(null);
-    updateFirestoreState(newState);
+    setTournamentState(newState);
   };
   
   const submitMultipleResults = (round: number, results: ResultInput[]) => {
@@ -368,7 +359,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           });
       });
       setViewingRound(null);
-      updateFirestoreState(newState);
+      setTournamentState(newState);
   };
   
     const updatePairings = (newPairings: ManualPairing[]) => {
@@ -409,7 +400,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
                 }
             }
         });
-        updateFirestoreState(newState);
+        setTournamentState(newState);
     };
 
   const goToRound = (round: number | null) => {
@@ -417,8 +408,14 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const resetTournament = () => {
-    updateFirestoreState(initialTournamentState);
+    const clearedState = {...initialTournamentState};
+    setTournamentState(clearedState);
     setViewingRound(null);
+     try {
+      window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+    } catch (error) {
+      console.error("Error clearing state from localStorage", error);
+    }
   };
 
   const exportTournament = (): string => {
@@ -434,7 +431,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       try {
         const newState = JSON.parse(pendingImport);
         if (newState.players && newState.status && newState.history) {
-          updateFirestoreState(newState);
+          setTournamentState(newState);
           setViewingRound(null);
         } else {
           throw new Error("Invalid tournament file structure.");
