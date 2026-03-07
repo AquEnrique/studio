@@ -364,13 +364,19 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       if (!draft) return;
       // Save current round to history before generating next
       const currentRoundIndex = draft.rounds.length -1;
-      setRoundHistory(prev => ({...prev, [currentRoundIndex]: JSON.parse(JSON.stringify(draft.rounds[currentRoundIndex]))}));
+      const currentRoundData = JSON.parse(JSON.stringify(draft.rounds[currentRoundIndex]));
 
       const newRound = swissPair(draft.players, draft.rounds);
       const newRoundIndex = draft.rounds.length;
       draft.rounds.push(newRound);
       // Save initial state of new round to history
-      setRoundHistory(prev => ({...prev, [newRoundIndex]: JSON.parse(JSON.stringify(newRound))}));
+      const newRoundData = JSON.parse(JSON.stringify(draft.rounds[newRoundIndex]));
+      
+      setRoundHistory(prev => ({
+        ...prev,
+        [currentRoundIndex]: currentRoundData,
+        [newRoundIndex]: newRoundData
+      }));
     }));
     setViewingRound(null);
   };
