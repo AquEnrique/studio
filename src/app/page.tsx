@@ -63,7 +63,7 @@ export default function TournamentPage() {
       </AlertDialog>
 
       <main className="flex-grow p-4 md:p-6 space-y-4 md:space-y-6 pb-24">
-        <h1 className="text-3xl font-bold tracking-tight">Tournament Manager</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Tournament Manager</h1>
         {tournament.status === 'registration' && (
           <PlayerRegistration 
             addPlayer={addPlayer} 
@@ -77,7 +77,7 @@ export default function TournamentPage() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-semibold">Clasificaciones</h2>
+                  <h2 className="text-xl md:text-2xl font-semibold">Clasificaciones</h2>
                   <Button variant="outline" size="icon" onClick={() => refreshTournament()} className="h-8 w-8">
                     <RefreshCw className="h-4 w-4" />
                     <span className="sr-only">Actualizar tabla</span>

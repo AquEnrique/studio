@@ -191,21 +191,21 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
           return (
             <Card key={pairingId}>
               <CardContent className="p-4">
-                <div className="flex justify-between items-center">
-                  <div className="font-semibold truncate pr-2">{pairing.player1.name}</div>
-                  <div className="text-muted-foreground mx-2">vs</div>
-                  <div className="font-semibold truncate pl-2 text-right">{pairing.player2.name}</div>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
+                  <div className="font-semibold truncate text-left">{pairing.player1.name}</div>
+                  <div className="text-muted-foreground">vs</div>
+                  <div className="font-semibold truncate text-right">{pairing.player2.name}</div>
                 </div>
                 
                 {!player2IsBye ? (
-                  <div className="mt-4 flex justify-around items-center">
+                  <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 sm:gap-x-4">
                     <ScoreSelector 
                       score={p1Score}
                       onScoreChange={(score) => handleResultChange(pairingId, 'p1', score)}
                       disabled={!isEditable || isMatchLocked}
                       otherPlayerScore={p2Score}
                     />
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground text-center">-</span>
                     <ScoreSelector 
                       score={p2Score}
                       onScoreChange={(score) => handleResultChange(pairingId, 'p2', score)}

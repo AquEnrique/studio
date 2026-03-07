@@ -63,8 +63,8 @@ export default function JudgePage() {
     <>
       <main className="flex-grow p-4 md:p-6 space-y-4 md:space-y-6 pb-24">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h1 className="text-3xl font-bold tracking-tight">Vista de Juez</h1>
-            <div className="flex items-center gap-2 bg-muted p-1 rounded-full">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Vista de Juez</h1>
+            <div className="flex flex-wrap items-center justify-center sm:flex-nowrap gap-2 bg-muted p-1 rounded-full">
               <Button 
                   variant="outline" 
                   size="sm"
@@ -109,7 +109,7 @@ export default function JudgePage() {
           )}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <div className="flex flex-col gap-4">
-                  <h2 className="text-2xl font-semibold">Clasificaciones</h2>
+                  <h2 className="text-xl md:text-2xl font-semibold">Clasificaciones</h2>
                   <StandingsTable 
                       players={isViewingHistory ? historicalStandings : standings}
                       view='judge'
@@ -117,7 +117,7 @@ export default function JudgePage() {
                   />
               </div>
               <div>
-                  <h2 className="text-2xl font-semibold mb-4">Emparejamientos - Ronda {currentRoundForView}</h2>
+                  <h2 className="text-xl md:text-2xl font-semibold mb-4">Emparejamientos - Ronda {currentRoundForView}</h2>
                   <PairingsDisplay 
                       key={currentRoundForView}
                       pairings={currentPairings}

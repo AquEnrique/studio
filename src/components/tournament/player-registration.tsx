@@ -41,7 +41,7 @@ export function PlayerRegistration({ addPlayer, removePlayer, players, startManu
             <TabsTrigger value="manual-pairing">Emparejamiento Manual</TabsTrigger>
           </TabsList>
           <TabsContent value="registration">
-              <div className="flex gap-2 my-4">
+              <div className="flex flex-col sm:flex-row gap-2 my-4">
                 <Input
                   placeholder="Introduce el nombre del jugador"
                   value={newPlayerName}
