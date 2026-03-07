@@ -32,6 +32,7 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
 
     // Step 2: Iterate through rounds and matches to calculate base stats
     tournament.rounds.forEach((round) => {
+      if (!round || !round.matches) return;
       round.matches.forEach(match => {
         // Handle bye
         if (match.playerId2 === null) {
@@ -91,6 +92,7 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
         : 0;
       
       const roundResults: RoundResult[] = tournament.rounds.map(round => {
+          if (!round || !round.matches) return null;
           const match = round.matches.find(m => m.playerId1 === p.id || m.playerId2 === p.id);
           if (!match) return null;
           
@@ -228,10 +230,13 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const playerStats = new Map(players.map(p => [p.id, { points: 0, opponentIds: new Set<string>() }]));
 
     existingRounds.forEach(round => {
+        if (!round || !round.matches) return;
         round.matches.forEach(match => {
             if (match.playerId2 === null) {
-                const p1Stats = playerStats.get(match.playerId1);
-                if(p1Stats) p1Stats.points += 3;
+                if (round.status === 'finished') {
+                    const p1Stats = playerStats.get(match.playerId1);
+                    if(p1Stats) p1Stats.points += 3;
+                }
             } else {
                 const p1Stats = playerStats.get(match.playerId1);
                 const p2Stats = playerStats.get(match.playerId2);
@@ -359,8 +364,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           const isRollback = roundIndex < draft.rounds.length - 1;
 
           if (isRollback) {
-            // This logic is complex, for now we simplify and assume we only submit for the last round.
-            // A full implementation would need to handle re-generating future rounds.
             console.warn("Editing past rounds is not fully supported and may lead to invalid tournament states.");
             draft.rounds = draft.rounds.slice(0, roundIndex + 1);
           }
@@ -377,13 +380,10 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
               }
           });
 
-          // Mark all non-bye matches in the submission as submitted
           roundToUpdate.matches.forEach(match => {
-            if (match.playerId2 !== null) {
-                const resultExists = results.some(r => r.p1Id === match.playerId1);
-                if (resultExists) {
-                    match.isSubmitted = true;
-                }
+            const resultExists = results.some(r => r.p1Id === match.playerId1);
+            if (resultExists) {
+                match.isSubmitted = true;
             }
           });
 
@@ -466,7 +466,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setTournament(produce(draft => {
         if (!draft || draft.status !== 'running' || draft.rounds.length === 0) return;
 
-        const currentRound = draft.rounds[draft.rounds.length - 1];
+        const currentRoundIndex = draft.rounds.length - 1;
+        const currentRound = draft.rounds[currentRoundIndex];
 
         if (currentRound) {
             currentRound.matches.forEach(match => {
