@@ -23,6 +23,7 @@ interface PairingsDisplayProps {
 export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingSubmitted, setIsEditingSubmitted] = useState(false);
 
   useEffect(() => {
     const initialResults: { [key: string]: { p1: string; p2: string } } = {};
@@ -37,6 +38,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
     setResults(initialResults);
     // When pairings change (e.g. next round), exit editing mode
     setIsEditing(false);
+    setIsEditingSubmitted(false);
   }, [pairings, roundNumber]);
 
   const handleResultChange = (pairingId: string, player: 'p1' | 'p2', value: string) => {
@@ -67,11 +69,9 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
         const p2Id = (pairing.player2 as Player).id;
         const p1Games = parseInt(result.p1 || '0', 10);
         const p2Games = parseInt(result.p2 || '0', 10);
-
-        if (!pairing.isSubmitted || isViewingHistory) {
-             if (!isNaN(p1Games) && !isNaN(p2Games)) {
-                resultsToSubmit.push({p1Id, p2Id, p1Games, p2Games})
-            }
+        
+        if (!isNaN(p1Games) && !isNaN(p2Games)) {
+            resultsToSubmit.push({p1Id, p2Id, p1Games, p2Games})
         }
       }
     });
@@ -79,6 +79,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
     if (resultsToSubmit.length > 0) {
       submitResults(roundNumber - 1, resultsToSubmit);
     }
+    setIsEditingSubmitted(false);
   };
 
   const handleSavePairings = (newPairings: ManualPairing[]) => {
@@ -115,8 +116,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
         const pairingId = pairing.player1.id;
         const player2IsBye = pairing.player2.id === 'bye';
         
-        // If viewing history, inputs should be editable. The submit function handles the rollback.
-        const isSubmitted = !isViewingHistory && pairing.isSubmitted;
+        const isMatchLocked = !isViewingHistory && pairing.isSubmitted && !isEditingSubmitted;
 
         return (
           <Card key={pairingId}>
@@ -138,7 +138,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
                     aria-label={`${pairing.player1.name} score`}
                     value={results[pairingId]?.p1 ?? ''}
                     onChange={(e) => handleResultChange(pairingId, 'p1', e.target.value)}
-                    disabled={!isEditable || isSubmitted}
+                    disabled={!isEditable || isMatchLocked}
                   />
                   <span>-</span>
                   <Input
@@ -150,7 +150,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
                     aria-label={`${(pairing.player2 as Player).name} score`}
                     value={results[pairingId]?.p2 ?? ''}
                     onChange={(e) => handleResultChange(pairingId, 'p2', e.target.value)}
-                    disabled={!isEditable || isSubmitted}
+                    disabled={!isEditable || isMatchLocked}
                   />
                 </div>
               ) : (
@@ -161,9 +161,17 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
         )
       })}
       {isEditable && (
-        <Button onClick={handleSubmitAll} className="w-full mt-4">
-          Submit All Results
-        </Button>
+        <div className="w-full mt-4">
+          {anyMatchSubmittedInRound && !isEditingSubmitted && !isViewingHistory ? (
+            <Button variant="outline" onClick={() => setIsEditingSubmitted(true)} className="w-full">
+              Edit Results
+            </Button>
+          ) : (
+            <Button onClick={handleSubmitAll} className="w-full">
+              {anyMatchSubmittedInRound ? 'Update All Results' : 'Submit All Results'}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );
