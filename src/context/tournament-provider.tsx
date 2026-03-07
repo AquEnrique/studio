@@ -20,11 +20,11 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
     // Check if the latest round is fully submitted
     const lastRound = tournament.rounds[tournament.rounds.length - 1];
     const isLastRoundSubmitted = lastRound ? lastRound.every(match => {
-        if (match.playerId2 === null) return true; // Byes don't have results to submit, so they don't block completion.
+        if (match.playerId2 === null) return true; // Byes are considered submitted.
         const p1Wins = match.wonGamesPlayer1;
         const p2Wins = match.wonGamesPlayer2;
-        // A match is submitted if there's a winner or a draw
-        return p1Wins === 2 || p2Wins === 2 || (p1Wins === 1 && p2Wins === 1);
+        // A match is submitted if there's a winner
+        return p1Wins === 2 || p2Wins === 2;
     }) : true; // If no rounds, it's 'submitted'
     
     // Step 1: Initialize stats for each player
@@ -71,8 +71,11 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
         playerStats[p1Id].gamesWon += p1Games;
         playerStats[p2Id].gamesWon += p2Games;
         const totalGames = p1Games + p2Games;
-        playerStats[p1Id].gamesPlayed += totalGames;
-        playerStats[p2Id].gamesPlayed += totalGames;
+        if(totalGames > 0){
+          playerStats[p1Id].gamesPlayed += totalGames;
+          playerStats[p2Id].gamesPlayed += totalGames;
+        }
+
 
         // Calculate points based on 2 game wins
         if (p1Games === 2) { // P1 wins the match
@@ -166,6 +169,7 @@ interface TournamentContextType {
     confirmImport: () => void;
     cancelImport: () => void;
     allResultsSubmitted: boolean;
+    rollbackCurrentRound: () => void;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
@@ -359,19 +363,18 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   
   const generateNextRound = () => {
     if (tournament?.status !== 'running') return;
+    
+    const currentRoundIndex = tournament.rounds.length - 1;
+    const currentRoundData = JSON.parse(JSON.stringify(tournament.rounds[currentRoundIndex]));
 
     setTournament(produce(draft => {
       if (!draft) return;
-      // Save current round to history before generating next
-      const currentRoundIndex = draft.rounds.length -1;
-      const currentRoundData = JSON.parse(JSON.stringify(draft.rounds[currentRoundIndex]));
-
+      
       const newRound = swissPair(draft.players, draft.rounds);
       const newRoundIndex = draft.rounds.length;
       draft.rounds.push(newRound);
-      // Save initial state of new round to history
+
       const newRoundData = JSON.parse(JSON.stringify(draft.rounds[newRoundIndex]));
-      
       setRoundHistory(prev => ({
         ...prev,
         [currentRoundIndex]: currentRoundData,
@@ -506,6 +509,21 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setPendingImport(null);
   };
 
+  const rollbackCurrentRound = () => {
+    setTournament(produce(draft => {
+        if (!draft || draft.status !== 'running' || draft.rounds.length === 0) return;
+
+        const currentRoundIndex = draft.rounds.length - 1;
+        const initialRoundState = roundHistory[currentRoundIndex];
+
+        if (initialRoundState) {
+            draft.rounds[currentRoundIndex] = JSON.parse(JSON.stringify(initialRoundState));
+        } else {
+            console.error("Could not find initial state for current round in history.");
+        }
+    }));
+  };
+
   const currentPairings = useMemo((): DisplayPairing[] => {
     if (!tournament) return [];
     
@@ -531,7 +549,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
         const p2 = match.playerId2 ? playerMap.get(match.playerId2) : null;
         
-        const isSubmitted = (match.wonGamesPlayer1 === 2 || match.wonGamesPlayer2 === 2 || (match.wonGamesPlayer1 === 1 && match.wonGamesPlayer2 === 1)) && match.playerId2 !== null;
+        const isSubmitted = (match.wonGamesPlayer1 === 2 || match.wonGamesPlayer2 === 2) && match.playerId2 !== null;
 
         return {
             player1: p1,
@@ -554,7 +572,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         if (match.playerId2 === null) return true; // Byes are auto-submitted
         const p1Wins = match.wonGamesPlayer1;
         const p2Wins = match.wonGamesPlayer2;
-        return p1Wins === 2 || p2Wins === 2 || (p1Wins === 1 && p2Wins === 1);
+        return p1Wins === 2 || p2Wins === 2;
     });
   }, [tournament]);
 
@@ -579,6 +597,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     confirmImport,
     cancelImport,
     allResultsSubmitted,
+    rollbackCurrentRound,
   };
 
   return (

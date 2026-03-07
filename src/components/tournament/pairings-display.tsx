@@ -18,12 +18,19 @@ interface PairingsDisplayProps {
   onUpdatePairings: (newPairings: ManualPairing[]) => void;
   isViewingHistory: boolean;
   standings: StandingsPlayer[];
+  rollbackCurrentRound: () => void;
 }
 
-export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings }: PairingsDisplayProps) {
+export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings, rollbackCurrentRound }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingSubmitted, setIsEditingSubmitted] = useState(false);
+
+  useEffect(() => {
+    // When round number changes, we are definitely not editing submitted results of the PREVIOUS round.
+    setIsEditing(false);
+    setIsEditingSubmitted(false);
+  }, [roundNumber]);
 
   useEffect(() => {
     const initialResults: { [key: string]: { p1: string; p2: string } } = {};
@@ -36,10 +43,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
         }
     });
     setResults(initialResults);
-    // When pairings change (e.g. next round), exit editing mode
-    setIsEditing(false);
-    setIsEditingSubmitted(false);
-  }, [pairings, roundNumber]);
+  }, [pairings]);
 
   const handleResultChange = (pairingId: string, player: 'p1' | 'p2', value: string) => {
     if (value === '') {
@@ -86,6 +90,11 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
     onUpdatePairings(newPairings);
     setIsEditing(false);
   }
+
+  const handleEditClick = () => {
+    rollbackCurrentRound();
+    setIsEditingSubmitted(true);
+  };
 
   const anyMatchSubmittedInRound = !isViewingHistory && pairings.some(p => p.isSubmitted && p.player2.id !== 'bye');
 
@@ -163,12 +172,12 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
       {isEditable && (
         <div className="w-full mt-4">
           {anyMatchSubmittedInRound && !isEditingSubmitted && !isViewingHistory ? (
-            <Button variant="outline" onClick={() => setIsEditingSubmitted(true)} className="w-full">
+            <Button variant="outline" onClick={handleEditClick} className="w-full">
               Edit Results
             </Button>
           ) : (
-            <Button onClick={handleSubmitAll} className="w-full">
-              {anyMatchSubmittedInRound ? 'Update All Results' : 'Submit All Results'}
+            <Button onClick={handleSubmitAll} className="w-full" disabled={Object.keys(results).length === 0}>
+              {isEditingSubmitted ? 'Update All Results' : 'Submit All Results'}
             </Button>
           )}
         </div>

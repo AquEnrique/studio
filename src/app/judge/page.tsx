@@ -28,6 +28,7 @@ export default function JudgePage() {
     importTournament,
     exportTournament,
     allResultsSubmitted,
+    rollbackCurrentRound,
   } = useTournament();
 
   const isMobile = useIsMobile();
@@ -127,6 +128,7 @@ export default function JudgePage() {
                       onUpdatePairings={updatePairings}
                       isViewingHistory={isViewingHistory}
                       standings={isViewingHistory ? historicalStandings : standings}
+                      rollbackCurrentRound={rollbackCurrentRound}
                   />
               </div>
           </div>
