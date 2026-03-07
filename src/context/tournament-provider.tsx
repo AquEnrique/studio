@@ -114,6 +114,7 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
         opponentTotalPoints: opponentTotalPoints[p.id],
         gameWinPercentage,
         roundResults,
+        opponentIds: stats.opponentIds,
       };
     });
 
@@ -343,9 +344,14 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
     setTournament(produce(draft => {
       if (!draft) return;
+      // Save current round to history before generating next
+      const currentRoundIndex = draft.rounds.length -1;
+      setRoundHistory(prev => ({...prev, [currentRoundIndex]: JSON.parse(JSON.stringify(draft.rounds[currentRoundIndex]))}));
+
       const newRound = swissPair(draft.players, draft.rounds);
       const newRoundIndex = draft.rounds.length;
       draft.rounds.push(newRound);
+      // Save initial state of new round to history
       setRoundHistory(prev => ({...prev, [newRoundIndex]: JSON.parse(JSON.stringify(newRound))}));
     }));
     setViewingRound(null);
@@ -357,6 +363,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           if(!draft) return;
           
           if(roundIndex < draft.rounds.length - 1) {
+            // Time machine rollback
             const originalRound = roundHistory[roundIndex];
             if (!originalRound) {
                 console.error("No history found for round", roundIndex);
@@ -364,6 +371,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
             }
             draft.rounds = draft.rounds.slice(0, roundIndex);
             draft.rounds.push(JSON.parse(JSON.stringify(originalRound)));
+            // Clear future history
+            Object.keys(roundHistory).forEach(key => {
+              if (parseInt(key) > roundIndex) {
+                delete roundHistory[parseInt(key)];
+              }
+            });
           }
 
           const currentRound = draft.rounds[roundIndex];

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { DisplayPairing, Player, ManualPairing } from '@/lib/types';
+import type { DisplayPairing, Player, ManualPairing, StandingsPlayer } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,9 +17,10 @@ interface PairingsDisplayProps {
   allPlayers: Player[];
   onUpdatePairings: (newPairings: ManualPairing[]) => void;
   isViewingHistory: boolean;
+  standings: StandingsPlayer[];
 }
 
-export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory }: PairingsDisplayProps) {
+export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
 
@@ -95,6 +96,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
             onSave={handleSavePairings}
             onCancel={() => setIsEditing(false)}
             roundNumber={roundNumber}
+            standings={standings}
         />
     )
   }

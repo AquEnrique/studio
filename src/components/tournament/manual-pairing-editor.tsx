@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Player, ManualPairing, DisplayPairing } from '@/lib/types';
+import type { Player, ManualPairing, DisplayPairing, StandingsPlayer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCcw, Save, X, Ban } from 'lucide-react';
@@ -16,13 +16,21 @@ interface ManualPairingEditorProps {
   onSave: (pairings: ManualPairing[]) => void;
   onCancel: () => void;
   roundNumber: number;
+  standings: StandingsPlayer[];
 }
 
-export function ManualPairingEditor({ players, initialPairings, onSave, onCancel, roundNumber }: ManualPairingEditorProps) {
+export function ManualPairingEditor({ players, initialPairings, onSave, onCancel, roundNumber, standings }: ManualPairingEditorProps) {
   
   const [unpairedPlayers, setUnpairedPlayers] = useState<Player[]>([]);
   const [pairings, setPairings] = useState<ManualPairing[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+
+  const standingsMap = useMemo(() => new Map(standings.map(p => [p.playerId, p])), [standings]);
+  const pastOpponentIds = useMemo(() => {
+    if (!selectedPlayer) return new Set<string>();
+    const playerStanding = standingsMap.get(selectedPlayer.id);
+    return new Set(playerStanding?.opponentIds || []);
+  }, [selectedPlayer, standingsMap]);
 
   useEffect(() => {
     const pairedPlayerIds = new Set(initialPairings.flatMap(p => {
@@ -30,13 +38,19 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
         if (p.player2.id !== 'bye') ids.push(p.player2.id);
         return ids;
     }));
-    setUnpairedPlayers(players.filter(p => !pairedPlayerIds.has(p.id)).sort((a,b) => a.name.localeCompare(b.name)));
+    
+    const unpairedRankedPlayers = standings
+        .filter(p => !pairedPlayerIds.has(p.playerId))
+        .map(p => ({ id: p.playerId, name: p.playerName }));
+
+    setUnpairedPlayers(unpairedRankedPlayers);
+
     setPairings(initialPairings.map(p => ({
         player1: p.player1,
         player2: p.player2,
     })));
     setSelectedPlayer(null);
-  }, [players, initialPairings]);
+  }, [initialPairings, standings]);
 
 
   const handlePlayerClick = (player: Player) => {
@@ -72,19 +86,35 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
     }
     
     setPairings(newPairings);
-    setUnpairedPlayers(prev => [...prev, ...playersToAddBack].sort((a,b) => a.name.localeCompare(b.name)));
+    
+    const newUnpaired = [...unpairedPlayers, ...playersToAddBack];
+    const rankedPlayerIds = standings.map(p => p.playerId);
+    newUnpaired.sort((a, b) => {
+        const rankA = rankedPlayerIds.indexOf(a.id);
+        const rankB = rankedPlayerIds.indexOf(b.id);
+        if (rankA === -1) return 1;
+        if (rankB === -1) return -1;
+        return rankA - rankB;
+    });
+
+    setUnpairedPlayers(newUnpaired);
     setSelectedPlayer(null);
   };
   
   const cleanPairings = () => {
-    const allPairedPlayers = pairings.flatMap(p => {
-        const playersInPair = [p.player1];
-        if (p.player2.id !== 'bye') {
-            playersInPair.push(p.player2 as Player);
-        }
-        return playersInPair;
+    const pairedPlayers = pairings.flatMap(p => {
+      const players = [p.player1];
+      if (p.player2.id !== 'bye') players.push(p.player2 as Player);
+      return players;
     });
-    setUnpairedPlayers(prev => [...prev, ...allPairedPlayers].sort((a,b) => a.name.localeCompare(b.name)));
+    const allPlayersInEditor = [...unpairedPlayers, ...pairedPlayers];
+    const allPlayerIds = allPlayersInEditor.map(p => p.id);
+    
+    const allUnpairedRanked = standings
+      .filter(p => allPlayerIds.includes(p.playerId))
+      .map(p => ({id: p.playerId, name: p.playerName}));
+      
+    setUnpairedPlayers(allUnpairedRanked);
     setPairings([]);
     setSelectedPlayer(null);
   };
@@ -124,6 +154,7 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
                   className={cn(
                       "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
                       selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                      selectedPlayer && selectedPlayer.id !== player.id && pastOpponentIds.has(player.id) && "bg-muted/70 opacity-70"
                   )}
                 >
                   <span>{player.name}</span>

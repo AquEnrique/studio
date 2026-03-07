@@ -39,6 +39,7 @@ export type StandingsPlayer = {
   gameWinPercentage: number;
   // For simple/judge standings table
   roundResults: RoundResult[];
+  opponentIds: string[];
 };
 
 
@@ -57,5 +58,6 @@ export type ManualPairing = {
   player1: Player;
   player2: Player | { id: 'bye'; name: 'BYE' };
 };
+
 
 

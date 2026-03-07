@@ -126,6 +126,7 @@ export default function JudgePage() {
                       allPlayers={tournament.players}
                       onUpdatePairings={updatePairings}
                       isViewingHistory={isViewingHistory}
+                      standings={isViewingHistory ? historicalStandings : standings}
                   />
               </div>
           </div>
