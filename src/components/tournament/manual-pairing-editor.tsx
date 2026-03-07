@@ -26,6 +26,7 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   const standingsMap = useMemo(() => new Map(standings.map(p => [p.playerId, p])), [standings]);
+  const rankMap = useMemo(() => new Map(standings.map((p, index) => [p.playerId, index + 1])), [standings]);
   const pastOpponentIds = useMemo(() => {
     if (!selectedPlayer) return new Set<string>();
     const playerStanding = standingsMap.get(selectedPlayer.id);
@@ -147,6 +148,7 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
           </div>
           <div className="p-2 bg-muted/50 rounded-md min-h-[100px] space-y-2">
             {unpairedPlayers.map(player => {
+              const rank = rankMap.get(player.id);
               return (
                 <div
                   key={player.id}
@@ -157,7 +159,7 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
                       selectedPlayer && selectedPlayer.id !== player.id && pastOpponentIds.has(player.id) && "bg-muted/70 opacity-70"
                   )}
                 >
-                  <span>{player.name}</span>
+                  <span>{rank ? `${rank} - ` : ''}{player.name}</span>
                 </div>
               )
             })}
