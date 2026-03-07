@@ -129,6 +129,7 @@ export default function JudgePage() {
                       isViewingHistory={isViewingHistory}
                       standings={isViewingHistory ? historicalStandings : standings}
                       onRollbackRound={rollbackToRound}
+                      tournament={tournament}
                   />
               </div>
           </div>

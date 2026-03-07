@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { DisplayPairing, Player, ManualPairing, StandingsPlayer } from '@/lib/types';
+import type { DisplayPairing, Player, ManualPairing, StandingsPlayer, Tournament } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ManualPairingEditor } from './manual-pairing-editor';
@@ -28,6 +28,7 @@ interface PairingsDisplayProps {
   isViewingHistory: boolean;
   standings: StandingsPlayer[];
   onRollbackRound: (roundIndex: number) => void;
+  tournament: Tournament;
 }
 
 const ScoreSelector = ({
@@ -60,7 +61,7 @@ const ScoreSelector = ({
 };
 
 
-export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings, onRollbackRound }: PairingsDisplayProps) {
+export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings, onRollbackRound, tournament }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
   const [isEditing, setIsEditing] = useState(false);
   const [isHistoryAlertOpen, setIsHistoryAlertOpen] = useState(false);
@@ -148,6 +149,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
             onCancel={() => setIsEditing(false)}
             roundNumber={roundNumber}
             standings={standings}
+            tournament={tournament}
         />
     )
   }

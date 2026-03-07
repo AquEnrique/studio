@@ -2,13 +2,14 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Player, ManualPairing, DisplayPairing, StandingsPlayer } from '@/lib/types';
+import type { Player, ManualPairing, DisplayPairing, StandingsPlayer, Tournament } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCcw, Save, X, Ban } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { calculateStandings } from '@/context/tournament-provider';
 
 interface ManualPairingEditorProps {
   players: Player[];
@@ -17,9 +18,10 @@ interface ManualPairingEditorProps {
   onCancel: () => void;
   roundNumber: number;
   standings: StandingsPlayer[];
+  tournament: Tournament;
 }
 
-export function ManualPairingEditor({ players, initialPairings, onSave, onCancel, roundNumber, standings }: ManualPairingEditorProps) {
+export function ManualPairingEditor({ players, initialPairings, onSave, onCancel, roundNumber, standings, tournament }: ManualPairingEditorProps) {
   
   const [unpairedPlayers, setUnpairedPlayers] = useState<Player[]>([]);
   const [pairings, setPairings] = useState<ManualPairing[]>([]);
@@ -27,11 +29,23 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
 
   const standingsMap = useMemo(() => new Map(standings.map(p => [p.playerId, p])), [standings]);
   const rankMap = useMemo(() => new Map(standings.map((p, index) => [p.playerId, index + 1])), [standings]);
+
+  const pastOpponentsStandings = useMemo(() => {
+    if (!tournament) return [];
+    const historicalTournament: Tournament = {
+      ...tournament,
+      rounds: tournament.rounds.slice(0, roundNumber - 1),
+    };
+    return calculateStandings(historicalTournament);
+  }, [tournament, roundNumber]);
+
+  const pastOpponentsStandingsMap = useMemo(() => new Map(pastOpponentsStandings.map(p => [p.playerId, p])), [pastOpponentsStandings]);
+  
   const pastOpponentIds = useMemo(() => {
     if (!selectedPlayer) return new Set<string>();
-    const playerStanding = standingsMap.get(selectedPlayer.id);
+    const playerStanding = pastOpponentsStandingsMap.get(selectedPlayer.id);
     return new Set(playerStanding?.opponentIds || []);
-  }, [selectedPlayer, standingsMap]);
+  }, [selectedPlayer, pastOpponentsStandingsMap]);
 
   useEffect(() => {
     const pairedPlayerIds = new Set(initialPairings.flatMap(p => {
