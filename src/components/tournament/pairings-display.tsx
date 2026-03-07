@@ -5,9 +5,9 @@ import { useState, useEffect } from 'react';
 import type { DisplayPairing, Player, ManualPairing, StandingsPlayer } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ManualPairingEditor } from './manual-pairing-editor';
 import { Pencil } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PairingsDisplayProps {
   pairings: DisplayPairing[];
@@ -20,6 +20,36 @@ interface PairingsDisplayProps {
   standings: StandingsPlayer[];
   rollbackCurrentRound: () => void;
 }
+
+const ScoreSelector = ({
+  score,
+  onScoreChange,
+  disabled,
+  otherPlayerScore,
+}: {
+  score: string;
+  onScoreChange: (score: string) => void;
+  disabled: boolean;
+  otherPlayerScore: string;
+}) => {
+  return (
+    <div className="flex justify-center gap-1">
+      {[0, 1, 2].map(val => (
+        <Button
+          key={val}
+          variant={score === String(val) ? 'secondary' : 'outline'}
+          size="icon"
+          className="h-9 w-9 rounded-full"
+          onClick={(e) => { e.preventDefault(); onScoreChange(String(val)); }}
+          disabled={disabled || (val === 2 && otherPlayerScore === '2')}
+        >
+          {val}
+        </Button>
+      ))}
+    </div>
+  );
+};
+
 
 export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditable, allPlayers, onUpdatePairings, isViewingHistory, standings, rollbackCurrentRound }: PairingsDisplayProps) {
   const [results, setResults] = useState<{ [key: string]: { p1: string; p2: string } }>({});
@@ -35,32 +65,24 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
   useEffect(() => {
     const initialResults: { [key: string]: { p1: string; p2: string } } = {};
     pairings.forEach(p => {
-        if(p.result) {
-            initialResults[p.player1.id] = {
-                p1: p.result.p1Games,
-                p2: p.result.p2Games,
-            };
-        }
+      if (p.player2.id !== 'bye') {
+        initialResults[p.player1.id] = {
+            p1: p.result?.p1Games ?? '0',
+            p2: p.result?.p2Games ?? '0',
+        };
+      }
     });
     setResults(initialResults);
   }, [pairings]);
 
   const handleResultChange = (pairingId: string, player: 'p1' | 'p2', value: string) => {
-    if (value === '') {
-      setResults(prev => ({ ...prev, [pairingId]: { ...prev[pairingId], [player]: '' } }));
-      return;
-    }
-
-    const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue >= 0 && numValue <= 2) {
-      setResults(prev => ({
+    setResults(prev => ({
         ...prev,
         [pairingId]: {
-          ...prev[pairingId],
-          [player]: value,
+            ...(prev[pairingId]),
+            [player]: value,
         }
-      }));
-    }
+    }));
   };
 
   const handleSubmitAll = () => {
@@ -68,15 +90,20 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
     pairings.forEach(pairing => {
       const p1Id = pairing.player1.id;
       const result = results[p1Id];
-      if (result && (result.p1 !== undefined || result.p2 !== undefined)) {
-        if(pairing.player2.id === 'bye') return;
-        const p2Id = (pairing.player2 as Player).id;
-        const p1Games = parseInt(result.p1 || '0', 10);
-        const p2Games = parseInt(result.p2 || '0', 10);
-        
-        if (!isNaN(p1Games) && !isNaN(p2Games)) {
-            resultsToSubmit.push({p1Id, p2Id, p1Games, p2Games})
-        }
+      
+      if (!result) return;
+      if(pairing.player2.id === 'bye') return;
+
+      const p2Id = (pairing.player2 as Player).id;
+      const p1Games = parseInt(result.p1, 10);
+      const p2Games = parseInt(result.p2, 10);
+      
+      if (!isNaN(p1Games) && !isNaN(p2Games)) {
+          if (p1Games === 2 && p2Games === 2) {
+            console.error(`Invalid score 2-2 for match: ${pairing.player1.name} vs ${pairing.player2.name}`);
+            return;
+          }
+          resultsToSubmit.push({p1Id, p2Id, p1Games, p2Games})
       }
     });
 
@@ -124,46 +151,38 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
       {pairings.map((pairing) => {
         const pairingId = pairing.player1.id;
         const player2IsBye = pairing.player2.id === 'bye';
-        
         const isMatchLocked = !isViewingHistory && pairing.isSubmitted && !isEditingSubmitted;
+
+        const p1Score = results[pairingId]?.p1 ?? '0';
+        const p2Score = results[pairingId]?.p2 ?? '0';
 
         return (
           <Card key={pairingId}>
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex flex-col gap-2 font-semibold">
-                <span>{pairing.player1.name}</span>
-                <span className="text-sm text-muted-foreground self-center">vs</span>
-                <span>{pairing.player2.name}</span>
+            <CardContent className="p-4">
+               <div className="flex justify-between items-center">
+                <div className="font-semibold truncate pr-2">{pairing.player1.name}</div>
+                <div className="text-muted-foreground mx-2">vs</div>
+                <div className="font-semibold truncate pl-2 text-right">{pairing.player2.name}</div>
               </div>
-
+              
               {!player2IsBye ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="2"
-                    className="w-16"
-                    placeholder="P1"
-                    aria-label={`${pairing.player1.name} score`}
-                    value={results[pairingId]?.p1 ?? ''}
-                    onChange={(e) => handleResultChange(pairingId, 'p1', e.target.value)}
+                <div className="mt-4 flex justify-around items-center">
+                  <ScoreSelector 
+                    score={p1Score}
+                    onScoreChange={(score) => handleResultChange(pairingId, 'p1', score)}
                     disabled={!isEditable || isMatchLocked}
+                    otherPlayerScore={p2Score}
                   />
-                  <span>-</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="2"
-                    className="w-16"
-                    placeholder="P2"
-                    aria-label={`${(pairing.player2 as Player).name} score`}
-                    value={results[pairingId]?.p2 ?? ''}
-                    onChange={(e) => handleResultChange(pairingId, 'p2', e.target.value)}
+                   <span className="text-muted-foreground">-</span>
+                  <ScoreSelector 
+                    score={p2Score}
+                    onScoreChange={(score) => handleResultChange(pairingId, 'p2', score)}
                     disabled={!isEditable || isMatchLocked}
+                    otherPlayerScore={p1Score}
                   />
                 </div>
               ) : (
-                <span className="text-sm font-bold text-primary pr-4">BYE (Win)</span>
+                <div className="mt-4 text-center text-sm font-bold text-primary">BYE (Win)</div>
               )}
             </CardContent>
           </Card>
@@ -176,7 +195,7 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
               Edit Results
             </Button>
           ) : (
-            <Button onClick={handleSubmitAll} className="w-full" disabled={Object.keys(results).length === 0}>
+            <Button onClick={handleSubmitAll} className="w-full">
               {isEditingSubmitted ? 'Update All Results' : 'Submit All Results'}
             </Button>
           )}
