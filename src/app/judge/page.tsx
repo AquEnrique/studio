@@ -108,10 +108,10 @@ export default function JudgePage() {
           )}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <div className="flex flex-col gap-4">
-                  <h2 className="text-2xl font-semibold">Clasificaciones (Simple)</h2>
+                  <h2 className="text-2xl font-semibold">Clasificaciones</h2>
                   <StandingsTable 
                       players={isViewingHistory ? historicalStandings : standings}
-                      view='simple'
+                      view='judge'
                       maxRounds={currentRoundForView}
                   />
               </div>

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, createContext, useContext, ReactNode } from 'react';
-import type { Tournament, Player, StandingsPlayer, ManualPairing, Match, Round, DisplayPairing } from '@/lib/types';
+import type { Tournament, Player, StandingsPlayer, ManualPairing, Match, Round, DisplayPairing, RoundResult } from '@/lib/types';
 import { produce } from 'immer';
 
 const LOCAL_STORAGE_KEY = 'ygo-tournament-state-v2';
@@ -85,17 +85,26 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
         ? stats.gamesWon / stats.gamesPlayed 
         : 0;
       
-      const roundResults = tournament.rounds.map(round => {
+      const roundResults: RoundResult[] = tournament.rounds.map(round => {
           const match = round.find(m => m.playerId1 === p.id || m.playerId2 === p.id);
           if (!match) return null;
-          if (match.playerId2 === null) return 'bye'; // Bye gives 3 points
           
-          const isPlayer1 = match.playerId1 === p.id;
-          if (isPlayer1) {
-              return match.wonGamesPlayer1 === 2 ? 3 : 0;
-          } else {
-              return match.wonGamesPlayer2 === 2 ? 3 : 0;
+          if (match.playerId2 === null && match.playerId1 === p.id) { // Check if the player is the one with the bye
+              return { opponentName: 'BYE', wins: match.wonGamesPlayer1, losses: match.wonGamesPlayer2, isBye: true };
           }
+          
+          if (match.playerId2 === null) return null; // Not this player's bye match
+
+          const isPlayer1 = match.playerId1 === p.id;
+          const opponentId = isPlayer1 ? match.playerId2 : match.playerId1;
+          const opponent = playerMap.get(opponentId);
+
+          return {
+            opponentName: opponent?.name || 'Unknown',
+            wins: isPlayer1 ? match.wonGamesPlayer1 : match.wonGamesPlayer2,
+            losses: isPlayer1 ? match.wonGamesPlayer2 : match.wonGamesPlayer1,
+            isBye: false
+          };
       });
 
       return {
@@ -325,8 +334,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           if(!draft) return;
           
           if(roundIndex < draft.rounds.length - 1) {
-            const originalRoundState = JSON.parse(JSON.stringify(draft.rounds.slice(0, roundIndex + 1)));
-            draft.rounds = originalRoundState;
+            // Keep a copy of the round we are about to modify
+            const originalRound = JSON.parse(JSON.stringify(draft.rounds[roundIndex]));
+            
+            // Rollback state to the beginning of the edited round
+            draft.rounds = draft.rounds.slice(0, roundIndex);
+            draft.rounds.push(originalRound);
           }
 
           const currentRound = draft.rounds[roundIndex];
@@ -409,7 +422,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const roundForView = viewingRound || tournament.rounds.length;
     const roundIndex = roundForView - 1;
 
-    if (roundIndex < 0) return [];
+    if (roundIndex < 0 || roundIndex >= tournament.rounds.length) return [];
     
     const currentRound = tournament.rounds[roundIndex];
     if (!currentRound) return [];

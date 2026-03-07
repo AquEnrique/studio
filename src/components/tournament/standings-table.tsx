@@ -31,7 +31,7 @@ type CalculationInfo = {
 
 interface StandingsTableProps {
   players: StandingsPlayer[];
-  view: 'simple' | 'advanced';
+  view: 'simple' | 'advanced' | 'judge';
   maxRounds: number;
 }
 
@@ -92,17 +92,24 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
               <TableCell className="font-bold">{player.playerPoints}</TableCell>
               {Array.from({ length: maxRounds }, (_, i) => i).map(roundIndex => {
                 const roundResult = player.roundResults[roundIndex];
-                const cellContent = roundResult !== null ? (roundResult === 'bye' ? 'BYE' : roundResult) : '-';
-                const cellColor = roundResult !== null 
-                  ? roundResult === 'bye'
-                    ? 'text-yellow-400' 
-                    : roundResult === 3 
-                      ? 'text-green-500' 
-                      : roundResult === 0
-                      ? 'text-red-500'
-                      : ''
-                  : 'text-muted-foreground';
+                let cellContent: React.ReactNode = '-';
+                let cellColor = 'text-muted-foreground';
 
+                if (roundResult) {
+                    if (roundResult.isBye) {
+                        cellContent = 'BYE';
+                        cellColor = 'text-yellow-400';
+                    } else {
+                        const points = roundResult.wins === 2 ? 3 : 0;
+                        cellContent = points;
+                        if (points === 3) {
+                            cellColor = 'text-green-500';
+                        } else if (roundResult.losses === 2) {
+                            cellColor = 'text-red-500';
+                        }
+                    }
+                }
+                
                 return (
                   <TableCell key={`points-${player.playerId}-${roundIndex}`} className={cn("text-center font-mono", cellColor)}>
                     {cellContent}
@@ -114,6 +121,90 @@ export function StandingsTable({ players, view, maxRounds }: StandingsTableProps
         </TableBody>
       </Table>
     )
+  }
+
+  if (view === 'judge') {
+    return (
+      <>
+      <AlertDialog open={!!calculationInfo} onOpenChange={(isOpen) => !isOpen && setCalculationInfo(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{calculationInfo?.title}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="mt-2 text-sm text-foreground">
+                {calculationInfo?.description}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cerrar</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="sticky left-0 z-20 bg-card w-[60px]">Rank</TableHead>
+            <TableHead className="sticky left-[60px] z-20 bg-card min-w-[200px]">Nombre</TableHead>
+            <TableHead>Puntos</TableHead>
+            <TableHead>
+                <div className="flex items-center gap-1">
+                    Puntos de Oponente
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('OTP')}>
+                        <Info className="w-3 h-3" />
+                    </Button>
+                </div>
+            </TableHead>
+            <TableHead>
+                <div className="flex items-center gap-1">
+                    GW%
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('GWP')}>
+                        <Info className="w-3 h-3" />
+                    </Button>
+                </div>
+            </TableHead>
+            {Array.from({ length: maxRounds }, (_, i) => i + 1).map(roundNum => (
+              <TableHead key={`round-head-${roundNum}`} className="text-center min-w-[120px]">R{roundNum}</TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {players.map((player, index) => (
+            <TableRow key={player.playerId}>
+              <TableCell className="sticky left-0 z-10 bg-card font-medium">{index + 1}</TableCell>
+              <TableCell className="sticky left-[60px] z-10 bg-card font-medium">{player.playerName}</TableCell>
+              <TableCell>{player.playerPoints}</TableCell>
+              <TableCell>{player.opponentTotalPoints}</TableCell>
+              <TableCell>{(player.gameWinPercentage * 100).toFixed(1)}%</TableCell>
+              {player.roundResults.slice(0, maxRounds).map((result, roundIndex) => (
+                <TableCell key={`round-cell-${player.playerId}-${roundIndex}`} className="text-center">
+                  {result ? (
+                    <div>
+                      <span className={cn(
+                        result.wins > result.losses ? 'text-green-500' : 
+                        result.losses > result.wins ? 'text-red-500' : ''
+                      )}>
+                          {result.isBye ? 'BYE' : `${result.wins}/${result.losses}`}
+                      </span>
+                      <span className="text-xs text-muted-foreground block truncate">
+                        {!result.isBye && `vs ${result.opponentName}`}
+                      </span>
+                    </div>
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
+              ))}
+               {/* Fill remaining cells if player has fewer rounds than maxRounds */}
+              {Array.from({ length: Math.max(0, maxRounds - player.roundResults.length) }).map((_, i) => (
+                  <TableCell key={`empty-cell-${player.playerId}-${i}`} className="text-center">-</TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      </>
+    );
   }
 
   // Advanced View

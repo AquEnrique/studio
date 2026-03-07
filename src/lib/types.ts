@@ -21,6 +21,14 @@ export type Tournament = {
   status: 'registration' | 'running' | 'finished';
 };
 
+// New type for detailed round results
+export type RoundResult = {
+  opponentName: string; // 'BYE' for a bye
+  wins: number;
+  losses: number;
+  isBye: boolean;
+} | null;
+
 
 // View model for the standings table, calculated from the Tournament object
 export type StandingsPlayer = {
@@ -29,8 +37,8 @@ export type StandingsPlayer = {
   playerPoints: number;
   opponentTotalPoints: number;
   gameWinPercentage: number;
-  // For simple standings table
-  roundResults: (number | 'bye' | null)[];
+  // For simple/judge standings table
+  roundResults: RoundResult[];
 };
 
 
@@ -49,4 +57,5 @@ export type ManualPairing = {
   player1: Player;
   player2: Player | { id: 'bye'; name: 'BYE' };
 };
+
 
