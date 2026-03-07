@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, createContext, useContext, ReactNode, useRef } from 'react';
+import { useState, useEffect, useMemo, createContext, useContext, ReactNode, useRef, useCallback } from 'react';
 import type { Tournament, Player, StandingsPlayer, ManualPairing, Match, Round, DisplayPairing, RoundResult } from '@/lib/types';
 import { produce } from 'immer';
 
@@ -159,6 +159,7 @@ interface TournamentContextType {
     cancelImport: () => void;
     allResultsSubmitted: boolean;
     rollbackToRound: (roundIndex: number) => void;
+    refreshTournament: () => Promise<void>;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
@@ -169,30 +170,30 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [pendingImport, setPendingImport] = useState<string | null>(null);
   const isInitialMount = useRef(true);
 
-  useEffect(() => {
-    const fetchTournament = async () => {
-      try {
-        const response = await fetch(NPOINT_URL);
-        if (response.ok) {
-          const data = await response.json();
-          if (data && typeof data === 'object' && Object.keys(data).length > 0 && data.players && data.status && data.rounds) {
-            setTournament(data);
-          } else {
-            // If npoint is empty or invalid, start with initial state and save it
-            setTournament(initialTournamentState);
-          }
+  const fetchTournament = useCallback(async () => {
+    try {
+      const response = await fetch(NPOINT_URL);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && typeof data === 'object' && Object.keys(data).length > 0 && data.players && data.status && data.rounds) {
+          setTournament(data);
         } else {
-          console.error("Error fetching from npoint.io, status:", response.status);
+          // If npoint is empty or invalid, start with initial state and save it
           setTournament(initialTournamentState);
         }
-      } catch (error) {
-        console.error("Error fetching tournament data from npoint.io", error);
+      } else {
+        console.error("Error fetching from npoint.io, status:", response.status);
         setTournament(initialTournamentState);
       }
-    };
-
-    fetchTournament();
+    } catch (error) {
+      console.error("Error fetching tournament data from npoint.io", error);
+      setTournament(initialTournamentState);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchTournament();
+  }, [fetchTournament]);
 
   useEffect(() => {
     // Prevent saving on initial render when tournament state is first set from fetch
@@ -518,6 +519,10 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setViewingRound(null);
   };
 
+  const refreshTournament = async () => {
+    await fetchTournament();
+  };
+
   const currentPairings = useMemo((): DisplayPairing[] => {
     if (!tournament) return [];
     
@@ -587,6 +592,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     cancelImport,
     allResultsSubmitted,
     rollbackToRound,
+    refreshTournament,
   };
 
   return (

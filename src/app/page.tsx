@@ -6,7 +6,7 @@ import { PlayerRegistration } from '@/components/tournament/player-registration'
 import { TournamentControls } from '@/components/tournament/tournament-controls';
 import { StandingsTable } from '@/components/tournament/standings-table';
 import { useTournament } from '@/context/tournament-provider';
-import { List, BarChart } from 'lucide-react';
+import { List, BarChart, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -35,6 +35,7 @@ export default function TournamentPage() {
     exportTournament,
     confirmImport,
     cancelImport,
+    refreshTournament,
   } = useTournament();
   
   const [standingsView, setStandingsView] = useState<'simple' | 'advanced'>('simple');
@@ -75,7 +76,13 @@ export default function TournamentPage() {
         {(tournament.status === 'running' || tournament.status === 'finished') && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">Clasificaciones</h2>
+              <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-semibold">Clasificaciones</h2>
+                  <Button variant="outline" size="icon" onClick={() => refreshTournament()} className="h-8 w-8">
+                    <RefreshCw className="h-4 w-4" />
+                    <span className="sr-only">Actualizar tabla</span>
+                  </Button>
+              </div>
               <div className="flex items-center gap-2 rounded-full bg-muted p-1">
                   <Button 
                       variant={standingsView === 'simple' ? 'secondary' : 'ghost'} 
