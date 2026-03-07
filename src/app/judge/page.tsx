@@ -114,6 +114,7 @@ export default function JudgePage() {
                       players={isViewingHistory ? historicalStandings : standings}
                       view='judge'
                       maxRounds={currentRoundForView}
+                      isMobile={isMobile}
                   />
               </div>
               <div>

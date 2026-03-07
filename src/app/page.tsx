@@ -108,6 +108,7 @@ export default function TournamentPage() {
               players={standings} 
               view={standingsView} 
               maxRounds={tournament.rounds.length}
+              isMobile={isMobile}
             />
           </div>
         )}
