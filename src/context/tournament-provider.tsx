@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useMemo, createContext, useContext, ReactNode, useRef } from 'react';
 import type { Tournament, Player, StandingsPlayer, ManualPairing, Match, Round, DisplayPairing, RoundResult } from '@/lib/types';
 import { produce } from 'immer';
 
-const LOCAL_STORAGE_KEY = 'ygo-tournament-state-v2';
+const NPOINT_URL = 'https://api.npoint.io/36dc4af53c22ef8f8eb5';
 
 const initialTournamentState: Tournament = {
   players: [],
@@ -167,30 +167,62 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [viewingRound, setViewingRound] = useState<number | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    try {
-      const savedState = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedState) {
-        const loadedTournament: Tournament = JSON.parse(savedState);
-        setTournament(loadedTournament);
-      } else {
+    const fetchTournament = async () => {
+      try {
+        const response = await fetch(NPOINT_URL);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && typeof data === 'object' && Object.keys(data).length > 0 && data.players && data.status && data.rounds) {
+            setTournament(data);
+          } else {
+            // If npoint is empty or invalid, start with initial state and save it
+            setTournament(initialTournamentState);
+          }
+        } else {
+          console.error("Error fetching from npoint.io, status:", response.status);
+          setTournament(initialTournamentState);
+        }
+      } catch (error) {
+        console.error("Error fetching tournament data from npoint.io", error);
         setTournament(initialTournamentState);
       }
-    } catch (error) {
-      console.error("Error loading state from localStorage", error);
-      setTournament(initialTournamentState);
-    }
+    };
+
+    fetchTournament();
   }, []);
 
   useEffect(() => {
-    if (tournament) {
-        try {
-            window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tournament));
-        } catch (error) {
-            console.error("Error saving state to localStorage", error);
-        }
+    // Prevent saving on initial render when tournament state is first set from fetch
+    if (isInitialMount.current || !tournament) {
+      if(tournament) isInitialMount.current = false;
+      return;
     }
+
+    const updateNpoint = async () => {
+      try {
+        await fetch(NPOINT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(tournament),
+        });
+      } catch (error) {
+        console.error("Error saving tournament data to npoint.io", error);
+      }
+    };
+    
+    // Debounce the update slightly to avoid hammering the API on rapid changes
+    const handler = setTimeout(() => {
+      updateNpoint();
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, [tournament]);
 
   const standings = useMemo(() => {
@@ -233,7 +265,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         if (!round || !round.matches) return;
         round.matches.forEach(match => {
             if (match.playerId2 === null) {
-                if (round.status === 'finished') {
+                 if (round.status === 'finished') {
                     const p1Stats = playerStats.get(match.playerId1);
                     if(p1Stats) p1Stats.points += 3;
                 }
@@ -293,7 +325,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       for (let i = 0; i < playersToPair.length; i++) {
         const p2 = playersToPair[i];
         if (!playerStats.get(p1.id)?.opponentIds.has(p2.id)) {
-          pairings.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0 });
+          pairings.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0, isSubmitted: false });
           playersToPair.splice(i, 1);
           paired = true;
           break;
@@ -310,7 +342,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       const p1 = playersToPair.shift()!;
       const p2 = playersToPair.shift()!;
       console.warn(`Could not find a valid opponent for ${p1.name}. Forcing a rematch with ${p2.name}.`);
-      pairings.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0 });
+      pairings.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0, isSubmitted: false });
     }
   
     return pairings;
@@ -377,10 +409,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
               }
           });
 
-          const allSubmitted = roundToUpdate.matches.every(m => {
-            const resultExists = results.some(r => r.p1Id === m.playerId1);
-            return resultExists || m.playerId2 === null;
-          });
+          const allSubmitted = roundToUpdate.matches.every(m => m.isSubmitted);
 
           if(allSubmitted) {
             roundToUpdate.status = 'finished';
@@ -433,6 +462,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const exportTournament = (): string => {
+    if (!tournament) return JSON.stringify(initialTournamentState, null, 2);
     return JSON.stringify(tournament, null, 2);
   };
 
@@ -492,7 +522,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     if (!tournament) return [];
     
     // If not running, return empty.
-    if(tournament.status !== 'running') return [];
+    if(tournament.status !== 'running' && tournament.status !== 'finished') return [];
     
     // Determine which round to display. If viewingRound is set, use it, otherwise use the latest round.
     const roundNumberForView = viewingRound || tournament.rounds.length;
@@ -531,7 +561,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const allResultsSubmitted = useMemo(() => {
     if (!tournament || tournament.status !== 'running' || tournament.rounds.length === 0) return false;
     const currentRound = tournament.rounds[tournament.rounds.length - 1];
-    if (!currentRound) return true;
+    if (!currentRound) return false; // Should not happen if rounds.length > 0
     return currentRound.status === 'finished';
   }, [tournament]);
 
