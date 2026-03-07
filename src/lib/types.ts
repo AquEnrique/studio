@@ -14,7 +14,10 @@ export type Match = {
   isSubmitted?: boolean;
 };
 
-export type Round = Match[];
+export type Round = {
+  matches: Match[];
+  status: 'started' | 'finished';
+};
 
 export type Tournament = {
   players: Player[];
@@ -59,7 +62,3 @@ export type ManualPairing = {
   player1: Player;
   player2: Player | { id: 'bye'; name: 'BYE' };
 };
-
-
-
-

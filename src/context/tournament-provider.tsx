@@ -17,13 +17,6 @@ const initialTournamentState: Tournament = {
 export const calculateStandings = (tournament: Tournament | null): StandingsPlayer[] => {
     if (!tournament || !tournament.players.length) return [];
     
-    // Check if the latest round is fully submitted
-    const lastRound = tournament.rounds[tournament.rounds.length - 1];
-    const isLastRoundSubmitted = lastRound ? lastRound.every(match => {
-        if (match.playerId2 === null) return true; // Byes are considered submitted.
-        return !!match.isSubmitted;
-    }) : true; // If no rounds, it's 'submitted'
-    
     // Step 1: Initialize stats for each player
     const playerStats: { [key: string]: { 
         points: number, 
@@ -38,14 +31,11 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
     });
 
     // Step 2: Iterate through rounds and matches to calculate base stats
-    tournament.rounds.forEach((round, roundIndex) => {
-      const isLastRound = roundIndex === tournament.rounds.length - 1;
-
-      round.forEach(match => {
+    tournament.rounds.forEach((round) => {
+      round.matches.forEach(match => {
         // Handle bye
         if (match.playerId2 === null) {
-          // Only award bye points if it's a past round, or if the current round is fully submitted.
-          if (!isLastRound || isLastRoundSubmitted) {
+          if (round.status === 'finished') {
             if(playerStats[match.playerId1]) {
               playerStats[match.playerId1].points += 3;
             }
@@ -101,7 +91,7 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
         : 0;
       
       const roundResults: RoundResult[] = tournament.rounds.map(round => {
-          const match = round.find(m => m.playerId1 === p.id || m.playerId2 === p.id);
+          const match = round.matches.find(m => m.playerId1 === p.id || m.playerId2 === p.id);
           if (!match) return null;
           
           if (match.playerId2 === null && match.playerId1 === p.id) { // Check if the player is the one with the bye
@@ -175,7 +165,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [viewingRound, setViewingRound] = useState<number | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
-  const [roundHistory, setRoundHistory] = useState<{[roundIndex: number]: Round}>({});
 
   useEffect(() => {
     try {
@@ -183,19 +172,12 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       if (savedState) {
         const loadedTournament: Tournament = JSON.parse(savedState);
         setTournament(loadedTournament);
-        const newHistory: {[roundIndex: number]: Round} = {};
-        loadedTournament.rounds.forEach((round, index) => {
-          newHistory[index] = JSON.parse(JSON.stringify(round));
-        });
-        setRoundHistory(newHistory);
       } else {
         setTournament(initialTournamentState);
-        setRoundHistory({});
       }
     } catch (error) {
       console.error("Error loading state from localStorage", error);
       setTournament(initialTournamentState);
-      setRoundHistory({});
     }
   }, []);
 
@@ -242,11 +224,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const swissPair = (players: Player[], existingRounds: Round[]): Round => {
+  const swissPair = (players: Player[], existingRounds: Round[]): Match[] => {
     const playerStats = new Map(players.map(p => [p.id, { points: 0, opponentIds: new Set<string>() }]));
 
     existingRounds.forEach(round => {
-        round.forEach(match => {
+        round.matches.forEach(match => {
             if (match.playerId2 === null) {
                 const p1Stats = playerStats.get(match.playerId1);
                 if(p1Stats) p1Stats.points += 3;
@@ -274,7 +256,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         return Math.random() - 0.5;
     });
 
-    const pairings: Round = [];
+    const pairings: Match[] = [];
     
     let playersToPair = [...sortedPlayers];
     
@@ -283,9 +265,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         // Try to assign bye to lowest ranked player who hasn't had one
         for (let i = playersToPair.length - 1; i >= 0; i--) {
             const player = playersToPair[i];
-            const hasHadBye = existingRounds.some(r => r.some(m => m.playerId1 === player.id && m.playerId2 === null));
+            const hasHadBye = existingRounds.some(r => r.matches.some(m => m.playerId1 === player.id && m.playerId2 === null));
             if (!hasHadBye) {
-                pairings.push({ playerId1: player.id, playerId2: null, wonGamesPlayer1: 2, wonGamesPlayer2: 0 });
+                pairings.push({ playerId1: player.id, playerId2: null, wonGamesPlayer1: 2, wonGamesPlayer2: 0, isSubmitted: true });
                 playersToPair.splice(i, 1);
                 byeAssigned = true;
                 break;
@@ -294,7 +276,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         // If all remaining players had a bye, give it to the lowest ranked one.
         if (!byeAssigned && playersToPair.length > 0) {
             const byePlayer = playersToPair.pop()!;
-            pairings.push({ playerId1: byePlayer.id, playerId2: null, wonGamesPlayer1: 2, wonGamesPlayer2: 0 });
+            pairings.push({ playerId1: byePlayer.id, playerId2: null, wonGamesPlayer1: 2, wonGamesPlayer2: 0, isSubmitted: true });
         }
     }
     
@@ -331,52 +313,39 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   
   const startTournament = () => {
     if (tournament?.status !== 'registration' || tournament.players.length < 2) return;
-    const firstRound = swissPair(tournament.players, []);
+    const firstRoundMatches = swissPair(tournament.players, []);
     setTournament(produce(tournament, draft => {
         if(draft){
             draft.status = 'running';
-            draft.rounds = [firstRound];
+            draft.rounds = [{ matches: firstRoundMatches, status: 'started' }];
         }
     }));
-    setRoundHistory({ 0: JSON.parse(JSON.stringify(firstRound)) });
   };
 
   const startManualTournament = (manualPairings: ManualPairing[]) => {
     if (tournament?.status !== 'registration' || tournament.players.length < 2) return;
-    const firstRound: Round = manualPairings.map(p => ({
+    const firstRoundMatches: Match[] = manualPairings.map(p => ({
         playerId1: p.player1.id,
         playerId2: p.player2.id === 'bye' ? null : p.player2.id,
         wonGamesPlayer1: p.player2.id === 'bye' ? 2 : 0,
         wonGamesPlayer2: 0,
+        isSubmitted: p.player2.id === 'bye' ? true : false,
     }));
     setTournament(produce(tournament, draft => {
         if (draft) {
             draft.status = 'running';
-            draft.rounds = [firstRound];
+            draft.rounds = [{ matches: firstRoundMatches, status: 'started' }];
         }
     }));
-    setRoundHistory({ 0: JSON.parse(JSON.stringify(firstRound)) });
   };
   
   const generateNextRound = () => {
-    if (tournament?.status !== 'running') return;
+    if (!tournament || tournament?.status !== 'running') return;
     
-    const currentRoundIndex = tournament.rounds.length - 1;
-    const currentRoundData = JSON.parse(JSON.stringify(tournament.rounds[currentRoundIndex]));
-
     setTournament(produce(draft => {
       if (!draft) return;
-      
-      const newRound = swissPair(draft.players, draft.rounds);
-      const newRoundIndex = draft.rounds.length;
-      draft.rounds.push(newRound);
-
-      const newRoundData = JSON.parse(JSON.stringify(draft.rounds[newRoundIndex]));
-      setRoundHistory(prev => ({
-        ...prev,
-        [currentRoundIndex]: currentRoundData,
-        [newRoundIndex]: newRoundData
-      }));
+      const newRoundMatches = swissPair(draft.players, draft.rounds);
+      draft.rounds.push({ matches: newRoundMatches, status: 'started' });
     }));
     setViewingRound(null);
   };
@@ -390,34 +359,35 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           const isRollback = roundIndex < draft.rounds.length - 1;
 
           if (isRollback) {
-            const originalRoundState = roundHistory[roundIndex];
-            if (!originalRoundState) {
-                console.error("No history found for round", roundIndex);
-                return;
-            }
+            // This logic is complex, for now we simplify and assume we only submit for the last round.
+            // A full implementation would need to handle re-generating future rounds.
+            console.warn("Editing past rounds is not fully supported and may lead to invalid tournament states.");
             draft.rounds = draft.rounds.slice(0, roundIndex + 1);
-            draft.rounds[roundIndex] = JSON.parse(JSON.stringify(originalRoundState));
-            
-            // Clear future history
-            Object.keys(roundHistory).forEach(key => {
-              if (parseInt(key) > roundIndex) {
-                delete roundHistory[parseInt(key)];
-              }
-            });
           }
 
           const roundToUpdate = draft.rounds[roundIndex];
           if(!roundToUpdate) return;
 
           results.forEach(result => {
-              const matchIndex = roundToUpdate.findIndex(m => m.playerId1 === result.p1Id && m.playerId2 === result.p2Id);
-              if (matchIndex !== -1) {
-                  const match = roundToUpdate[matchIndex];
+              const match = roundToUpdate.matches.find(m => m.playerId1 === result.p1Id && m.playerId2 === result.p2Id);
+              if (match) {
                   match.wonGamesPlayer1 = result.p1Games;
                   match.wonGamesPlayer2 = result.p2Games;
                   match.isSubmitted = true;
               }
           });
+
+          // Mark all non-bye matches in the submission as submitted
+          roundToUpdate.matches.forEach(match => {
+            if (match.playerId2 !== null) {
+                const resultExists = results.some(r => r.p1Id === match.playerId1);
+                if (resultExists) {
+                    match.isSubmitted = true;
+                }
+            }
+          });
+
+          roundToUpdate.status = 'finished';
       }));
 
       if(viewingRound !== null) {
@@ -429,26 +399,20 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         if (!tournament || tournament.status !== 'running') return;
         const currentRoundIndex = viewingRound ? viewingRound - 1 : tournament.rounds.length - 1;
 
-        const newRound: Round = newPairings.map(p => ({
+        const newRoundMatches: Match[] = newPairings.map(p => ({
             playerId1: p.player1.id,
             playerId2: p.player2.id === 'bye' ? null : p.player2.id,
             wonGamesPlayer1: p.player2.id === 'bye' ? 2 : 0,
-            wonGamesPlayer2: 0
+            wonGamesPlayer2: 0,
+            isSubmitted: p.player2.id === 'bye'
         }));
 
         setTournament(produce(tournament, draft => {
             if(draft) {
-              // If we are editing a historical round, rollback future rounds.
               if (currentRoundIndex < draft.rounds.length - 1) {
                   draft.rounds = draft.rounds.slice(0, currentRoundIndex);
-                  Object.keys(roundHistory).forEach(key => {
-                    if (parseInt(key) > currentRoundIndex) {
-                        delete roundHistory[parseInt(key)];
-                    }
-                  });
               }
-              draft.rounds[currentRoundIndex] = newRound;
-              setRoundHistory(prev => ({...prev, [currentRoundIndex]: JSON.parse(JSON.stringify(newRound))}));
+              draft.rounds[currentRoundIndex] = { matches: newRoundMatches, status: 'started' };
             }
         }));
     };
@@ -465,7 +429,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       draft.status = 'registration';
     }));
     setViewingRound(null);
-    setRoundHistory({});
   };
 
   const exportTournament = (): string => {
@@ -484,11 +447,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         if (loadedTournament.players && loadedTournament.status && loadedTournament.rounds) {
           setTournament(loadedTournament);
           setViewingRound(null);
-          const newHistory: {[roundIndex: number]: Round} = {};
-          loadedTournament.rounds.forEach((round: Round, index: number) => {
-            newHistory[index] = JSON.parse(JSON.stringify(round));
-          });
-          setRoundHistory(newHistory);
         } else {
           throw new Error("Invalid tournament file structure.");
         }
@@ -508,13 +466,17 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setTournament(produce(draft => {
         if (!draft || draft.status !== 'running' || draft.rounds.length === 0) return;
 
-        const currentRoundIndex = draft.rounds.length - 1;
-        const initialRoundState = roundHistory[currentRoundIndex];
+        const currentRound = draft.rounds[draft.rounds.length - 1];
 
-        if (initialRoundState) {
-            draft.rounds[currentRoundIndex] = JSON.parse(JSON.stringify(initialRoundState));
-        } else {
-            console.error("Could not find initial state for current round in history.");
+        if (currentRound) {
+            currentRound.matches.forEach(match => {
+                if (match.playerId2 !== null) {
+                    match.wonGamesPlayer1 = 0;
+                    match.wonGamesPlayer2 = 0;
+                }
+                match.isSubmitted = false;
+            });
+            currentRound.status = 'started';
         }
     }));
   };
@@ -530,21 +492,21 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     const roundIndex = roundNumberForView - 1;
 
     // If no valid round index, return empty.
-    if (roundIndex < 0) return [];
+    if (roundIndex < 0 || roundIndex >= tournament.rounds.length) return [];
     
     const roundToDisplay = tournament.rounds[roundIndex];
 
-    if (!roundToDisplay) return [];
+    if (!roundToDisplay || !roundToDisplay.matches) return [];
 
     const playerMap = new Map(tournament.players.map(p => [p.id, p]));
 
-    return roundToDisplay.map(match => {
+    return roundToDisplay.matches.map(match => {
         const p1 = playerMap.get(match.playerId1);
         if (!p1) return null;
 
         const p2 = match.playerId2 ? playerMap.get(match.playerId2) : null;
         
-        const isSubmitted = !!match.isSubmitted && match.playerId2 !== null;
+        const isSubmitted = !!match.isSubmitted;
 
         return {
             player1: p1,
@@ -560,13 +522,10 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   }, [tournament, viewingRound]);
 
   const allResultsSubmitted = useMemo(() => {
-    if (!tournament || tournament.status !== 'running') return false;
+    if (!tournament || tournament.status !== 'running' || tournament.rounds.length === 0) return false;
     const currentRound = tournament.rounds[tournament.rounds.length - 1];
     if (!currentRound) return true;
-    return currentRound.every(match => {
-        if (match.playerId2 === null) return true; // Byes are auto-submitted
-        return !!match.isSubmitted;
-    });
+    return currentRound.status === 'finished';
   }, [tournament]);
 
 
