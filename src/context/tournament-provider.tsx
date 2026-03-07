@@ -344,8 +344,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setTournament(produce(draft => {
       if (!draft) return;
       const newRound = swissPair(draft.players, draft.rounds);
+      const newRoundIndex = draft.rounds.length;
       draft.rounds.push(newRound);
-      setRoundHistory(prev => ({...prev, [draft!.rounds.length-1]: JSON.parse(JSON.stringify(newRound))}));
+      setRoundHistory(prev => ({...prev, [newRoundIndex]: JSON.parse(JSON.stringify(newRound))}));
     }));
     setViewingRound(null);
   };
@@ -402,14 +403,13 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const resetTournament = () => {
-    setTournament(initialTournamentState);
+    setTournament(produce(draft => {
+      if (!draft) return;
+      draft.rounds = [];
+      draft.status = 'registration';
+    }));
     setViewingRound(null);
     setRoundHistory({});
-     try {
-      window.localStorage.removeItem(LOCAL_STORAGE_KEY);
-    } catch (error) {
-      console.error("Error clearing state from localStorage", error);
-    }
   };
 
   const exportTournament = (): string => {
@@ -456,10 +456,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
     if (roundIndex < 0) return [];
     
-    // For time machine, get historical pairings if available
-    const roundToDisplay = viewingRound !== null && roundHistory[roundIndex]
-      ? roundHistory[roundIndex]
-      : tournament.rounds[roundIndex];
+    const roundToDisplay = tournament.rounds[roundIndex];
 
     if (!roundToDisplay) return [];
 
