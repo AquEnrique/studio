@@ -11,6 +11,7 @@ export type Match = {
   playerId2: string | null;
   wonGamesPlayer1: number;
   wonGamesPlayer2: number;
+  isSubmitted?: boolean;
 };
 
 export type Round = Match[];
@@ -58,6 +59,7 @@ export type ManualPairing = {
   player1: Player;
   player2: Player | { id: 'bye'; name: 'BYE' };
 };
+
 
 
 

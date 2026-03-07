@@ -21,10 +21,7 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
     const lastRound = tournament.rounds[tournament.rounds.length - 1];
     const isLastRoundSubmitted = lastRound ? lastRound.every(match => {
         if (match.playerId2 === null) return true; // Byes are considered submitted.
-        const p1Wins = match.wonGamesPlayer1;
-        const p2Wins = match.wonGamesPlayer2;
-        // A match is submitted if there's a winner
-        return p1Wins === 2 || p2Wins === 2;
+        return !!match.isSubmitted;
     }) : true; // If no rounds, it's 'submitted'
     
     // Step 1: Initialize stats for each player
@@ -416,11 +413,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
               const matchIndex = roundToUpdate.findIndex(m => m.playerId1 === result.p1Id && m.playerId2 === result.p2Id);
               if (matchIndex !== -1) {
                   const match = roundToUpdate[matchIndex];
-                  // Idempotency check: only update if results are different
-                  if (match.wonGamesPlayer1 !== result.p1Games || match.wonGamesPlayer2 !== result.p2Games) {
-                    match.wonGamesPlayer1 = result.p1Games;
-                    match.wonGamesPlayer2 = result.p2Games;
-                  }
+                  match.wonGamesPlayer1 = result.p1Games;
+                  match.wonGamesPlayer2 = result.p2Games;
+                  match.isSubmitted = true;
               }
           });
       }));
@@ -549,7 +544,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
         const p2 = match.playerId2 ? playerMap.get(match.playerId2) : null;
         
-        const isSubmitted = (match.wonGamesPlayer1 === 2 || match.wonGamesPlayer2 === 2) && match.playerId2 !== null;
+        const isSubmitted = !!match.isSubmitted && match.playerId2 !== null;
 
         return {
             player1: p1,
@@ -570,9 +565,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     if (!currentRound) return true;
     return currentRound.every(match => {
         if (match.playerId2 === null) return true; // Byes are auto-submitted
-        const p1Wins = match.wonGamesPlayer1;
-        const p2Wins = match.wonGamesPlayer2;
-        return p1Wins === 2 || p2Wins === 2;
+        return !!match.isSubmitted;
     });
   }, [tournament]);
 
