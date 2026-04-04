@@ -178,7 +178,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
 
   const fetchTournament = useCallback(async () => {
     try {
-      const response = await fetch(NPOINT_URL);
+      const response = await fetch(NPOINT_URL, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (data && typeof data === 'object' && Object.keys(data).length > 0 && data.players && data.status && data.rounds) {

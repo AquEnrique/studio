@@ -8,11 +8,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { TournamentControls } from '@/components/tournament/tournament-controls';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { calculateStandings } from '@/context/tournament-provider';
 import type { Tournament } from '@/lib/types';
+import { useClock } from '@/context/clock-provider';
 
 export default function JudgePage() {
   const {
@@ -30,7 +31,16 @@ export default function JudgePage() {
     allResultsSubmitted,
     rollbackToRound,
     forceSaveTournament,
+    refreshTournament,
   } = useTournament();
+
+  const { refreshClock } = useClock();
+
+  useEffect(() => {
+    refreshTournament();
+    refreshClock();
+  }, [refreshTournament, refreshClock]);
+
 
   const isMobile = useIsMobile();
 

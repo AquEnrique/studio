@@ -12,6 +12,7 @@ interface ClockState {
   startRoundTimer: () => Promise<void>;
   resetRoundTimer: () => Promise<void>;
   requestNotificationPermission: () => void;
+  refreshClock: () => void;
 }
 
 const ClockContext = createContext<ClockState | undefined>(undefined);
@@ -23,7 +24,7 @@ export function ClockProvider({ children }: { children: ReactNode }) {
 
   const fetchStartTime = useCallback(async () => {
     try {
-      const response = await fetch(CLOCK_NPOINT_URL);
+      const response = await fetch(CLOCK_NPOINT_URL, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         if (data && data.startTime) {
@@ -31,12 +32,17 @@ export function ClockProvider({ children }: { children: ReactNode }) {
         } else {
           setStartTime(null);
           setRemainingTime(ROUND_DURATION);
+          setIsFinished(false);
         }
       }
     } catch (error) {
       console.error("Failed to fetch clock start time:", error);
     }
   }, []);
+
+  const refreshClock = useCallback(() => {
+    fetchStartTime();
+  }, [fetchStartTime]);
 
   useEffect(() => {
     fetchStartTime();
@@ -78,6 +84,8 @@ export function ClockProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!startTime) {
+      setRemainingTime(ROUND_DURATION);
+      setIsFinished(false);
       return;
     }
 
@@ -111,7 +119,8 @@ export function ClockProvider({ children }: { children: ReactNode }) {
     isFinished,
     startRoundTimer,
     resetRoundTimer,
-    requestNotificationPermission
+    requestNotificationPermission,
+    refreshClock,
   };
 
   return (

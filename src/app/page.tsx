@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlayerRegistration } from '@/components/tournament/player-registration';
 import { TournamentControls } from '@/components/tournament/tournament-controls';
 import { StandingsTable } from '@/components/tournament/standings-table';
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { PairingsDisplay } from '@/components/tournament/pairings-display';
+import { useClock } from '@/context/clock-provider';
 
 
 export default function TournamentPage() {
@@ -39,6 +40,13 @@ export default function TournamentPage() {
     refreshTournament,
     currentPairings,
   } = useTournament();
+
+  const { refreshClock } = useClock();
+
+  useEffect(() => {
+    refreshTournament();
+    refreshClock();
+  }, [refreshTournament, refreshClock]);
   
   const [standingsView, setStandingsView] = useState<'simple' | 'advanced'>('simple');
   const isMobile = useIsMobile();
