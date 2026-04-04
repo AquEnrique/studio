@@ -549,9 +549,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setViewingRound(null);
   };
 
-  const refreshTournament = async () => {
+  const refreshTournament = useCallback(async () => {
     await fetchTournament();
-  };
+  }, [fetchTournament]);
 
   const currentPairings = useMemo((): DisplayPairing[] => {
     if (!tournament) return [];
