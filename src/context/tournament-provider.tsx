@@ -383,12 +383,25 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const generateNextRound = () => {
     if (!tournament || tournament?.status !== 'running') return;
     
-    setTournament(produce(draft => {
+    const newTournament = produce(tournament, draft => {
       if (!draft) return;
       const newRoundMatches = swissPair(draft.players, draft.rounds);
       draft.rounds.push({ matches: newRoundMatches, status: 'started' });
-    }));
+    });
+
+    setTournament(newTournament);
     setViewingRound(null);
+
+    // Immediately and automatically save the tournament state when generating a new round
+    fetch(NPOINT_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newTournament),
+    }).catch(error => {
+        console.error("Error automatically saving tournament on next round:", error);
+    });
   };
   
   const submitResults = (roundIndex: number, results: ResultInput[]) => {
