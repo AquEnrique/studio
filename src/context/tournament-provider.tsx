@@ -142,8 +142,8 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
     standingsPlayers.sort((a, b) => {
         if (b.playerPoints !== a.playerPoints) return b.playerPoints - a.playerPoints;
         if (b.opponentTotalPoints !== a.opponentTotalPoints) return b.opponentTotalPoints - a.opponentTotalPoints;
-        if (b.opponentGameWinPercentage !== a.opponentGameWinPercentage) return b.opponentGameWinPercentage - a.opponentGameWinPercentage;
         if (b.gameWinPercentage !== a.gameWinPercentage) return b.gameWinPercentage - a.gameWinPercentage;
+        if (b.opponentGameWinPercentage !== a.opponentGameWinPercentage) return b.opponentGameWinPercentage - a.opponentGameWinPercentage;
         return Math.random() - 0.5; // Random tiebreaker at the end
     });
 
