@@ -44,12 +44,6 @@ export function ClockProvider({ children }: { children: ReactNode }) {
     fetchStartTime();
   }, [fetchStartTime]);
 
-  useEffect(() => {
-    fetchStartTime();
-    const interval = setInterval(fetchStartTime, 120000); // Poll every 2 minutes
-    return () => clearInterval(interval);
-  }, [fetchStartTime]);
-
   const updateNpoint = async (time: number | null) => {
     try {
       await fetch(CLOCK_NPOINT_URL, {

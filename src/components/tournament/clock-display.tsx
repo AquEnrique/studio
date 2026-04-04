@@ -5,10 +5,23 @@ import { cn } from '@/lib/utils';
 import { useTournament } from '@/context/tournament-provider';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { useEffect } from 'react';
 
 export function ClockDisplay() {
   const { tournament } = useTournament();
   const { remainingTime, startTime, isFinished, refreshClock } = useClock();
+
+  useEffect(() => {
+    if (tournament?.status !== 'running') {
+      return;
+    }
+
+    const pollInterval = setInterval(() => {
+      refreshClock();
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [tournament?.status, refreshClock]);
 
   if (tournament?.status !== 'running' || !startTime) {
     return null;
