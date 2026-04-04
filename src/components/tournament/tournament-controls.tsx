@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Play, SkipForward, RefreshCw, Upload, Download, PlayCircle } from 'lucide-react';
+import { Play, SkipForward, RefreshCw, Upload, Download, PlayCircle, StopCircle } from 'lucide-react';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useClock } from '@/context/clock-provider';
@@ -54,6 +54,11 @@ export function TournamentControls({
     requestNotificationPermission();
     startRoundTimer();
     toast({ title: "¡Ronda iniciada!", description: "El reloj de 50 minutos ha comenzado." });
+  }
+
+  const handleStopTimer = () => {
+    resetRoundTimer();
+    toast({ title: "Reloj detenido", description: "El reloj de la ronda ha sido reiniciado." });
   }
 
   const handleResetTournament = () => {
@@ -175,6 +180,8 @@ export function TournamentControls({
             )}
 
             {isJudgeView && status === 'running' && !isViewingHistory && !startTime && renderButton(<PlayCircle />, "Iniciar Reloj", handleStartTimer)}
+
+            {isJudgeView && status === 'running' && !isViewingHistory && startTime && renderButton(<StopCircle />, "Detener Reloj", handleStopTimer, { variant: "destructive" })}
             
             {status === 'running' && allResultsSubmitted && !isViewingHistory && onNextRound && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)}
             

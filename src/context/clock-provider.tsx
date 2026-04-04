@@ -8,11 +8,9 @@ const ROUND_DURATION = 50 * 60 * 1000; // 50 minutes in milliseconds
 interface ClockState {
   startTime: number | null;
   remainingTime: number;
-  isPaused: boolean;
   isFinished: boolean;
   startRoundTimer: () => Promise<void>;
   resetRoundTimer: () => Promise<void>;
-  togglePause: () => void;
   requestNotificationPermission: () => void;
 }
 
@@ -21,7 +19,6 @@ const ClockContext = createContext<ClockState | undefined>(undefined);
 export function ClockProvider({ children }: { children: ReactNode }) {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [remainingTime, setRemainingTime] = useState(ROUND_DURATION);
-  const [isPaused, setIsPaused] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
   const fetchStartTime = useCallback(async () => {
@@ -62,7 +59,6 @@ export function ClockProvider({ children }: { children: ReactNode }) {
   const startRoundTimer = async () => {
     const now = Date.now();
     setStartTime(now);
-    setIsPaused(false);
     setIsFinished(false);
     await updateNpoint(now);
   };
@@ -70,15 +66,8 @@ export function ClockProvider({ children }: { children: ReactNode }) {
   const resetRoundTimer = async () => {
     setStartTime(null);
     setRemainingTime(ROUND_DURATION);
-    setIsPaused(true);
     setIsFinished(false);
     await updateNpoint(null);
-  };
-  
-  const togglePause = () => {
-    if (startTime) {
-      setIsPaused(prev => !prev);
-    }
   };
 
   const requestNotificationPermission = () => {
@@ -88,7 +77,7 @@ export function ClockProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (!startTime || isPaused) {
+    if (!startTime) {
       return;
     }
 
@@ -114,16 +103,14 @@ export function ClockProvider({ children }: { children: ReactNode }) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime, isPaused]);
+  }, [startTime]);
   
   const value = {
     startTime,
     remainingTime,
-    isPaused,
     isFinished,
     startRoundTimer,
     resetRoundTimer,
-    togglePause,
     requestNotificationPermission
   };
 
