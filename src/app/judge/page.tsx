@@ -29,6 +29,7 @@ export default function JudgePage() {
     exportTournament,
     allResultsSubmitted,
     rollbackToRound,
+    forceSaveTournament,
   } = useTournament();
 
   const isMobile = useIsMobile();
@@ -147,6 +148,7 @@ export default function JudgePage() {
         isMobile={isMobile}
         isViewingHistory={isViewingHistory}
         isJudgeView={true}
+        onForceSave={forceSaveTournament}
       />
     </>
   );

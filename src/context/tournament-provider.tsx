@@ -160,6 +160,7 @@ interface TournamentContextType {
     allResultsSubmitted: boolean;
     rollbackToRound: (roundIndex: number) => void;
     refreshTournament: () => Promise<void>;
+    forceSaveTournament: () => Promise<boolean>;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
@@ -169,6 +170,11 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const [viewingRound, setViewingRound] = useState<number | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
   const isInitialMount = useRef(true);
+  const tournamentRef = useRef(tournament);
+  
+  useEffect(() => {
+    tournamentRef.current = tournament;
+  }, [tournament]);
 
   const fetchTournament = useCallback(async () => {
     try {
@@ -191,40 +197,37 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const forceSaveTournament = useCallback(async (): Promise<boolean> => {
+    if (!tournamentRef.current) return false;
+    try {
+        const response = await fetch(NPOINT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tournamentRef.current),
+        });
+        return response.ok;
+    } catch (error) {
+        console.error("Error saving tournament data to npoint.io", error);
+        return false;
+    }
+  }, []);
+
   useEffect(() => {
     fetchTournament();
   }, [fetchTournament]);
 
   useEffect(() => {
-    // Prevent saving on initial render when tournament state is first set from fetch
     if (isInitialMount.current || !tournament) {
       if(tournament) isInitialMount.current = false;
       return;
     }
-
-    const updateNpoint = async () => {
-      try {
-        await fetch(NPOINT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(tournament),
-        });
-      } catch (error) {
-        console.error("Error saving tournament data to npoint.io", error);
-      }
-    };
-    
-    // Debounce the update slightly to avoid hammering the API on rapid changes
     const handler = setTimeout(() => {
-      updateNpoint();
+      forceSaveTournament();
     }, 500);
-
     return () => {
       clearTimeout(handler);
     };
-  }, [tournament]);
+  }, [tournament, forceSaveTournament]);
 
   const standings = useMemo(() => {
     if (!tournament) return [];
@@ -593,6 +596,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     allResultsSubmitted,
     rollbackToRound,
     refreshTournament,
+    forceSaveTournament,
   };
 
   return (

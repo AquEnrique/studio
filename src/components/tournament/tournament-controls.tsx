@@ -31,6 +31,7 @@ interface TournamentControlsProps {
   isViewingHistory?: boolean;
   currentRound?: number;
   isJudgeView?: boolean;
+  onForceSave?: () => Promise<boolean>;
 }
 
 export function TournamentControls({
@@ -45,6 +46,7 @@ export function TournamentControls({
   allResultsSubmitted,
   isViewingHistory,
   isJudgeView,
+  onForceSave,
 }: TournamentControlsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -106,6 +108,16 @@ export function TournamentControls({
     }
      if(event.target) {
         event.target.value = '';
+    }
+  };
+
+  const handleForceSave = async () => {
+    if (!onForceSave) return;
+    const success = await onForceSave();
+    if (success) {
+        toast({ title: "¡Guardado!", description: "El estado del torneo ha sido sincronizado." });
+    } else {
+        toast({ variant: "destructive", title: "Error", description: "No se pudo sincronizar el estado del torneo." });
     }
   };
 
@@ -174,6 +186,8 @@ export function TournamentControls({
             </Button>
             
             <div className="flex-grow" />
+            
+            {isJudgeView && onForceSave && renderButton(<Upload />, "Guardar Estado", handleForceSave, { variant: "outline" })}
 
             {status === 'registration' && onStart && renderButton(
                 <Play />, "Iniciar Torneo", onStart, { disabled: playerCount < 2 }

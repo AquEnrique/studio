@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { PairingsDisplay } from '@/components/tournament/pairings-display';
 
 
 export default function TournamentPage() {
@@ -36,6 +37,7 @@ export default function TournamentPage() {
     confirmImport,
     cancelImport,
     refreshTournament,
+    currentPairings,
   } = useTournament();
   
   const [standingsView, setStandingsView] = useState<'simple' | 'advanced'>('simple');
@@ -74,42 +76,61 @@ export default function TournamentPage() {
         )}
 
         {(tournament.status === 'running' || tournament.status === 'finished') && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                  <h2 className="text-xl md:text-2xl font-semibold">Clasificaciones</h2>
-                  <Button variant="outline" size="icon" onClick={() => refreshTournament()} className="h-8 w-8">
-                    <RefreshCw className="h-4 w-4" />
-                    <span className="sr-only">Actualizar tabla</span>
-                  </Button>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <h2 className="text-xl md:text-2xl font-semibold">Clasificaciones</h2>
+                    <Button variant="outline" size="icon" onClick={() => refreshTournament()} className="h-8 w-8">
+                      <RefreshCw className="h-4 w-4" />
+                      <span className="sr-only">Actualizar tabla</span>
+                    </Button>
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-muted p-1">
+                    <Button 
+                        variant={standingsView === 'simple' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setStandingsView('simple')}
+                        className="rounded-full gap-2"
+                    >
+                        <List className="w-4 h-4"/>
+                        Simple
+                    </Button>
+                    <Button 
+                        variant={standingsView === 'advanced' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setStandingsView('advanced')}
+                        className="rounded-full gap-2"
+                    >
+                        <BarChart className="w-4 h-4"/>
+                        Avanzada
+                    </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 rounded-full bg-muted p-1">
-                  <Button 
-                      variant={standingsView === 'simple' ? 'secondary' : 'ghost'} 
-                      size="sm" 
-                      onClick={() => setStandingsView('simple')}
-                      className="rounded-full gap-2"
-                  >
-                      <List className="w-4 h-4"/>
-                      Simple
-                  </Button>
-                  <Button 
-                      variant={standingsView === 'advanced' ? 'secondary' : 'ghost'} 
-                      size="sm" 
-                      onClick={() => setStandingsView('advanced')}
-                      className="rounded-full gap-2"
-                  >
-                      <BarChart className="w-4 h-4"/>
-                      Avanzada
-                  </Button>
-              </div>
+              <StandingsTable 
+                players={standings} 
+                view={standingsView} 
+                maxRounds={tournament.rounds.length}
+                isMobile={isMobile}
+              />
             </div>
-            <StandingsTable 
-              players={standings} 
-              view={standingsView} 
-              maxRounds={tournament.rounds.length}
-              isMobile={isMobile}
-            />
+            {tournament.status === 'running' && (
+              <div>
+                <h2 className="text-xl md:text-2xl font-semibold mb-4">Emparejamientos - Ronda {tournament.rounds.length}</h2>
+                <PairingsDisplay
+                    pairings={currentPairings}
+                    submitResults={() => {}}
+                    roundNumber={tournament.rounds.length}
+                    isEditable={false}
+                    allPlayers={tournament.players}
+                    onUpdatePairings={() => {}}
+                    isViewingHistory={false}
+                    standings={standings}
+                    onRollbackRound={() => {}}
+                    tournament={tournament}
+                />
+              </div>
+            )}
           </div>
         )}
       </main>
