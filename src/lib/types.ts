@@ -40,6 +40,7 @@ export type StandingsPlayer = {
   playerName: string;
   playerPoints: number;
   opponentTotalPoints: number;
+  opponentGameWinPercentage: number;
   gameWinPercentage: number;
   // For simple/judge standings table
   roundResults: RoundResult[];

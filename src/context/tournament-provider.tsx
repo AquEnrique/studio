@@ -75,60 +75,74 @@ export const calculateStandings = (tournament: Tournament | null): StandingsPlay
       });
     });
 
-    // Step 3: Calculate opponent total points (OTP)
-    const opponentTotalPoints: { [key: string]: number } = {};
+    // Step 3: Create a map of each player's Game Win Percentage (GWP)
+    const playerGwpMap = new Map<string, number>();
     tournament.players.forEach(p => {
-      opponentTotalPoints[p.id] = playerStats[p.id].opponentIds.reduce((total, oppId) => {
-        return total + (playerStats[oppId]?.points || 0);
-      }, 0);
+        const stats = playerStats[p.id];
+        const gwp = stats.gamesPlayed > 0 ? stats.gamesWon / stats.gamesPlayed : 0;
+        playerGwpMap.set(p.id, gwp);
     });
 
-    // Step 4: Build the final StandingsPlayer array
+    // Step 4: Build the final StandingsPlayer array with all tiebreakers
     const standingsPlayers: StandingsPlayer[] = tournament.players.map(p => {
-      const stats = playerStats[p.id];
+        const stats = playerStats[p.id];
+        
+        const opponentTotalPoints = stats.opponentIds.reduce((total, oppId) => {
+            return total + (playerStats[oppId]?.points || 0);
+        }, 0);
+
+        const opponentGameWinPercentagesSum = stats.opponentIds.reduce((total, oppId) => {
+            // Per official Konami rules, an opponent's GWP is considered at least 33% for this calculation.
+            const opponentGwp = playerGwpMap.get(oppId) || 0;
+            return total + Math.max(opponentGwp, 0.33);
+        }, 0);
+
+        const opponentGameWinPercentage = stats.opponentIds.length > 0
+            ? opponentGameWinPercentagesSum / stats.opponentIds.length
+            : 0;
+
+        const gameWinPercentage = playerGwpMap.get(p.id) || 0;
       
-      const gameWinPercentage = stats.gamesPlayed > 0 
-        ? stats.gamesWon / stats.gamesPlayed 
-        : 0;
-      
-      const roundResults: RoundResult[] = tournament.rounds.map(round => {
-          if (!round || !round.matches) return null;
-          const match = round.matches.find(m => m.playerId1 === p.id || m.playerId2 === p.id);
-          if (!match) return null;
-          
-          if (match.playerId2 === null && match.playerId1 === p.id) { // Check if the player is the one with the bye
-              return { opponentName: 'BYE', wins: match.wonGamesPlayer1, losses: match.wonGamesPlayer2, isBye: true };
-          }
-          
-          if (match.playerId2 === null) return null; // Not this player's bye match
+        const roundResults: RoundResult[] = tournament.rounds.map(round => {
+            if (!round || !round.matches) return null;
+            const match = round.matches.find(m => m.playerId1 === p.id || m.playerId2 === p.id);
+            if (!match) return null;
+            
+            if (match.playerId2 === null && match.playerId1 === p.id) { // Check if the player is the one with the bye
+                return { opponentName: 'BYE', wins: match.wonGamesPlayer1, losses: match.wonGamesPlayer2, isBye: true };
+            }
+            
+            if (match.playerId2 === null) return null; // Not this player's bye match
 
-          const isPlayer1 = match.playerId1 === p.id;
-          const opponentId = isPlayer1 ? match.playerId2 : match.playerId1;
-          const opponentName = playerMap.get(opponentId);
+            const isPlayer1 = match.playerId1 === p.id;
+            const opponentId = isPlayer1 ? match.playerId2 : match.playerId1;
+            const opponentName = playerMap.get(opponentId);
 
-          return {
-            opponentName: opponentName || 'Unknown',
-            wins: isPlayer1 ? match.wonGamesPlayer1 : match.wonGamesPlayer2,
-            losses: isPlayer1 ? match.wonGamesPlayer2 : match.wonGamesPlayer1,
-            isBye: false
-          };
-      });
+            return {
+                opponentName: opponentName || 'Unknown',
+                wins: isPlayer1 ? match.wonGamesPlayer1 : match.wonGamesPlayer2,
+                losses: isPlayer1 ? match.wonGamesPlayer2 : match.wonGamesPlayer1,
+                isBye: false
+            };
+        });
 
-      return {
-        playerId: p.id,
-        playerName: playerMap.get(p.id) || 'Unknown',
-        playerPoints: stats.points,
-        opponentTotalPoints: opponentTotalPoints[p.id],
-        gameWinPercentage,
-        roundResults,
-        opponentIds: stats.opponentIds,
-      };
+        return {
+            playerId: p.id,
+            playerName: playerMap.get(p.id) || 'Unknown',
+            playerPoints: stats.points,
+            opponentTotalPoints,
+            opponentGameWinPercentage,
+            gameWinPercentage,
+            roundResults,
+            opponentIds: stats.opponentIds,
+        };
     });
 
-    // Step 5: Sort players based on points and tiebreakers
+    // Step 5: Sort players based on points and all tiebreakers
     standingsPlayers.sort((a, b) => {
         if (b.playerPoints !== a.playerPoints) return b.playerPoints - a.playerPoints;
         if (b.opponentTotalPoints !== a.opponentTotalPoints) return b.opponentTotalPoints - a.opponentTotalPoints;
+        if (b.opponentGameWinPercentage !== a.opponentGameWinPercentage) return b.opponentGameWinPercentage - a.opponentGameWinPercentage;
         if (b.gameWinPercentage !== a.gameWinPercentage) return b.gameWinPercentage - a.gameWinPercentage;
         return Math.random() - 0.5; // Random tiebreaker at the end
     });

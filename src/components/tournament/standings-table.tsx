@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -45,7 +46,7 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
   
   const [calculationInfo, setCalculationInfo] = useState<CalculationInfo>(null);
 
-  const showColumnInfo = (column: 'OTP' | 'GWP') => {
+  const showColumnInfo = (column: 'OTP' | 'GWP' | 'OGW') => {
     let info: CalculationInfo = null;
     switch (column) {
       case 'OTP':
@@ -60,12 +61,25 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
           ),
         };
         break;
+      case 'OGW':
+        info = {
+            title: "Opponent's Game Win % (OGW%)",
+            description: (
+              <>
+                <p>Este es el segundo desempate. Es el promedio del Porcentaje de Victorias en Juegos (GW%) de todos tus oponentes.</p>
+                <br />
+                <p>Un OGW% más alto indica que has jugado contra oponentes más fuertes.</p>
+                <p className="text-xs text-muted-foreground mt-2">Para este cálculo, el GW% de un oponente nunca se considera inferior al 33%.</p>
+              </>
+            ),
+        };
+        break;
       case 'GWP':
         info = {
           title: 'Game Win % (GW%)',
           description: (
             <>
-              <p>Este es el segundo desempate. Es el porcentaje de juegos individuales ganados a lo largo del torneo.</p>
+              <p>Este es el tercer desempate. Es el porcentaje de juegos individuales ganados a lo largo del torneo.</p>
               <br />
               <p><strong>Fórmula:</strong> (Juegos Ganados) / (Juegos Jugados)</p>
               <p className="text-xs text-muted-foreground mt-2">Las rondas con bye no se incluyen en este cálculo.</p>
@@ -172,6 +186,15 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <div className="flex items-center gap-1 font-medium">
+                                    OGW%
+                                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); showColumnInfo('OGW'); }}>
+                                        <Info className="w-3 h-3" />
+                                    </Button>
+                                </div>
+                                <span className="font-mono">{(player.opponentGameWinPercentage * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <div className="flex items-center gap-1 font-medium">
                                     GW%
                                     <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); showColumnInfo('GWP'); }}>
                                         <Info className="w-3 h-3" />
@@ -241,8 +264,16 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
               <TableHead>Puntos</TableHead>
               <TableHead>
                   <div className="flex items-center gap-1">
-                      Puntos de Oponente
+                      OTP
                       <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('OTP')}>
+                          <Info className="w-3 h-3" />
+                      </Button>
+                  </div>
+              </TableHead>
+              <TableHead>
+                  <div className="flex items-center gap-1">
+                      OGW%
+                      <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => showColumnInfo('OGW')}>
                           <Info className="w-3 h-3" />
                       </Button>
                   </div>
@@ -267,6 +298,7 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
                 <TableCell className="sticky left-[60px] z-10 bg-card font-medium">{player.playerName}</TableCell>
                 <TableCell>{player.playerPoints}</TableCell>
                 <TableCell>{player.opponentTotalPoints}</TableCell>
+                <TableCell>{(player.opponentGameWinPercentage * 100).toFixed(1)}%</TableCell>
                 <TableCell>{(player.gameWinPercentage * 100).toFixed(1)}%</TableCell>
                 {player.roundResults.slice(0, maxRounds).map((result, roundIndex) => (
                   <TableCell key={`round-cell-${player.playerId}-${roundIndex}`} className="text-center">
