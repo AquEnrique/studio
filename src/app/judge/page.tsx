@@ -146,6 +146,7 @@ export default function JudgePage() {
         allResultsSubmitted={allResultsSubmitted}
         isMobile={isMobile}
         isViewingHistory={isViewingHistory}
+        isJudgeView={true}
       />
     </>
   );

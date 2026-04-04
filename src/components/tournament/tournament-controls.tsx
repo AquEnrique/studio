@@ -13,9 +13,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Play, SkipForward, RefreshCw, Upload, Download } from 'lucide-react';
+import { Play, SkipForward, RefreshCw, Upload, Download, PlayCircle } from 'lucide-react';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useClock } from '@/context/clock-provider';
 
 interface TournamentControlsProps {
   status: 'registration' | 'running' | 'finished';
@@ -29,6 +30,7 @@ interface TournamentControlsProps {
   allResultsSubmitted?: boolean;
   isViewingHistory?: boolean;
   currentRound?: number;
+  isJudgeView?: boolean;
 }
 
 export function TournamentControls({
@@ -41,10 +43,23 @@ export function TournamentControls({
   onExport,
   isMobile,
   allResultsSubmitted,
-  isViewingHistory
+  isViewingHistory,
+  isJudgeView,
 }: TournamentControlsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { startRoundTimer, resetRoundTimer, requestNotificationPermission, startTime } = useClock();
+
+  const handleStartTimer = () => {
+    requestNotificationPermission();
+    startRoundTimer();
+    toast({ title: "¡Ronda iniciada!", description: "El reloj de 50 minutos ha comenzado." });
+  }
+
+  const handleResetTournament = () => {
+    resetRoundTimer();
+    onReset();
+  }
 
   const handleExport = () => {
     try {
@@ -159,11 +174,13 @@ export function TournamentControls({
                 <Play />, "Iniciar Torneo", onStart, { disabled: playerCount < 2 }
             )}
 
+            {isJudgeView && status === 'running' && !isViewingHistory && !startTime && renderButton(<PlayCircle />, "Iniciar Reloj", handleStartTimer)}
+            
             {status === 'running' && allResultsSubmitted && !isViewingHistory && onNextRound && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)}
             
             {(status === 'running' || status === 'finished') && (
                 renderAlertDialogButton(
-                    <RefreshCw />, "Reiniciar", "¿Estás seguro?", "Esto eliminará todos los jugadores, rondas y clasificaciones. Esta acción no se puede deshacer.", onReset, "Reiniciar", { variant: "destructive" }
+                    <RefreshCw />, "Reiniciar", "¿Estás seguro?", "Esto eliminará todos los jugadores, rondas y clasificaciones. Esta acción no se puede deshacer.", handleResetTournament, "Reiniciar", { variant: "destructive" }
                 )
             )}
         </div>

@@ -6,6 +6,7 @@ import { Dices, Gavel } from 'lucide-react';
 import { useTournament } from '@/context/tournament-provider';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ClockDisplay } from './tournament/clock-display';
 
 export function Header() {
   const { tournament } = useTournament();
@@ -13,13 +14,17 @@ export function Header() {
 
   return (
     <header className="flex items-center justify-between h-14 px-4 border-b shrink-0 gap-4">
-      <Link href="/" className="flex items-center gap-2">
+      <Link href="/" className="flex items-center gap-2 flex-shrink-0">
         <Dices className="w-6 h-6 text-primary" />
-        <h1 className="text-lg font-semibold">YGO Tournament Manager</h1>
+        <h1 className="text-lg font-semibold hidden sm:block">YGO Tournament Manager</h1>
       </Link>
 
+      <div className="flex-grow flex justify-center">
+        <ClockDisplay />
+      </div>
+
       {tournament?.status === 'running' && (
-        <Button asChild variant="outline">
+        <Button asChild variant="outline" size={isMobile ? 'icon' : 'default'} className="flex-shrink-0">
           <Link href="/judge">
             <Gavel />
             {!isMobile && <span>Juez</span>}
