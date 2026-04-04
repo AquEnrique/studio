@@ -46,7 +46,7 @@ export function ClockProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchStartTime();
-    const interval = setInterval(fetchStartTime, 30000); // Poll every 30 seconds
+    const interval = setInterval(fetchStartTime, 120000); // Poll every 2 minutes
     return () => clearInterval(interval);
   }, [fetchStartTime]);
 
