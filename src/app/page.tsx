@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -86,7 +85,7 @@ export default function TournamentPage() {
         {(tournament.status === 'running' || tournament.status === 'finished') && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xl md:text-2xl font-semibold">Clasificaciones</h2>
                     <Button variant="outline" size="icon" onClick={() => refreshTournament()} className="h-8 w-8">
