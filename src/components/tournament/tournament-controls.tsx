@@ -111,9 +111,8 @@ export function TournamentControls({
     currentPairings.forEach((p, index) => {
       const p1Name = p.player1.name;
       const p2Name = p.player2.name;
-      const p1Score = p.result?.p1Games ?? '0';
-      const p2Score = p.result?.p2Games ?? '0';
-      text += `${index + 1}. ${p1Name} ${p1Score} vs ${p2Name} ${p2Score}\n`;
+      // Removed scores from the copy text
+      text += `${index + 1}. ${p1Name} vs ${p2Name}\n`;
     });
     text += `\nLink del torneo: https://tournamentygo-fortaleza.netlify.app/`;
 
