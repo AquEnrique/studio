@@ -35,14 +35,24 @@ export function ClockDisplay() {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <div className={cn("flex items-center gap-2 rounded-full p-1 px-3 text-sm font-semibold", isFinished ? "bg-destructive text-destructive-foreground animate-pulse" : "bg-muted")}>
-        <span className="px-2 font-mono tracking-wider">
+    <div className="flex items-center gap-3">
+      <div className={cn(
+        "flex items-center gap-2 rounded-full p-2 px-5 text-xl md:text-3xl font-bold transition-all", 
+        isFinished 
+          ? "bg-destructive text-destructive-foreground animate-pulse" 
+          : "bg-primary text-primary-foreground shadow-lg"
+      )}>
+        <span className="font-mono tracking-widest">
           {formatTime(remainingTime)}
         </span>
       </div>
-      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={refreshClock}>
-        <RefreshCw className="h-4 w-4" />
+      <Button 
+        variant="outline" 
+        size="icon" 
+        className="h-10 w-10 md:h-12 md:w-12 rounded-full" 
+        onClick={refreshClock}
+      >
+        <RefreshCw className="h-5 w-5 md:h-6 w-6" />
         <span className="sr-only">Sincronizar Reloj</span>
       </Button>
     </div>

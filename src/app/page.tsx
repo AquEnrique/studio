@@ -71,8 +71,9 @@ export default function TournamentPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <main className="flex-grow p-4 md:p-6 space-y-4 md:space-y-6 pb-24">
+      <main className="flex-grow p-4 md:p-6 space-y-6 md:space-y-8 pb-24">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Tournament Manager</h1>
+        
         {tournament.status === 'registration' && (
           <PlayerRegistration 
             addPlayer={addPlayer} 
@@ -83,8 +84,28 @@ export default function TournamentPage() {
         )}
 
         {(tournament.status === 'running' || tournament.status === 'finished') && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-8">
+            {/* Pairings first, as requested */}
+            {tournament.status === 'running' && (
+              <section>
+                <h2 className="text-xl md:text-2xl font-semibold mb-4">Emparejamientos - Ronda {tournament.rounds.length}</h2>
+                <PairingsDisplay
+                    pairings={currentPairings}
+                    submitResults={() => {}}
+                    roundNumber={tournament.rounds.length}
+                    isEditable={false}
+                    allPlayers={tournament.players}
+                    onUpdatePairings={() => {}}
+                    isViewingHistory={false}
+                    standings={standings}
+                    onRollbackRound={() => {}}
+                    tournament={tournament}
+                />
+              </section>
+            )}
+
+            {/* Standings table below pairings */}
+            <section className="flex flex-col gap-4">
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xl md:text-2xl font-semibold">Clasificaciones</h2>
@@ -120,27 +141,11 @@ export default function TournamentPage() {
                 maxRounds={tournament.rounds.length}
                 isMobile={isMobile}
               />
-            </div>
-            {tournament.status === 'running' && (
-              <div>
-                <h2 className="text-xl md:text-2xl font-semibold mb-4">Emparejamientos - Ronda {tournament.rounds.length}</h2>
-                <PairingsDisplay
-                    pairings={currentPairings}
-                    submitResults={() => {}}
-                    roundNumber={tournament.rounds.length}
-                    isEditable={false}
-                    allPlayers={tournament.players}
-                    onUpdatePairings={() => {}}
-                    isViewingHistory={false}
-                    standings={standings}
-                    onRollbackRound={() => {}}
-                    tournament={tournament}
-                />
-              </div>
-            )}
+            </section>
           </div>
         )}
       </main>
+      
       {tournament.status === 'registration' && (
         <TournamentControls
           status={tournament.status}
