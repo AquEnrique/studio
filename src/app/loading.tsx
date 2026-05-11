@@ -1,12 +1,25 @@
-import { Dices } from 'lucide-react';
+
+import Image from 'next/image';
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function Loading() {
+  const logo = PlaceHolderImages.find(img => img.id === 'logo');
+
   return (
     <div className="flex flex-col h-screen">
       <header className="flex items-center h-14 px-4 border-b shrink-0 gap-4">
         <div className="flex items-center gap-2">
-          <Dices className="w-6 h-6 text-primary" />
+          {logo && (
+            <Image 
+              src={logo.imageUrl} 
+              alt="Logo Fortaleza YGO" 
+              width={24} 
+              height={24} 
+              className="rounded-sm opacity-50"
+              data-ai-hint={logo.imageHint}
+            />
+          )}
            <h1 className="text-lg font-semibold">YGO Tournament Manager</h1>
         </div>
       </header>

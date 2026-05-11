@@ -1,0 +1,11 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "logo",
+      "description": "Logo de Fortaleza YGO",
+      "imageUrl": "https://picsum.photos/seed/fortaleza-logo/200/200",
+      "imageHint": "fortress logo"
+    }
+  ]
+}
