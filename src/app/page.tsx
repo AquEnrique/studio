@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -33,11 +34,11 @@ export default function TournamentPage() {
     startManualTournament,
     resetTournament,
     importTournament,
-    exportTournament,
     confirmImport,
     cancelImport,
     refreshTournament,
     currentPairings,
+    forceSaveTournament,
   } = useTournament();
 
   const { refreshClock } = useClock();
@@ -153,7 +154,7 @@ export default function TournamentPage() {
           onStart={startTournament}
           onReset={resetTournament}
           onImport={importTournament}
-          onExport={exportTournament}
+          onForceSave={forceSaveTournament}
           isMobile={isMobile}
         />
       )}

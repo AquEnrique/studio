@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Play, SkipForward, RefreshCw, Upload, Download, PlayCircle, StopCircle } from 'lucide-react';
+import { Play, SkipForward, RefreshCw, Upload, Save, PlayCircle, StopCircle } from 'lucide-react';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useClock } from '@/context/clock-provider';
@@ -25,7 +25,6 @@ interface TournamentControlsProps {
   onNextRound?: () => void;
   onReset: () => void;
   onImport: (fileContent: string) => void;
-  onExport: () => string;
   isMobile: boolean;
   allResultsSubmitted?: boolean;
   isViewingHistory?: boolean;
@@ -41,7 +40,6 @@ export function TournamentControls({
   onNextRound,
   onReset,
   onImport,
-  onExport,
   isMobile,
   allResultsSubmitted,
   isViewingHistory,
@@ -67,25 +65,6 @@ export function TournamentControls({
     resetRoundTimer();
     onReset();
   }
-
-  const handleExport = () => {
-    try {
-      const tournamentJson = onExport();
-      const blob = new Blob([tournamentJson], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `tournament-export-${new Date().toISOString()}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast({ title: "Éxito", description: "Datos del torneo exportados correctamente." });
-    } catch (error) {
-      console.error("Exportación fallida:", error);
-      toast({ variant: "destructive", title: "Error", description: "No se pudieron exportar los datos del torneo." });
-    }
-  };
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -180,15 +159,11 @@ export function TournamentControls({
             />
 
             {status === 'registration' && renderButton(<Upload />, "Importar", handleImportClick, { variant: "outline" })}
-            <Button variant="outline" onClick={handleExport}>
-                <Download />
-                {!isMobile && <span>Exportar</span>}
-            </Button>
             
+            {onForceSave && renderButton(<Save />, "Guardar Estado", handleForceSave, { variant: "outline" })}
+
             <div className="flex-grow" />
             
-            {isJudgeView && onForceSave && renderButton(<Upload />, "Guardar Estado", handleForceSave, { variant: "outline" })}
-
             {status === 'registration' && onStart && renderButton(
                 <Play />, "Iniciar Torneo", onStart, { disabled: playerCount < 2 }
             )}

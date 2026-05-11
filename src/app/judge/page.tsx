@@ -27,7 +27,6 @@ export default function JudgePage() {
     generateNextRound,
     resetTournament,
     importTournament,
-    exportTournament,
     allResultsSubmitted,
     rollbackToRound,
     forceSaveTournament,
@@ -153,7 +152,6 @@ export default function JudgePage() {
         onNextRound={generateNextRound}
         onReset={resetTournament}
         onImport={importTournament}
-        onExport={exportTournament}
         allResultsSubmitted={allResultsSubmitted}
         isMobile={isMobile}
         isViewingHistory={isViewingHistory}
