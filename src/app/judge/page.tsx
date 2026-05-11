@@ -148,7 +148,7 @@ export default function JudgePage() {
       <TournamentControls
         status={tournament.status}
         playerCount={tournament.players.length}
-        currentRound={tournament.rounds.length}
+        currentRound={currentRoundForView}
         onNextRound={generateNextRound}
         onReset={resetTournament}
         onImport={importTournament}
@@ -157,6 +157,7 @@ export default function JudgePage() {
         isViewingHistory={isViewingHistory}
         isJudgeView={true}
         onForceSave={forceSaveTournament}
+        currentPairings={currentPairings}
       />
     </>
   );

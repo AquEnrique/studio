@@ -13,10 +13,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Play, SkipForward, RefreshCw, Upload, Save, PlayCircle, StopCircle } from 'lucide-react';
+import { Play, SkipForward, RefreshCw, Upload, Save, PlayCircle, StopCircle, Copy } from 'lucide-react';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useClock } from '@/context/clock-provider';
+import type { DisplayPairing } from '@/lib/types';
 
 interface TournamentControlsProps {
   status: 'registration' | 'running' | 'finished';
@@ -31,6 +32,7 @@ interface TournamentControlsProps {
   currentRound?: number;
   isJudgeView?: boolean;
   onForceSave?: () => Promise<boolean>;
+  currentPairings?: DisplayPairing[];
 }
 
 export function TournamentControls({
@@ -45,6 +47,8 @@ export function TournamentControls({
   isViewingHistory,
   isJudgeView,
   onForceSave,
+  currentRound,
+  currentPairings,
 }: TournamentControlsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -98,6 +102,23 @@ export function TournamentControls({
     } else {
         toast({ variant: "destructive", title: "Error", description: "No se pudo sincronizar el estado del torneo." });
     }
+  };
+
+  const handleCopy = () => {
+    if (!currentPairings || !currentRound) return;
+
+    let text = `RONDA ${currentRound}\n\n`;
+    currentPairings.forEach((p, index) => {
+      const p1Name = p.player1.name;
+      const p2Name = p.player2.name;
+      const p1Score = p.result?.p1Games ?? '0';
+      const p2Score = p.result?.p2Games ?? '0';
+      text += `${index + 1}. ${p1Name} ${p1Score} vs ${p2Name} ${p2Score}\n`;
+    });
+    text += `\nLink del torneo: https://tournamentygo-fortaleza.netlify.app/`;
+
+    navigator.clipboard.writeText(text);
+    toast({ title: "¡Copiado!", description: "Los emparejamientos han sido copiados al portapapeles." });
   };
 
   const renderButton = (
@@ -161,6 +182,8 @@ export function TournamentControls({
             {status === 'registration' && renderButton(<Upload />, "Importar", handleImportClick, { variant: "outline" })}
             
             {onForceSave && renderButton(<Save />, "Guardar Estado", handleForceSave, { variant: "outline" })}
+
+            {isJudgeView && status !== 'registration' && renderButton(<Copy />, "Copiar", handleCopy, { variant: "outline" })}
 
             <div className="flex-grow" />
             
