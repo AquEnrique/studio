@@ -189,32 +189,51 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
           const p2Score = results[pairingId]?.p2 ?? '0';
 
           return (
-            <Card key={pairingId}>
+            <Card key={pairingId} className={!isEditable ? "border-primary/20" : ""}>
               <CardContent className="p-4">
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
-                  <div className="font-semibold truncate text-left">{pairing.player1.name}</div>
-                  <div className="text-muted-foreground">vs</div>
-                  <div className="font-semibold truncate text-right">{pairing.player2.name}</div>
+                  <div className="font-bold truncate text-left text-lg md:text-xl">{pairing.player1.name}</div>
+                  <div className="text-muted-foreground font-mono px-2">VS</div>
+                  <div className="font-bold truncate text-right text-lg md:text-xl">{pairing.player2.name}</div>
                 </div>
                 
-                {!player2IsBye ? (
-                  <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 sm:gap-x-4">
-                    <ScoreSelector 
-                      score={p1Score}
-                      onScoreChange={(score) => handleResultChange(pairingId, 'p1', score)}
-                      disabled={!isEditable || isMatchLocked}
-                      otherPlayerScore={p2Score}
-                    />
-                    <span className="text-muted-foreground text-center">-</span>
-                    <ScoreSelector 
-                      score={p2Score}
-                      onScoreChange={(score) => handleResultChange(pairingId, 'p2', score)}
-                      disabled={!isEditable || isMatchLocked}
-                      otherPlayerScore={p1Score}
-                    />
-                  </div>
+                {isEditable ? (
+                  !player2IsBye ? (
+                    <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 sm:gap-x-4">
+                      <ScoreSelector 
+                        score={p1Score}
+                        onScoreChange={(score) => handleResultChange(pairingId, 'p1', score)}
+                        disabled={!isEditable || isMatchLocked}
+                        otherPlayerScore={p2Score}
+                      />
+                      <span className="text-muted-foreground text-center">-</span>
+                      <ScoreSelector 
+                        score={p2Score}
+                        onScoreChange={(score) => handleResultChange(pairingId, 'p2', score)}
+                        disabled={!isEditable || isMatchLocked}
+                        otherPlayerScore={p1Score}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-4 text-center text-sm font-bold text-primary">BYE (Gana Automático)</div>
+                  )
                 ) : (
-                  <div className="mt-4 text-center text-sm font-bold text-primary">BYE (Win)</div>
+                   // Simple view for Home
+                   !player2IsBye ? (
+                     pairing.isSubmitted ? (
+                        <div className="mt-3 flex justify-center items-center gap-4 bg-muted/30 py-2 rounded-lg">
+                           <span className="text-2xl font-mono font-bold text-primary">{p1Score}</span>
+                           <span className="text-muted-foreground">-</span>
+                           <span className="text-2xl font-mono font-bold text-primary">{p2Score}</span>
+                        </div>
+                     ) : (
+                        <div className="mt-2 text-center text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                           Partida en curso
+                        </div>
+                     )
+                   ) : (
+                     <div className="mt-2 text-center text-sm font-bold text-primary italic">BYE</div>
+                   )
                 )}
               </CardContent>
             </Card>

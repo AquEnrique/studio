@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useClock } from '@/context/clock-provider';
@@ -35,21 +36,21 @@ export function ClockDisplay() {
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
       <div className={cn(
-        "flex items-center gap-2 rounded-full p-2 px-5 text-xl md:text-3xl font-bold transition-all", 
+        "flex items-center gap-3 rounded-full p-2 px-6 text-2xl md:text-4xl font-black transition-all border-2", 
         isFinished 
-          ? "bg-destructive text-destructive-foreground animate-pulse" 
-          : "bg-primary text-primary-foreground shadow-lg"
+          ? "bg-destructive text-destructive-foreground border-destructive animate-pulse" 
+          : "bg-primary text-primary-foreground border-primary-foreground/20 shadow-xl"
       )}>
-        <span className="font-mono tracking-widest">
+        <span className="font-mono tracking-tighter">
           {formatTime(remainingTime)}
         </span>
       </div>
       <Button 
         variant="outline" 
         size="icon" 
-        className="h-10 w-10 md:h-12 md:w-12 rounded-full" 
+        className="h-10 w-10 md:h-12 md:w-12 rounded-full border-2" 
         onClick={refreshClock}
       >
         <RefreshCw className="h-5 w-5 md:h-6 w-6" />
