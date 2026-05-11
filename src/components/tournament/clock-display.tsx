@@ -7,10 +7,14 @@ import { useTournament } from '@/context/tournament-provider';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 export function ClockDisplay() {
+  const pathname = usePathname();
   const { tournament } = useTournament();
   const { remainingTime, startTime, isFinished, refreshClock } = useClock();
+
+  const isJudgeView = pathname === '/judge';
 
   useEffect(() => {
     if (tournament?.status !== 'running') {
@@ -47,15 +51,17 @@ export function ClockDisplay() {
           {formatTime(remainingTime)}
         </span>
       </div>
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="h-10 w-10 md:h-12 md:w-12 rounded-full border-2" 
-        onClick={refreshClock}
-      >
-        <RefreshCw className="h-5 w-5 md:h-6 w-6" />
-        <span className="sr-only">Sincronizar Reloj</span>
-      </Button>
+      {isJudgeView && (
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="h-10 w-10 md:h-12 md:w-12 rounded-full border-2" 
+          onClick={refreshClock}
+        >
+          <RefreshCw className="h-5 w-5 md:h-6 w-6" />
+          <span className="sr-only">Sincronizar Reloj</span>
+        </Button>
+      )}
     </div>
   );
 }
