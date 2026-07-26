@@ -168,7 +168,7 @@ export function ManualPairingEditor({ players, initialPairings, onSave, onCancel
                   key={player.id}
                   onClick={() => handlePlayerClick(player)}
                   className={cn(
-                      "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
+                      "p-3 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center active:scale-[0.98]",
                       selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
                       selectedPlayer && selectedPlayer.id !== player.id && pastOpponentIds.has(player.id) && "bg-muted/70 opacity-70"
                   )}

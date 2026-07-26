@@ -57,6 +57,8 @@ export type DisplayPairing = {
     p2Games: string;
   }
   isSubmitted: boolean;
+  // True when player1 and player2 already faced each other in an earlier round of the tournament.
+  isRematch?: boolean;
 };
 
 export type ManualPairing = {

@@ -81,24 +81,24 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
     <div className="py-4 space-y-4">
        <Alert>
           <Hand className="h-4 w-4" />
-          <AlertTitle>Create First Round Pairings</AlertTitle>
+          <AlertTitle>Crea los emparejamientos de la primera ronda</AlertTitle>
           <AlertDescription>
-            Click a player, then click another to create a pair. To assign a bye, select a player and click 'Assign Bye'.
+            Toca un jugador y luego otro para formar una pareja. Para asignar un bye, selecciona un jugador y toca "Asignar Bye".
           </AlertDescription>
         </Alert>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
            <div className="flex items-center justify-between mb-2">
-             <h4 className="font-semibold">Unpaired Players ({unpairedPlayers.length})</h4>
+             <h4 className="font-semibold">Jugadores sin emparejar ({unpairedPlayers.length})</h4>
              {players.length % 2 !== 0 && !pairings.some(p => p.player2.id === 'bye') && (
-                <Button 
-                    size="sm" 
-                    variant="secondary" 
+                <Button
+                    size="sm"
+                    variant="secondary"
                     disabled={!selectedPlayer || pairings.some(p => p.player2.id === 'bye')}
                     onClick={handleAssignBye}
                 >
-                    <Ban className="mr-2 h-4 w-4"/> Assign Bye
+                    <Ban className="mr-2 h-4 w-4"/> Asignar Bye
                 </Button>
              )}
            </div>
@@ -108,7 +108,7 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
                 key={player.id}
                 onClick={() => handlePlayerClick(player)}
                 className={cn(
-                    "p-2 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center",
+                    "p-3 bg-background rounded-md shadow-sm cursor-pointer transition-all flex justify-between items-center active:scale-[0.98]",
                     selectedPlayer?.id === player.id && "ring-2 ring-primary ring-offset-2 ring-offset-background",
                 )}
               >
@@ -118,7 +118,7 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
           </div>
         </div>
         <div>
-          <h4 className="font-semibold mb-2">Manual Pairings ({pairings.length})</h4>
+          <h4 className="font-semibold mb-2">Emparejamientos ({pairings.length})</h4>
           <div className="p-2 bg-muted/50 rounded-md min-h-[100px] space-y-2">
             {pairings.map((pairing, index) => (
               <Card key={index} className="bg-background">
@@ -132,7 +132,7 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => removePairing(index)}>
-                    Remove
+                    Quitar
                   </Button>
                 </CardContent>
               </Card>
@@ -142,10 +142,10 @@ export function ManualPairing({ players, onStartTournament }: ManualPairingProps
       </div>
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="outline" onClick={cleanPairings} disabled={pairings.length === 0}>
-          <RefreshCcw className="mr-2 h-4 w-4" /> Clean
+          <RefreshCcw className="mr-2 h-4 w-4" /> Limpiar
         </Button>
         <Button onClick={() => onStartTournament(pairings)} disabled={!isTournamentReady}>
-           <Play className="mr-2 h-4 w-4" /> Start Manual Tournament
+           <Play className="mr-2 h-4 w-4" /> Iniciar Torneo Manual
         </Button>
       </div>
     </div>

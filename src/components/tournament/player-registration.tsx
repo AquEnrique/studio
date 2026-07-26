@@ -9,6 +9,7 @@ import type { Player, ManualPairing } from '@/lib/types';
 import { UserPlus, X } from 'lucide-react';
 import { ManualPairing as ManualPairingComponent } from './manual-pairing';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getRecommendedRounds } from '@/context/tournament-provider';
 
 
 interface PlayerRegistrationProps {
@@ -53,7 +54,14 @@ export function PlayerRegistration({ addPlayer, removePlayer, players, startManu
                 </Button>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold">Jugadores Registrados ({players.length})</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-semibold">Jugadores Registrados ({players.length})</h3>
+                  {players.length >= 2 && (
+                    <span className="text-xs sm:text-sm text-muted-foreground">
+                      Rondas recomendadas: <span className="font-semibold text-foreground">{getRecommendedRounds(players.length)}</span>
+                    </span>
+                  )}
+                </div>
                 {players.length > 0 ? (
                   <div className="bg-muted/50 p-4 rounded-md max-h-60 overflow-y-auto">
                     <ul className="space-y-2">
@@ -63,10 +71,10 @@ export function PlayerRegistration({ addPlayer, removePlayer, players, startManu
                             <span className="text-sm font-mono mr-2 text-muted-foreground">{index + 1}.</span>
                             <span>{player.name}</span>
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 sm:h-6 sm:w-6 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                             onClick={() => removePlayer(player.id)}
                           >
                             <X className="h-4 w-4 text-destructive" />

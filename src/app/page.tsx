@@ -74,7 +74,7 @@ export default function TournamentPage() {
 
       <main className="flex-grow p-4 md:p-6 space-y-6 md:space-y-8 pb-24">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Tournament Manager</h1>
-        
+
         {tournament.status === 'registration' && (
           <PlayerRegistration 
             addPlayer={addPlayer} 

@@ -6,7 +6,8 @@ import type { DisplayPairing, Player, ManualPairing, StandingsPlayer, Tournament
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ManualPairingEditor } from './manual-pairing-editor';
-import { Pencil } from 'lucide-react';
+import { Pencil, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,13 +44,13 @@ const ScoreSelector = ({
   otherPlayerScore: string;
 }) => {
   return (
-    <div className="flex justify-center gap-1">
+    <div className="flex justify-center gap-2">
       {[0, 1, 2].map(val => (
         <Button
           key={val}
           variant={score === String(val) ? 'secondary' : 'outline'}
           size="icon"
-          className="h-9 w-9 rounded-full"
+          className="h-11 w-11 rounded-full text-base"
           onClick={(e) => { e.preventDefault(); onScoreChange(String(val)); }}
           disabled={disabled || (val === 2 && otherPlayerScore === '2')}
         >
@@ -189,14 +190,26 @@ export function PairingsDisplay({ pairings, submitResults, roundNumber, isEditab
           const p2Score = results[pairingId]?.p2 ?? '0';
 
           return (
-            <Card key={pairingId} className={!isEditable ? "border-primary/20" : ""}>
+            <Card
+              key={pairingId}
+              className={cn(
+                !isEditable && "border-primary/20",
+                pairing.isRematch && "border-destructive bg-destructive/10"
+              )}
+            >
               <CardContent className="p-4">
+                {pairing.isRematch && (
+                  <div className="mb-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-destructive">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    Rival repetido
+                  </div>
+                )}
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
                   <div className="font-bold truncate text-left text-lg md:text-xl">{pairing.player1.name}</div>
                   <div className="text-muted-foreground font-mono px-2">VS</div>
                   <div className="font-bold truncate text-right text-lg md:text-xl">{pairing.player2.name}</div>
                 </div>
-                
+
                 {isEditable ? (
                   !player2IsBye ? (
                     <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 sm:gap-x-4">

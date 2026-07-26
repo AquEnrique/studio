@@ -91,6 +91,23 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
     setCalculationInfo(info);
   };
 
+  if (view === 'simple' && isMobile) {
+    return (
+      <div className="space-y-2">
+        {players.map((player, index) => (
+          <div key={player.playerId} className="flex items-center gap-3 rounded-md border bg-card p-3">
+            <span className="font-mono text-base w-6 text-center text-muted-foreground shrink-0">{index + 1}</span>
+            <span className="font-medium flex-grow truncate">{player.playerName}</span>
+            <span className="font-bold text-lg font-mono shrink-0">{player.playerPoints} pts</span>
+          </div>
+        ))}
+        {players.length === 0 && (
+          <p className="text-muted-foreground text-sm text-center py-4">Aún no hay clasificaciones.</p>
+        )}
+      </div>
+    );
+  }
+
   if (view === 'simple') {
     return (
       <div className="overflow-x-auto">
@@ -119,14 +136,14 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
                   if (roundResult) {
                       if (roundResult.isBye) {
                           cellContent = 'BYE';
-                          cellColor = 'text-yellow-400';
+                          cellColor = 'text-warning';
                       } else {
                           const points = roundResult.wins === 2 ? 3 : 0;
                           cellContent = points;
                           if (points === 3) {
-                              cellColor = 'text-green-500';
+                              cellColor = 'text-success';
                           } else if (roundResult.losses === 2) {
-                              cellColor = 'text-red-500';
+                              cellColor = 'text-destructive';
                           }
                       }
                   }
@@ -211,9 +228,9 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
                                         {result ? (
                                             <div>
                                             <span className={cn(
-                                                result.isBye ? 'text-yellow-400' :
-                                                result.wins > result.losses ? 'text-green-500' :
-                                                result.losses > result.wins ? 'text-red-500' : ''
+                                                result.isBye ? 'text-warning' :
+                                                result.wins > result.losses ? 'text-success' :
+                                                result.losses > result.wins ? 'text-destructive' : ''
                                             )}>
                                                 {result.isBye ? 'BYE' : `${result.wins}/${result.losses}`}
                                             </span>
@@ -305,8 +322,9 @@ export function StandingsTable({ players, view, maxRounds, isMobile }: Standings
                     {result ? (
                       <div>
                         <span className={cn(
-                          result.wins > result.losses ? 'text-green-500' : 
-                          result.losses > result.wins ? 'text-red-500' : ''
+                          result.isBye ? 'text-warning' :
+                          result.wins > result.losses ? 'text-success' :
+                          result.losses > result.wins ? 'text-destructive' : ''
                         )}>
                             {result.isBye ? 'BYE' : `${result.wins}/${result.losses}`}
                         </span>

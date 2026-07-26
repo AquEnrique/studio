@@ -33,6 +33,8 @@ interface TournamentControlsProps {
   isJudgeView?: boolean;
   onForceSave?: () => Promise<boolean>;
   currentPairings?: DisplayPairing[];
+  roundsGenerated?: number;
+  recommendedRounds?: number;
 }
 
 export function TournamentControls({
@@ -49,7 +51,13 @@ export function TournamentControls({
   onForceSave,
   currentRound,
   currentPairings,
+  roundsGenerated,
+  recommendedRounds,
 }: TournamentControlsProps) {
+  const recommendedRoundsReached =
+    typeof roundsGenerated === 'number' &&
+    typeof recommendedRounds === 'number' &&
+    roundsGenerated >= recommendedRounds;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { startRoundTimer, resetRoundTimer, requestNotificationPermission, startTime } = useClock();
@@ -168,8 +176,8 @@ export function TournamentControls({
   }
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t p-2 z-10">
-        <div className="container mx-auto flex items-center justify-center gap-2">
+    <footer className="fixed bottom-0 left-0 right-0 z-10 border-t bg-background/80 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm">
+        <div className="container mx-auto flex flex-wrap items-center justify-center gap-2">
             <input
               type="file"
               ref={fileInputRef}
@@ -194,8 +202,8 @@ export function TournamentControls({
 
             {isJudgeView && status === 'running' && !isViewingHistory && startTime && renderButton(<StopCircle />, "Detener Reloj", handleStopTimer, { variant: "destructive" })}
             
-            {status === 'running' && allResultsSubmitted && !isViewingHistory && onNextRound && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)}
-            
+            {status === 'running' && allResultsSubmitted && !isViewingHistory && onNextRound && !recommendedRoundsReached && renderButton(<SkipForward />, "Siguiente Ronda", onNextRound)}
+
             {(status === 'running' || status === 'finished') && (
                 renderAlertDialogButton(
                     <RefreshCw />, "Reiniciar", "¿Estás seguro?", "Esto eliminará todos los jugadores, rondas y clasificaciones. Esta acción no se puede deshacer.", handleResetTournament, "Reiniciar", { variant: "destructive" }

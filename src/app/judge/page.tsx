@@ -31,6 +31,7 @@ export default function JudgePage() {
     rollbackToRound,
     forceSaveTournament,
     refreshTournament,
+    recommendedRounds,
   } = useTournament();
 
   const { refreshClock } = useClock();
@@ -72,24 +73,23 @@ export default function JudgePage() {
   return (
     <>
       <main className="flex-grow p-4 md:p-6 space-y-4 md:space-y-6 pb-24">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Vista de Juez</h1>
-            <div className="flex flex-wrap items-center justify-center sm:flex-nowrap gap-2 bg-muted p-1 rounded-full">
-              <Button 
-                  variant="outline" 
+          <div className="flex justify-center sm:justify-start">
+            <div className="flex flex-wrap items-center justify-center gap-2 rounded-full bg-muted p-1">
+              <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => goToRound(currentRoundForView > 1 ? currentRoundForView - 1 : 1)} 
+                  onClick={() => goToRound(currentRoundForView > 1 ? currentRoundForView - 1 : 1)}
                   disabled={currentRoundForView <= 1}
                   className="rounded-full"
               >
                   <ChevronLeft className="h-4 w-4" />
                   <span className="sr-only">Ronda anterior</span>
               </Button>
-              <span className="font-semibold text-sm px-2">Ronda {currentRoundForView}</span>
-              <Button 
-                  variant="outline" 
+              <span className="font-semibold text-sm px-2">Viendo Ronda {currentRoundForView}</span>
+              <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => goToRound(currentRoundForView < tournament.rounds.length ? currentRoundForView + 1 : tournament.rounds.length)} 
+                  onClick={() => goToRound(currentRoundForView < tournament.rounds.length ? currentRoundForView + 1 : tournament.rounds.length)}
                   disabled={currentRoundForView >= tournament.rounds.length && !isViewingHistory}
                   className="rounded-full"
               >
@@ -97,8 +97,8 @@ export default function JudgePage() {
                   <span className="sr-only">Siguiente ronda</span>
               </Button>
               {isViewingHistory && (
-                  <Button 
-                      size="sm" 
+                  <Button
+                      size="sm"
                       onClick={() => goToRound(null)}
                       className="rounded-full"
                   >
@@ -158,6 +158,8 @@ export default function JudgePage() {
         isJudgeView={true}
         onForceSave={forceSaveTournament}
         currentPairings={currentPairings}
+        roundsGenerated={tournament.rounds.length}
+        recommendedRounds={recommendedRounds}
       />
     </>
   );

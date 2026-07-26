@@ -13,6 +13,12 @@ const initialTournamentState: Tournament = {
   status: 'registration',
 };
 
+// Recommended number of Swiss rounds for a given player count: ceil(log2(n)), min 1.
+export const getRecommendedRounds = (playerCount: number): number => {
+  if (playerCount < 2) return 0;
+  return Math.max(1, Math.ceil(Math.log2(playerCount)));
+};
+
 // Helper to calculate standings from the tournament state
 export const calculateStandings = (tournament: Tournament | null): StandingsPlayer[] => {
     if (!tournament || !tournament.players.length) return [];
@@ -144,6 +150,7 @@ interface TournamentContextType {
     tournament: Tournament | null;
     standings: StandingsPlayer[];
     currentPairings: DisplayPairing[];
+    recommendedRounds: number;
     addPlayer: (name: string) => void;
     removePlayer: (id: string) => void;
     startTournament: () => void;
@@ -261,8 +268,6 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   };
 
   const swissPair = (players: Player[], existingRounds: Round[]): Match[] => {
-    const isFirstRound = existingRounds.length === 0;
-    
     // Shuffle helper
     const shuffleArray = <T,>(array: T[]): T[] => {
       const shuffled = [...array];
@@ -273,115 +278,116 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       return shuffled;
     };
 
-    let sortedPlayers: Player[];
+    // Build points, past-opponents and bye history from existing rounds once.
+    const pointsMap = new Map<string, number>();
+    const opponentsMap = new Map<string, Set<string>>();
+    const byeRoundIndices = new Map<string, Set<number>>();
 
-    if (isFirstRound) {
-      // For first round, shuffle completely for random pairings and bye
-      sortedPlayers = shuffleArray(players);
-    } else {
-      const playerStats = new Map(players.map(p => [p.id, { points: 0, opponentIds: new Set<string>() }]));
-      existingRounds.forEach(round => {
-          if (!round || !round.matches) return;
-          round.matches.forEach(match => {
-              if (match.playerId2 === null) {
-                   if (round.status === 'finished') {
-                      const p1Stats = playerStats.get(match.playerId1);
-                      if(p1Stats) p1Stats.points += 3;
-                  }
-              } else {
-                  const p1Stats = playerStats.get(match.playerId1);
-                  const p2Stats = playerStats.get(match.playerId2);
-                  if(!p1Stats || !p2Stats) return;
+    players.forEach(p => {
+      pointsMap.set(p.id, 0);
+      opponentsMap.set(p.id, new Set<string>());
+      byeRoundIndices.set(p.id, new Set<number>());
+    });
 
-                  p1Stats.opponentIds.add(match.playerId2);
-                  p2Stats.opponentIds.add(match.playerId1);
+    existingRounds.forEach((round, roundIndex) => {
+      if (!round || !round.matches) return;
+      round.matches.forEach(match => {
+        if (match.playerId2 === null) {
+          byeRoundIndices.get(match.playerId1)?.add(roundIndex);
+          if (round.status === 'finished') {
+            pointsMap.set(match.playerId1, (pointsMap.get(match.playerId1) || 0) + 3);
+          }
+          return;
+        }
 
-                  if (match.wonGamesPlayer1 === 2) {
-                      p1Stats.points += 3;
-                  } else if (match.wonGamesPlayer2 === 2) {
-                      p2Stats.points += 3;
-                  }
-              }
-          });
+        opponentsMap.get(match.playerId1)?.add(match.playerId2);
+        opponentsMap.get(match.playerId2)?.add(match.playerId1);
+
+        if (match.wonGamesPlayer1 === 2) {
+          pointsMap.set(match.playerId1, (pointsMap.get(match.playerId1) || 0) + 3);
+        } else if (match.wonGamesPlayer2 === 2) {
+          pointsMap.set(match.playerId2, (pointsMap.get(match.playerId2) || 0) + 3);
+        }
       });
-      
-      sortedPlayers = [...players].sort((a, b) => {
-          const pointsA = playerStats.get(a.id)?.points || 0;
-          const pointsB = playerStats.get(b.id)?.points || 0;
-          if(pointsB !== pointsA) return pointsB - pointsA;
-          return Math.random() - 0.5;
-      });
-    }
+    });
+
+    // Rank by points desc; shuffle first so ties (e.g. round 1, or equal records) break randomly
+    // since Array.sort is stable in modern JS engines.
+    const sortedPlayers = shuffleArray(players).sort(
+      (a, b) => (pointsMap.get(b.id) || 0) - (pointsMap.get(a.id) || 0)
+    );
 
     const pairings: Match[] = [];
-    let playersToPair = [...sortedPlayers];
-    
-    if (playersToPair.length % 2 !== 0) {
-        let byeAssigned = false;
-        // For random round 1, just pick from the shuffled list. 
-        // For other rounds, try to assign to someone who hasn't had one.
-        for (let i = playersToPair.length - 1; i >= 0; i--) {
-            const player = playersToPair[i];
-            const hasHadBye = existingRounds.some(r => r.matches.some(m => m.playerId1 === player.id && m.playerId2 === null));
-            if (!hasHadBye) {
-                pairings.push({ playerId1: player.id, playerId2: null, wonGamesPlayer1: 2, wonGamesPlayer2: 0, isSubmitted: true });
-                playersToPair.splice(i, 1);
-                byeAssigned = true;
-                break;
-            }
-        }
-        if (!byeAssigned && playersToPair.length > 0) {
-            const byePlayer = playersToPair.pop()!;
-            pairings.push({ playerId1: byePlayer.id, playerId2: null, wonGamesPlayer1: 2, wonGamesPlayer2: 0, isSubmitted: true });
-        }
-    }
-    
-    let couldn_t_pair: Player[] = [];
-    
-    // Basic pairing logic
-    while (playersToPair.length > 1) {
-      const p1 = playersToPair.shift()!;
-      let paired = false;
-      
-      // If it's first round, opponents check doesn't matter (nobody has opponents)
-      // If not, try to find someone they haven't played
-      for (let i = 0; i < playersToPair.length; i++) {
-        const p2 = playersToPair[i];
-        
-        const playerStats = isFirstRound ? null : new Map(players.map(p => [p.id, { points: 0, opponentIds: new Set<string>() }]));
-        if(!isFirstRound) {
-            existingRounds.forEach(round => {
-                round.matches.forEach(m => {
-                    if(m.playerId2) {
-                        if(m.playerId1 === p1.id) playerStats?.get(p1.id)?.opponentIds.add(m.playerId2);
-                        if(m.playerId2 === p1.id) playerStats?.get(p1.id)?.opponentIds.add(m.playerId1);
-                    }
-                })
-            })
-        }
+    let pool = [...sortedPlayers];
 
-        const hasPlayedP2 = isFirstRound ? false : (players.find(p => p.id === p1.id) as any)?.opponentIds?.includes(p2.id); // This is just a fallback check
+    // Bye assignment for an odd number of players.
+    if (pool.length % 2 !== 0) {
+      const lastRoundIndex = existingRounds.length - 1;
+      const hadByeLastRound = (playerId: string) =>
+        lastRoundIndex >= 0 && !!byeRoundIndices.get(playerId)?.has(lastRoundIndex);
+      const neverHadBye = (playerId: string) => (byeRoundIndices.get(playerId)?.size || 0) === 0;
 
-        if (isFirstRound || !hasPlayedP2) {
-          pairings.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0, isSubmitted: false });
-          playersToPair.splice(i, 1);
-          paired = true;
+      // Prefer the lowest-ranked player who has never had a bye and didn't just have one.
+      let byeIndex = -1;
+      for (let i = pool.length - 1; i >= 0; i--) {
+        if (neverHadBye(pool[i].id) && !hadByeLastRound(pool[i].id)) {
+          byeIndex = i;
           break;
         }
       }
-      if (!paired) {
-        couldn_t_pair.push(p1);
+      // Otherwise, anyone who at least didn't have the bye in the immediately preceding round
+      // (a player must never receive two consecutive byes).
+      if (byeIndex === -1) {
+        for (let i = pool.length - 1; i >= 0; i--) {
+          if (!hadByeLastRound(pool[i].id)) {
+            byeIndex = i;
+            break;
+          }
+        }
+      }
+      // Last resort (only possible if every remaining player just had the bye, i.e. pool of 1).
+      if (byeIndex === -1) byeIndex = pool.length - 1;
+
+      const [byePlayer] = pool.splice(byeIndex, 1);
+      pairings.push({ playerId1: byePlayer.id, playerId2: null, wonGamesPlayer1: 2, wonGamesPlayer2: 0, isSubmitted: true });
+    }
+
+    // Pair remaining players via backtracking: never repeat a matchup, and prefer players
+    // close together in the rank-sorted pool (i.e. similar performance) by trying them first.
+    const pairUp = (remaining: Player[]): Match[] | null => {
+      if (remaining.length === 0) return [];
+      const [first, ...rest] = remaining;
+      for (let i = 0; i < rest.length; i++) {
+        const candidate = rest[i];
+        if (!opponentsMap.get(first.id)?.has(candidate.id)) {
+          const next = [...rest.slice(0, i), ...rest.slice(i + 1)];
+          const result = pairUp(next);
+          if (result !== null) {
+            return [{ playerId1: first.id, playerId2: candidate.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0, isSubmitted: false }, ...result];
+          }
+        }
+      }
+      return null;
+    };
+
+    let matches = pairUp(pool);
+
+    if (matches === null) {
+      // Extremely constrained field (everyone has already played everyone at this point value).
+      // Fall back to minimizing repeats instead of failing to produce a round at all.
+      console.warn('swissPair: no rematch-free pairing exists for this round; allowing a repeat matchup as a last resort.');
+      matches = [];
+      let remaining = [...pool];
+      while (remaining.length > 1) {
+        const p1 = remaining.shift()!;
+        let idx = remaining.findIndex(p => !opponentsMap.get(p1.id)?.has(p.id));
+        if (idx === -1) idx = 0;
+        const [p2] = remaining.splice(idx, 1);
+        matches.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0, isSubmitted: false });
       }
     }
 
-    playersToPair = [...couldn_t_pair, ...playersToPair];
-    
-    while(playersToPair.length > 1) {
-      const p1 = playersToPair.shift()!;
-      const p2 = playersToPair.shift()!;
-      pairings.push({ playerId1: p1.id, playerId2: p2.id, wonGamesPlayer1: 0, wonGamesPlayer2: 0, isSubmitted: false });
-    }
-  
+    pairings.push(...matches);
     return pairings;
   };
   
@@ -415,7 +421,8 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   
   const generateNextRound = () => {
     if (!tournament || tournament?.status !== 'running') return;
-    
+    if (tournament.rounds.length >= getRecommendedRounds(tournament.players.length)) return;
+
     const newTournament = produce(tournament, draft => {
       if (!draft) return;
       const newRoundMatches = swissPair(draft.players, draft.rounds);
@@ -572,15 +579,31 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     if (!roundToDisplay || !roundToDisplay.matches) return [];
     const playerMap = new Map(tournament.players.map(p => [p.id, p]));
 
+    // Opponents each player faced in rounds strictly before the one being displayed.
+    const priorOpponents = new Map<string, Set<string>>();
+    for (let i = 0; i < roundIndex; i++) {
+      const round = tournament.rounds[i];
+      if (!round || !round.matches) continue;
+      round.matches.forEach(m => {
+        if (m.playerId2 === null) return;
+        if (!priorOpponents.has(m.playerId1)) priorOpponents.set(m.playerId1, new Set());
+        if (!priorOpponents.has(m.playerId2)) priorOpponents.set(m.playerId2, new Set());
+        priorOpponents.get(m.playerId1)!.add(m.playerId2);
+        priorOpponents.get(m.playerId2)!.add(m.playerId1);
+      });
+    }
+
     return roundToDisplay.matches.map(match => {
         const p1 = playerMap.get(match.playerId1);
         if (!p1) return null;
         const p2 = match.playerId2 ? playerMap.get(match.playerId2) : null;
         const isSubmitted = !!match.isSubmitted;
+        const isRematch = !!match.playerId2 && !!priorOpponents.get(match.playerId1)?.has(match.playerId2);
         return {
             player1: p1,
             player2: p2 ? p2 : { id: 'bye', name: 'BYE' },
             isSubmitted: isSubmitted,
+            isRematch,
             result: {
                 p1Games: match.wonGamesPlayer1.toString(),
                 p2Games: match.wonGamesPlayer2.toString(),
@@ -597,10 +620,16 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     return currentRound.status === 'finished';
   }, [tournament]);
 
+  const recommendedRounds = useMemo(
+    () => getRecommendedRounds(tournament?.players.length || 0),
+    [tournament?.players.length]
+  );
+
   const value: TournamentContextType = {
     tournament,
     standings,
     currentPairings,
+    recommendedRounds,
     addPlayer,
     removePlayer,
     startTournament,
