@@ -37,18 +37,11 @@ export function LpKeypadDialog({
   onApply: (delta: number) => void;
 }) {
   const [staged, setStaged] = useState('0');
-  const [flash, setFlash] = useState<{ id: number; text: string } | null>(null);
 
   // Start each opening from a clean slate.
   useEffect(() => {
     if (open) setStaged('0');
   }, [open]);
-
-  useEffect(() => {
-    if (!flash) return;
-    const timeout = setTimeout(() => setFlash(null), 900);
-    return () => clearTimeout(timeout);
-  }, [flash]);
 
   const stagedValue = parseInt(staged, 10) || 0;
 
@@ -62,18 +55,18 @@ export function LpKeypadDialog({
   const backspace = () => setStaged((prev) => (prev.length <= 1 ? '0' : prev.slice(0, -1)));
   const clear = () => setStaged('0');
 
+  // Applying an operation always closes the calculator so the updated
+  // total is immediately visible on the player panel.
   const apply = (sign: 1 | -1) => {
     if (stagedValue === 0) return;
-    const delta = stagedValue * sign;
-    onApply(delta);
-    setFlash({ id: Date.now(), text: `${delta > 0 ? '+' : ''}${delta}` });
-    setStaged('0');
+    onApply(stagedValue * sign);
+    onOpenChange(false);
   };
 
   const applyDirect = (delta: number) => {
     if (delta === 0) return;
     onApply(delta);
-    setFlash({ id: Date.now(), text: `${delta > 0 ? '+' : ''}${delta}` });
+    onOpenChange(false);
   };
 
   // Doubles the current total.
@@ -137,17 +130,6 @@ export function LpKeypadDialog({
             ÷2
           </button>
         </div>
-
-        <span
-          className={cn(
-            'block h-6 shrink-0 text-center text-lg font-bold transition-opacity',
-            flash
-              ? cn('animate-in fade-in slide-in-from-top-1', flash.text.startsWith('+') ? 'text-success' : 'text-destructive')
-              : 'opacity-0'
-          )}
-        >
-          {flash ? `${flash.text} aplicado` : '—'}
-        </span>
 
         <div className="grid flex-1 grid-cols-3 grid-rows-4 gap-2 sm:gap-3">
           {DIGIT_ROWS.flat().map((digit) => (
