@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ClockDisplay } from './tournament/clock-display';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { NavMenu } from '@/components/nav-menu';
 
 export function Header() {
   const { tournament, recommendedRounds } = useTournament();
@@ -23,9 +24,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pt-[env(safe-area-inset-top)]">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2">
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
+          <NavMenu />
           {isJudgeRoute ? (
-            <Button asChild variant="ghost" size="icon" className="-ml-2 shrink-0">
+            <Button asChild variant="ghost" size="icon" className="shrink-0">
               <Link href="/">
                 <ArrowLeft />
                 <span className="sr-only">Volver a la vista normal</span>
