@@ -8,6 +8,17 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useLifePoints } from '@/hooks/use-life-points';
 import { LpKeypadDialog } from '@/components/life-points/lp-keypad-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const STEP_OPTIONS = [100, 500, 1000] as const;
 
@@ -50,10 +61,26 @@ export function LifePointsCounter() {
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={resetAll} className="gap-2">
-            <RotateCcw className="h-4 w-4" />
-            <span className="hidden sm:inline">Reiniciar</span>
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <RotateCcw className="h-4 w-4" />
+                <span className="hidden sm:inline">Reiniciar</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Reiniciar puntos de vida?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esto pondrá los puntos de vida de ambos jugadores de nuevo en 8000. Esta acción no se puede deshacer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={resetAll}>Reiniciar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

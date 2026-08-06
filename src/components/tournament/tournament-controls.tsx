@@ -115,14 +115,36 @@ export function TournamentControls({
   const handleCopy = () => {
     if (!currentPairings || !currentRound) return;
 
-    let text = `RONDA ${currentRound}\n\n`;
-    currentPairings.forEach((p, index) => {
-      const p1Name = p.player1.name;
-      const p2Name = p.player2.name;
-      // Removed scores from the copy text
-      text += `${index + 1}. ${p1Name} vs ${p2Name}\n`;
-    });
-    text += `\nLink del torneo: https://tournamentygo-fortaleza.netlify.app/`;
+    let text: string;
+
+    if (allResultsSubmitted && !isViewingHistory) {
+      // Last round's results are all in: instead of the pairings, share a
+      // participant checklist (✅/❌ left blank on purpose) so judges can
+      // mark payments off by hand in an external notepad.
+      const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const participantNames: string[] = [];
+      currentPairings.forEach((p) => {
+        participantNames.push(p.player1.name);
+        if (p.player2.id !== 'bye') {
+          participantNames.push(p.player2.name);
+        }
+      });
+
+      text = `Torneo ${today}\nParticipantes:\n\n`;
+      participantNames.forEach((name) => {
+        text += `${name} ✅❌\n`;
+      });
+      text += `\nLink del torneo: https://tournamentygo-fortaleza.netlify.app/`;
+    } else {
+      text = `RONDA ${currentRound}\n\n`;
+      currentPairings.forEach((p, index) => {
+        const p1Name = p.player1.name;
+        const p2Name = p.player2.name;
+        // Removed scores from the copy text
+        text += `${index + 1}. ${p1Name} vs ${p2Name}\n`;
+      });
+      text += `\nLink del torneo: https://tournamentygo-fortaleza.netlify.app/`;
+    }
 
     navigator.clipboard.writeText(text);
     toast({ title: "¡Copiado!", description: "Los emparejamientos han sido copiados al portapapeles." });
