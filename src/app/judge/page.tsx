@@ -160,6 +160,7 @@ export default function JudgePage() {
         currentPairings={currentPairings}
         roundsGenerated={tournament.rounds.length}
         recommendedRounds={recommendedRounds}
+        standings={isViewingHistory ? historicalStandings : standings}
       />
     </>
   );

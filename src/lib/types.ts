@@ -23,6 +23,10 @@ export type Tournament = {
   players: Player[];
   rounds: Round[];
   status: 'registration' | 'running' | 'finished';
+  // UTC ISO timestamp (sourced from Peru's official time, see src/lib/peru-time.ts) of the
+  // last successful save. Used to detect when a device is about to overwrite a newer save
+  // made from elsewhere.
+  fechaGuardado?: string;
 };
 
 // New type for detailed round results

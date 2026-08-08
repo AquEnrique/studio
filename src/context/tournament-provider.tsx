@@ -4,6 +4,8 @@
 import { useState, useEffect, useMemo, createContext, useContext, ReactNode, useRef, useCallback } from 'react';
 import type { Tournament, Player, StandingsPlayer, ManualPairing, Match, Round, DisplayPairing, RoundResult } from '@/lib/types';
 import { produce } from 'immer';
+import { getPeruTimestamp } from '@/lib/peru-time';
+import { Loader2 } from 'lucide-react';
 
 const NPOINT_URL = 'https://api.npoint.io/36dc4af53c22ef8f8eb5';
 
@@ -174,13 +176,36 @@ interface TournamentContextType {
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
 
+const isValidTournamentPayload = (data: any): data is Tournament =>
+  !!data && typeof data === 'object' && Object.keys(data).length > 0 && data.players && data.status && data.rounds;
+
+// Newer-than comparison for fechaGuardado strings. A missing/unparseable value never
+// counts as "newer" - it just means we don't have proof of a fresher save to defer to.
+const isFechaGuardadoNewer = (candidate: string | null | undefined, knownBaseline: string | null): boolean => {
+  if (!candidate) return false;
+  const candidateTime = new Date(candidate).getTime();
+  if (Number.isNaN(candidateTime)) return false;
+  if (!knownBaseline) return true;
+  const knownTime = new Date(knownBaseline).getTime();
+  if (Number.isNaN(knownTime)) return true;
+  return candidateTime > knownTime;
+};
+
 export function TournamentProvider({ children }: { children: ReactNode }) {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [viewingRound, setViewingRound] = useState<number | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
+  const [isUpdatingToLatest, setIsUpdatingToLatest] = useState(false);
   const isInitialMount = useRef(true);
   const tournamentRef = useRef(tournament);
-  
+  // fechaGuardado of the last version we know for certain we're in sync with (either just
+  // fetched or just saved). Used to detect whether the remote copy has moved ahead of us.
+  const lastSyncedFechaGuardadoRef = useRef<string | null>(null);
+  // Set right before we update local state as a side-effect of a save (to reflect the new
+  // fechaGuardado, or to adopt a newer remote version) so the autosave effect below doesn't
+  // treat that update as a fresh edit and re-save it.
+  const skipNextAutosaveRef = useRef(false);
+
   useEffect(() => {
     tournamentRef.current = tournament;
   }, [tournament]);
@@ -190,49 +215,101 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       const response = await fetch(NPOINT_URL, { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
-        if (data && typeof data === 'object' && Object.keys(data).length > 0 && data.players && data.status && data.rounds) {
+        if (isValidTournamentPayload(data)) {
+          lastSyncedFechaGuardadoRef.current = data.fechaGuardado ?? null;
+          skipNextAutosaveRef.current = true;
           setTournament(data);
         } else {
+          lastSyncedFechaGuardadoRef.current = null;
+          skipNextAutosaveRef.current = true;
           setTournament(initialTournamentState);
         }
       } else {
+        lastSyncedFechaGuardadoRef.current = null;
+        skipNextAutosaveRef.current = true;
         setTournament(initialTournamentState);
       }
     } catch (error) {
+      lastSyncedFechaGuardadoRef.current = null;
+      skipNextAutosaveRef.current = true;
       setTournament(initialTournamentState);
+    }
+  }, []);
+
+  // Central write path: every save (autosave, "Guardar Estado", next round, etc.) goes
+  // through here so the newer-version check always runs. Before writing, it re-fetches the
+  // remote copy and compares its fechaGuardado against the last version we know we're based
+  // on. If the remote has moved ahead (someone else saved from another device/tab while we
+  // were editing), we don't overwrite it - we adopt it locally instead and surface the
+  // "Actualizando" modal. Otherwise we stamp the save with an authoritative Peru timestamp
+  // and write it.
+  const persistTournament = useCallback(async (tournamentToSave: Tournament): Promise<boolean> => {
+    try {
+      const checkResponse = await fetch(NPOINT_URL, { cache: 'no-store' });
+      if (checkResponse.ok) {
+        const remoteData = await checkResponse.json();
+        if (isValidTournamentPayload(remoteData) && isFechaGuardadoNewer(remoteData.fechaGuardado, lastSyncedFechaGuardadoRef.current)) {
+          setIsUpdatingToLatest(true);
+          lastSyncedFechaGuardadoRef.current = remoteData.fechaGuardado ?? null;
+          skipNextAutosaveRef.current = true;
+          setTournament(remoteData);
+          setViewingRound(null);
+          setTimeout(() => setIsUpdatingToLatest(false), 1500);
+          return false;
+        }
+      }
+
+      const fechaGuardado = await getPeruTimestamp();
+      const finalTournament: Tournament = { ...tournamentToSave, fechaGuardado };
+
+      const saveResponse = await fetch(NPOINT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalTournament),
+      });
+
+      if (saveResponse.ok) {
+        lastSyncedFechaGuardadoRef.current = fechaGuardado;
+        skipNextAutosaveRef.current = true;
+        setTournament(finalTournament);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error al guardar el torneo:', error);
+      return false;
     }
   }, []);
 
   const forceSaveTournament = useCallback(async (): Promise<boolean> => {
     if (!tournamentRef.current) return false;
-    try {
-        const response = await fetch(NPOINT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tournamentRef.current),
-        });
-        return response.ok;
-    } catch (error) {
-        return false;
-    }
-  }, []);
+    return persistTournament(tournamentRef.current);
+  }, [persistTournament]);
 
   useEffect(() => {
     fetchTournament();
   }, [fetchTournament]);
 
   useEffect(() => {
-    if (isInitialMount.current || !tournament) {
-      if(tournament) isInitialMount.current = false;
+    // Always consume the flag exactly once per tournament change, whichever branch below
+    // ends up taking - otherwise a fetch-triggered update could leave it set and cause the
+    // next *real* edit to silently skip its autosave.
+    const shouldSkip = skipNextAutosaveRef.current;
+    skipNextAutosaveRef.current = false;
+
+    if (isInitialMount.current) {
+      if (tournament) isInitialMount.current = false;
       return;
     }
+    if (!tournament || shouldSkip) return;
+
     const handler = setTimeout(() => {
-      forceSaveTournament();
+      persistTournament(tournamentRef.current!);
     }, 500);
     return () => {
       clearTimeout(handler);
     };
-  }, [tournament, forceSaveTournament]);
+  }, [tournament, persistTournament]);
 
   const standings = useMemo(() => {
     if (!tournament) return [];
@@ -432,13 +509,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setTournament(newTournament);
     setViewingRound(null);
 
-    fetch(NPOINT_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newTournament),
-    }).catch(error => {
+    // Save immediately (rather than waiting for the debounced autosave) so the next round
+    // is visible to other devices right away; goes through the same conflict-checked path.
+    persistTournament(newTournament).catch(error => {
         console.error("Error automatically saving tournament on next round:", error);
     });
   };
@@ -654,6 +727,17 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   return (
       <TournamentContext.Provider value={value}>
           {children}
+          {isUpdatingToLatest && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80">
+              <div className="flex flex-col items-center gap-3 rounded-lg border bg-background p-6 shadow-lg text-center max-w-sm mx-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="font-semibold">Actualizando…</p>
+                <p className="text-sm text-muted-foreground">
+                  Se encontró una versión más reciente del torneo guardada desde otro dispositivo. Actualizando a la versión actual.
+                </p>
+              </div>
+            </div>
+          )}
       </TournamentContext.Provider>
   );
 }

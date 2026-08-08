@@ -17,7 +17,7 @@ import { Play, SkipForward, RefreshCw, Upload, Save, PlayCircle, StopCircle, Cop
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useClock } from '@/context/clock-provider';
-import type { DisplayPairing } from '@/lib/types';
+import type { DisplayPairing, StandingsPlayer } from '@/lib/types';
 
 interface TournamentControlsProps {
   status: 'registration' | 'running' | 'finished';
@@ -35,6 +35,7 @@ interface TournamentControlsProps {
   currentPairings?: DisplayPairing[];
   roundsGenerated?: number;
   recommendedRounds?: number;
+  standings?: StandingsPlayer[];
 }
 
 export function TournamentControls({
@@ -53,7 +54,11 @@ export function TournamentControls({
   currentPairings,
   roundsGenerated,
   recommendedRounds,
+  standings,
 }: TournamentControlsProps) {
+  // The copy button switches from "share pairings" to a payment checklist (✅/❌) once the
+  // current round's results are all in - highlight it in yellow so judges notice the switch.
+  const isChecklistCopyMode = !!allResultsSubmitted && !isViewingHistory;
   const recommendedRoundsReached =
     typeof roundsGenerated === 'number' &&
     typeof recommendedRounds === 'number' &&
@@ -122,13 +127,20 @@ export function TournamentControls({
       // participant checklist (✅/❌ left blank on purpose) so judges can
       // mark payments off by hand in an external notepad.
       const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const participantNames: string[] = [];
-      currentPairings.forEach((p) => {
-        participantNames.push(p.player1.name);
-        if (p.player2.id !== 'bye') {
-          participantNames.push(p.player2.name);
-        }
-      });
+      // Ordered by standings (1st to last place) so the checklist matches the
+      // classification table, falling back to pairing order if standings aren't available.
+      let participantNames: string[];
+      if (standings && standings.length > 0) {
+        participantNames = standings.map((s) => s.playerName);
+      } else {
+        participantNames = [];
+        currentPairings.forEach((p) => {
+          participantNames.push(p.player1.name);
+          if (p.player2.id !== 'bye') {
+            participantNames.push(p.player2.name);
+          }
+        });
+      }
 
       text = `Torneo ${today}\nParticipantes:\n\n`;
       participantNames.forEach((name) => {
@@ -212,7 +224,12 @@ export function TournamentControls({
             
             {onForceSave && renderButton(<Save />, "Guardar Estado", handleForceSave, { variant: "outline" })}
 
-            {isJudgeView && status !== 'registration' && renderButton(<Copy />, "Copiar", handleCopy, { variant: "outline" })}
+            {isJudgeView && status !== 'registration' && renderButton(<Copy />, "Copiar", handleCopy, {
+                variant: "outline",
+                className: isChecklistCopyMode
+                    ? "border-yellow-500 bg-yellow-400 text-black hover:bg-yellow-500 hover:text-black"
+                    : undefined,
+            })}
 
             <div className="flex-grow" />
             
