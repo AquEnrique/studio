@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideIcons } from '../../core/icons';
 import { TournamentService } from '../../core/services/tournament.service';
@@ -74,12 +74,23 @@ export class NavMenuComponent {
   private readonly tournament = inject(TournamentService);
   private readonly breakpoint = inject(BreakpointService);
 
-  protected readonly open = signal(!this.breakpoint.isMobile());
+  // Starts closed on both server and first client paint so hydration never has to
+  // reconcile a mismatched open/backdrop state (the server can't know the real
+  // viewport). Desktop auto-open happens right after, once we're in the browser.
+  protected readonly open = signal(false);
 
   protected readonly items = computed<NavItem[]>(() => {
     const isRunning = this.tournament.tournament()?.status === 'running';
     return NAV_ITEMS.filter((item) => !item.requiresRunning || isRunning);
   });
+
+  constructor() {
+    afterNextRender(() => {
+      if (!this.breakpoint.isMobile()) {
+        this.open.set(true);
+      }
+    });
+  }
 
   toggle(): void {
     this.open.update((value) => !value);
