@@ -10,14 +10,6 @@
   ];
   # Sets environment variables in the workspace
   env = {};
-  # This adds a file watcher to startup the firebase emulators. The emulators will only start if
-  # a firebase.json file is written into the user's directory
-  services.firebase.emulators = {
-    # Disabling because we are using prod backends right now
-    detect = false;
-    projectId = "demo-app";
-    services = ["auth" "firestore"];
-  };
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
     extensions = [
@@ -26,7 +18,7 @@
     workspace = {
       onCreate = {
         default.openFiles = [
-          "src/app/page.tsx"
+          "src/app/pages/tournament/tournament.component.ts"
         ];
       };
     };
@@ -35,7 +27,7 @@
       enable = true;
       previews = {
         web = {
-          command = ["npm" "run" "dev" "--" "--port" "$PORT" "--hostname" "0.0.0.0"];
+          command = ["npm" "run" "start" "--" "--port" "$PORT" "--host" "0.0.0.0"];
           manager = "web";
         };
       };

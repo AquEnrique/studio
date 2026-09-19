@@ -1,0 +1,42 @@
+<header class="sticky top-0 z-50 w-full border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2">
+    <div class="flex shrink-0 items-center gap-1">
+      <app-nav-menu />
+
+      @if (isJudgeRoute()) {
+        <a appButton routerLink="/" variant="ghost" size="icon" class="shrink-0">
+          <lucide-icon name="ArrowLeft" [size]="20" />
+          <span class="sr-only">Volver a la vista normal</span>
+        </a>
+      } @else {
+        <a routerLink="/" class="flex shrink-0 items-center gap-2">
+          <span class="hidden text-lg font-semibold sm:inline">YGO Tournament Manager</span>
+        </a>
+      }
+
+      @if (isJudgeRoute()) {
+        <span class="font-semibold">Vista de Juez</span>
+      }
+    </div>
+
+    <div class="order-last flex min-w-0 basis-full items-center justify-center gap-2 sm:order-none sm:basis-0 sm:flex-1">
+      <app-clock-display />
+      @if (isRunning()) {
+        <div appBadge variant="secondary" class="whitespace-nowrap text-xs sm:text-sm">
+          Ronda {{ tournament.tournament()!.rounds.length }} de {{ tournament.recommendedRounds() }}
+        </div>
+      }
+    </div>
+
+    <div class="flex shrink-0 items-center gap-2">
+      @if (!isJudgeRoute() && isRunning()) {
+        <a appButton routerLink="/judge" variant="outline" [size]="breakpoint.isMobile() ? 'icon' : 'default'">
+          <lucide-icon name="Gavel" [size]="18" />
+          @if (!breakpoint.isMobile()) {
+            <span>Juez</span>
+          }
+        </a>
+      }
+    </div>
+  </div>
+</header>

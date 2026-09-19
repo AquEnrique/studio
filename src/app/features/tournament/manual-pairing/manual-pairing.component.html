@@ -1,0 +1,61 @@
+<div class="space-y-4 py-4">
+  <div appAlert>
+    <lucide-icon name="Hand" [size]="16" />
+    <h5 appAlertTitle>Crea los emparejamientos de la primera ronda</h5>
+    <div appAlertDescription>
+      Toca un jugador y luego otro para formar una pareja. Para asignar un bye, selecciona un jugador y toca "Asignar Bye".
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div>
+      <div class="mb-2 flex items-center justify-between">
+        <h4 class="font-semibold">Jugadores sin emparejar ({{ unpairedPlayers().length }})</h4>
+        @if (players.length % 2 !== 0 && !hasBye()) {
+          <button appButton size="sm" variant="secondary" [disabled]="!selectedPlayer() || hasBye()" (click)="handleAssignBye()">
+            <lucide-icon name="Ban" [size]="16" class="mr-2" /> Asignar Bye
+          </button>
+        }
+      </div>
+      <div class="min-h-[100px] space-y-2 rounded-md bg-muted/50 p-2">
+        @for (player of unpairedPlayers(); track player.id) {
+          <div
+            (click)="handlePlayerClick(player)"
+            class="flex cursor-pointer items-center justify-between rounded-md bg-background p-3 shadow-sm transition-all active:scale-[0.98]"
+            [class.ring-2]="selectedPlayer()?.id === player.id"
+            [class.ring-primary]="selectedPlayer()?.id === player.id"
+            [class.ring-offset-2]="selectedPlayer()?.id === player.id"
+            [class.ring-offset-background]="selectedPlayer()?.id === player.id"
+          >
+            <span>{{ player.name }}</span>
+          </div>
+        }
+      </div>
+    </div>
+    <div>
+      <h4 class="mb-2 font-semibold">Emparejamientos ({{ pairings().length }})</h4>
+      <div class="min-h-[100px] space-y-2 rounded-md bg-muted/50 p-2">
+        @for (pairing of pairings(); track $index; let i = $index) {
+          <div appCard class="bg-background">
+            <div appCardContent class="flex items-center justify-between p-2">
+              <div class="space-y-1 font-medium">
+                <div class="flex items-center justify-between"><span>{{ pairing.player1.name }}</span></div>
+                <div class="flex items-center justify-between"><span>{{ pairing.player2.name }}</span></div>
+              </div>
+              <button appButton variant="ghost" size="sm" (click)="removePairing(i)">Quitar</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4 flex justify-end gap-2">
+    <button appButton variant="outline" [disabled]="pairings().length === 0" (click)="cleanPairings()">
+      <lucide-icon name="RefreshCcw" [size]="16" class="mr-2" /> Limpiar
+    </button>
+    <button appButton [disabled]="!isTournamentReady()" (click)="startTournament()">
+      <lucide-icon name="Play" [size]="16" class="mr-2" /> Iniciar Torneo Manual
+    </button>
+  </div>
+</div>

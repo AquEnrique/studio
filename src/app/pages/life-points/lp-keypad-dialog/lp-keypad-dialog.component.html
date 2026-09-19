@@ -1,0 +1,83 @@
+<div appDialogHeader class="shrink-0 text-left">
+  <h2 appDialogTitle class="flex items-baseline justify-between gap-2" [class]="accentTextClass">
+    <span>{{ data.label }}</span>
+    <span class="text-sm font-normal text-muted-foreground">Actual: {{ data.currentValue }}</span>
+  </h2>
+</div>
+
+<div class="flex shrink-0 items-center justify-between gap-2 rounded-xl bg-muted px-4 py-3">
+  <span class="font-score min-w-0 flex-1 truncate text-right text-4xl font-black sm:text-5xl">{{ staged() }}</span>
+  <div class="flex shrink-0 items-center gap-1">
+    <button
+      type="button"
+      (click)="backspace()"
+      class="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+      aria-label="Borrar último dígito"
+    >
+      <lucide-icon name="Delete" [size]="20" />
+    </button>
+    <button
+      type="button"
+      (click)="clear()"
+      class="flex h-10 items-center justify-center rounded-lg px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+      aria-label="Limpiar"
+    >
+      C
+    </button>
+  </div>
+</div>
+
+<div class="grid shrink-0 grid-cols-2 gap-2 sm:gap-3">
+  <button
+    type="button"
+    (click)="applyDouble()"
+    class="flex h-11 items-center justify-center rounded-xl bg-muted text-lg font-bold transition-colors active:bg-muted-foreground/20 sm:h-12 sm:text-xl"
+    [attr.aria-label]="'Duplicar los puntos de vida de ' + data.label"
+  >
+    ×2
+  </button>
+  <button
+    type="button"
+    (click)="applyHalve()"
+    class="flex h-11 items-center justify-center rounded-xl bg-muted text-lg font-bold transition-colors active:bg-muted-foreground/20 sm:h-12 sm:text-xl"
+    [attr.aria-label]="'Dividir entre 2 los puntos de vida de ' + data.label + ', redondeando hacia arriba'"
+  >
+    ÷2
+  </button>
+</div>
+
+<div class="grid flex-1 grid-cols-3 grid-rows-4 gap-2 sm:gap-3">
+  @for (digit of digitRows; track digit) {
+    <button
+      type="button"
+      (click)="pushDigit(digit)"
+      class="flex items-center justify-center rounded-xl bg-muted text-2xl font-bold transition-colors active:bg-muted-foreground/20 sm:text-3xl"
+    >
+      {{ digit }}
+    </button>
+  }
+
+  <button
+    type="button"
+    (click)="apply(1)"
+    class="flex items-center justify-center rounded-xl bg-success/15 text-success transition-colors active:bg-success/25"
+    [attr.aria-label]="'Sumar ' + staged() + ' a ' + data.label"
+  >
+    <lucide-icon name="Plus" [size]="32" />
+  </button>
+  <button
+    type="button"
+    (click)="pushDigit('0')"
+    class="flex items-center justify-center rounded-xl bg-muted text-2xl font-bold transition-colors active:bg-muted-foreground/20 sm:text-3xl"
+  >
+    0
+  </button>
+  <button
+    type="button"
+    (click)="apply(-1)"
+    class="flex items-center justify-center rounded-xl bg-destructive/15 text-destructive transition-colors active:bg-destructive/25"
+    [attr.aria-label]="'Restar ' + staged() + ' a ' + data.label"
+  >
+    <lucide-icon name="Minus" [size]="32" />
+  </button>
+</div>

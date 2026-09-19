@@ -1,0 +1,52 @@
+<div class="relative flex flex-1 basis-0 flex-col items-center justify-between overflow-hidden rounded-xl border-2 p-3 sm:p-4" [class]="accentClasses">
+  <div class="flex w-full items-center justify-center">
+    <span class="text-sm font-semibold text-muted-foreground sm:text-base">{{ label }}</span>
+  </div>
+
+  <div class="relative flex flex-1 items-center justify-center">
+    @if (flash(); as f) {
+      <span
+        class="pointer-events-none absolute -top-1 animate-in fade-in slide-in-from-bottom-2 text-lg font-bold duration-300 sm:text-2xl"
+        [class.text-success]="f.text.startsWith('+')"
+        [class.text-destructive]="!f.text.startsWith('+')"
+      >
+        {{ f.text }}
+      </span>
+    }
+    <button
+      type="button"
+      (click)="openKeypad()"
+      class="font-score select-none text-center text-6xl font-black tracking-tighter transition-transform active:scale-95 sm:text-7xl [@media(orientation:landscape)]:text-5xl"
+      [attr.aria-label]="label + ': ' + value + ' puntos de vida. Tocar para abrir el teclado numérico.'"
+    >
+      {{ value }}
+    </button>
+  </div>
+
+  <div class="grid w-full grid-cols-2 gap-3">
+    <button
+      type="button"
+      (pointerdown)="startHold(-step)"
+      (pointerup)="stopHold()"
+      (pointerleave)="stopHold()"
+      (pointercancel)="stopHold()"
+      class="flex h-16 items-center justify-center gap-2 rounded-lg bg-destructive/15 text-destructive transition-colors active:bg-destructive/25 sm:h-20 [@media(orientation:landscape)]:h-14"
+      [attr.aria-label]="'Restar ' + step + ' a ' + label"
+    >
+      <lucide-icon name="Minus" [size]="24" />
+      <span class="text-lg font-bold sm:text-xl">{{ step }}</span>
+    </button>
+    <button
+      type="button"
+      (pointerdown)="startHold(step)"
+      (pointerup)="stopHold()"
+      (pointerleave)="stopHold()"
+      (pointercancel)="stopHold()"
+      class="flex h-16 items-center justify-center gap-2 rounded-lg bg-success/15 text-success transition-colors active:bg-success/25 sm:h-20 [@media(orientation:landscape)]:h-14"
+      [attr.aria-label]="'Sumar ' + step + ' a ' + label"
+    >
+      <lucide-icon name="Plus" [size]="24" />
+      <span class="text-lg font-bold sm:text-xl">{{ step }}</span>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,65 @@
+<div class="space-y-4 rounded-lg border bg-background/50 p-4 py-4">
+  <div appAlert>
+    <h5 appAlertTitle>Editor de Emparejamiento Manual (Ronda {{ roundNumber }})</h5>
+    <div appAlertDescription>
+      Haz clic en los jugadores para ajustar los emparejamientos de esta ronda. Los cambios se guardarán solo para la ronda actual.
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div>
+      <div class="mb-2 flex items-center justify-between">
+        <h4 class="font-semibold">Jugadores no emparejados ({{ unpairedPlayers().length }})</h4>
+        @if (players.length % 2 !== 0 && !hasBye()) {
+          <button appButton size="sm" variant="secondary" [disabled]="!selectedPlayer() || hasBye()" (click)="handleAssignBye()">
+            <lucide-icon name="Ban" [size]="16" class="mr-2" /> Asignar Bye
+          </button>
+        }
+      </div>
+      <div class="min-h-[100px] space-y-2 rounded-md bg-muted/50 p-2">
+        @for (player of unpairedPlayers(); track player.id) {
+          <div
+            (click)="handlePlayerClick(player)"
+            class="flex cursor-pointer items-center justify-between rounded-md bg-background p-3 shadow-sm transition-all active:scale-[0.98]"
+            [class.ring-2]="selectedPlayer()?.id === player.id"
+            [class.ring-primary]="selectedPlayer()?.id === player.id"
+            [class.ring-offset-2]="selectedPlayer()?.id === player.id"
+            [class.ring-offset-background]="selectedPlayer()?.id === player.id"
+            [class.bg-muted]="!!selectedPlayer() && selectedPlayer()?.id !== player.id && pastOpponentIds().has(player.id)"
+            [class.opacity-70]="!!selectedPlayer() && selectedPlayer()?.id !== player.id && pastOpponentIds().has(player.id)"
+          >
+            <span>{{ rankMap().get(player.id) ? rankMap().get(player.id) + ' - ' : '' }}{{ player.name }}</span>
+          </div>
+        }
+      </div>
+    </div>
+    <div>
+      <h4 class="mb-2 font-semibold">Emparejamientos ({{ pairings().length }})</h4>
+      <div class="min-h-[100px] space-y-2 rounded-md bg-muted/50 p-2">
+        @for (pairing of pairings(); track $index; let i = $index) {
+          <div appCard class="bg-background">
+            <div appCardContent class="flex items-center justify-between p-2">
+              <div class="space-y-1 font-medium">
+                <div class="flex items-center justify-between"><span>{{ pairing.player1.name }}</span></div>
+                <div class="flex items-center justify-between"><span>{{ pairing.player2.name }}</span></div>
+              </div>
+              <button appButton variant="ghost" size="sm" (click)="removePairing(i)">Eliminar</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4 flex justify-end gap-2">
+    <button appButton variant="ghost" (click)="cancel.emit()">
+      <lucide-icon name="X" [size]="16" class="mr-2" /> Cancelar
+    </button>
+    <button appButton variant="outline" [disabled]="pairings().length === 0" (click)="cleanPairings()">
+      <lucide-icon name="RefreshCcw" [size]="16" class="mr-2" /> Limpiar
+    </button>
+    <button appButton [disabled]="!isSaveReady()" (click)="save.emit(pairings())">
+      <lucide-icon name="Save" [size]="16" class="mr-2" /> Guardar Emparejamientos
+    </button>
+  </div>
+</div>

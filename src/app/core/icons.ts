@@ -1,0 +1,81 @@
+import { importProvidersFrom } from '@angular/core';
+import { LucideAngularModule } from 'lucide-angular';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Ban,
+  BarChart,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Crown,
+  Delete,
+  Gavel,
+  Hand,
+  Heart,
+  Home,
+  Info,
+  List,
+  Loader2,
+  Menu,
+  Minus,
+  Pencil,
+  Play,
+  PlayCircle,
+  Plus,
+  RefreshCcw,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  SkipForward,
+  StopCircle,
+  Terminal,
+  Upload,
+  UserPlus,
+  X,
+} from 'lucide-angular';
+
+// Every lucide icon referenced anywhere in the app, registered once as a root
+// provider (added to app.config.ts) so the icon lookup works app-wide.
+export const LucideIconsProvider = importProvidersFrom(
+  LucideAngularModule.pick({
+    AlertTriangle,
+    ArrowLeft,
+    Ban,
+    BarChart,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Copy,
+    Crown,
+    Delete,
+    Gavel,
+    Hand,
+    Heart,
+    Home,
+    Info,
+    List,
+    Loader2,
+    Menu,
+    Minus,
+    Pencil,
+    Play,
+    PlayCircle,
+    Plus,
+    RefreshCcw,
+    RefreshCw,
+    RotateCcw,
+    Save,
+    SkipForward,
+    StopCircle,
+    Terminal,
+    Upload,
+    UserPlus,
+    X,
+  })
+);
+
+// Every standalone component that renders <lucide-icon> imports this plain
+// module class (the actual icon set is registered globally, see above).
+export const LucideIcons = LucideAngularModule;

@@ -1,0 +1,186 @@
+@if (view === 'simple' && isMobile) {
+  <div class="space-y-2">
+    @for (player of players; track player.playerId; let i = $index) {
+      <div class="flex items-center gap-3 rounded-md border bg-card p-3">
+        <span class="w-6 shrink-0 text-center font-mono text-base text-muted-foreground">{{ i + 1 }}</span>
+        <span class="flex-grow truncate font-medium">{{ player.playerName }}</span>
+        <span class="shrink-0 font-mono text-lg font-bold">{{ player.playerPoints }} pts</span>
+      </div>
+    }
+    @if (players.length === 0) {
+      <p class="py-4 text-center text-sm text-muted-foreground">Aún no hay clasificaciones.</p>
+    }
+  </div>
+}
+
+@if (view === 'simple' && !isMobile) {
+  <div class="overflow-x-auto">
+    <app-table>
+      <thead appTableHeader>
+        <tr appTableRow>
+          <th appTableHead class="w-[50px] p-2 md:p-4">Rank</th>
+          <th appTableHead class="p-2 md:p-4">Name</th>
+          <th appTableHead class="p-2 md:p-4">Points</th>
+          @for (roundNum of rounds(); track roundNum) {
+            <th appTableHead class="p-1 text-center md:p-4">R{{ roundNum }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody appTableBody>
+        @for (player of players; track player.playerId; let i = $index) {
+          <tr appTableRow>
+            <td appTableCell class="p-2 md:p-4">{{ i + 1 }}</td>
+            <td appTableCell class="p-2 font-medium md:p-4">{{ player.playerName }}</td>
+            <td appTableCell class="p-2 font-bold md:p-4">{{ player.playerPoints }}</td>
+            @for (roundIndex of rounds(); track roundIndex; let ri = $index) {
+              <td appTableCell class="p-1 text-center font-mono md:p-4" [class]="simpleCellClass(player.roundResults[ri])">
+                {{ simpleCellContent(player.roundResults[ri]) }}
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </app-table>
+  </div>
+}
+
+@if ((view === 'judge' || view === 'advanced') && isMobile) {
+  <div class="w-full">
+    @for (player of players; track player.playerId; let i = $index) {
+      <app-accordion-item>
+        <app-accordion-trigger triggerClass="p-2 hover:no-underline">
+          <div class="flex w-full items-center gap-4 pr-4">
+            <span class="w-8 text-center font-mono text-lg">{{ i + 1 }}</span>
+            <span class="flex-grow truncate text-left font-semibold">{{ player.playerName }}</span>
+            <span class="text-lg font-bold">{{ player.playerPoints }}</span>
+          </div>
+        </app-accordion-trigger>
+        <app-accordion-content>
+          <div class="space-y-3 px-2">
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-1 font-medium">
+                Puntos de Oponente
+                <button appButton variant="ghost" size="icon" class="h-5 w-5" (click)="showColumnInfo('OTP')">
+                  <lucide-icon name="Info" [size]="12" />
+                </button>
+              </div>
+              <span class="font-mono">{{ player.opponentTotalPoints }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-1 font-medium">
+                GW%
+                <button appButton variant="ghost" size="icon" class="h-5 w-5" (click)="showColumnInfo('GWP')">
+                  <lucide-icon name="Info" [size]="12" />
+                </button>
+              </div>
+              <span class="font-mono">{{ (player.gameWinPercentage * 100).toFixed(1) }}%</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-1 font-medium">
+                OGW%
+                <button appButton variant="ghost" size="icon" class="h-5 w-5" (click)="showColumnInfo('OGW')">
+                  <lucide-icon name="Info" [size]="12" />
+                </button>
+              </div>
+              <span class="font-mono">{{ (player.opponentGameWinPercentage * 100).toFixed(1) }}%</span>
+            </div>
+            <div class="space-y-2 pt-2">
+              <h4 class="text-sm font-semibold">Rondas:</h4>
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                @for (result of player.roundResults.slice(0, maxRounds); track $index; let ri = $index) {
+                  <div class="rounded-md bg-muted/50 p-2 text-xs">
+                    <span class="block font-bold">R{{ ri + 1 }}</span>
+                    @if (result) {
+                      <div>
+                        <span [class]="resultTextClass(result)">{{ resultLabel(result) }}</span>
+                        <span class="block truncate text-muted-foreground">
+                          @if (!result.isBye) {
+                            vs {{ result.opponentName }}
+                          }
+                        </span>
+                      </div>
+                    } @else {
+                      -
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </app-accordion-content>
+      </app-accordion-item>
+    }
+  </div>
+}
+
+@if ((view === 'judge' || view === 'advanced') && !isMobile) {
+  <div class="relative w-full overflow-auto">
+    <app-table>
+      <thead appTableHeader>
+        <tr appTableRow class="hover:bg-transparent">
+          <th appTableHead class="sticky left-0 z-20 w-[60px] bg-card">Rank</th>
+          <th appTableHead class="sticky left-[60px] z-20 min-w-[200px] bg-card">Nombre</th>
+          <th appTableHead>Puntos</th>
+          <th appTableHead>
+            <div class="flex items-center gap-1">
+              OTP
+              <button appButton variant="ghost" size="icon" class="h-5 w-5" (click)="showColumnInfo('OTP')">
+                <lucide-icon name="Info" [size]="12" />
+              </button>
+            </div>
+          </th>
+          <th appTableHead>
+            <div class="flex items-center gap-1">
+              GW%
+              <button appButton variant="ghost" size="icon" class="h-5 w-5" (click)="showColumnInfo('GWP')">
+                <lucide-icon name="Info" [size]="12" />
+              </button>
+            </div>
+          </th>
+          <th appTableHead>
+            <div class="flex items-center gap-1">
+              OGW%
+              <button appButton variant="ghost" size="icon" class="h-5 w-5" (click)="showColumnInfo('OGW')">
+                <lucide-icon name="Info" [size]="12" />
+              </button>
+            </div>
+          </th>
+          @for (roundNum of rounds(); track roundNum) {
+            <th appTableHead class="min-w-[120px] text-center">R{{ roundNum }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody appTableBody>
+        @for (player of players; track player.playerId; let i = $index) {
+          <tr appTableRow>
+            <td appTableCell class="sticky left-0 z-10 bg-card font-medium">{{ i + 1 }}</td>
+            <td appTableCell class="sticky left-[60px] z-10 bg-card font-medium">{{ player.playerName }}</td>
+            <td appTableCell>{{ player.playerPoints }}</td>
+            <td appTableCell>{{ player.opponentTotalPoints }}</td>
+            <td appTableCell>{{ (player.gameWinPercentage * 100).toFixed(1) }}%</td>
+            <td appTableCell>{{ (player.opponentGameWinPercentage * 100).toFixed(1) }}%</td>
+            @for (result of player.roundResults.slice(0, maxRounds); track $index) {
+              <td appTableCell class="text-center">
+                @if (result) {
+                  <div>
+                    <span [class]="resultTextClass(result)">{{ resultLabel(result) }}</span>
+                    <span class="block truncate text-xs text-muted-foreground">
+                      @if (!result.isBye) {
+                        vs {{ result.opponentName }}
+                      }
+                    </span>
+                  </div>
+                } @else {
+                  -
+                }
+              </td>
+            }
+            @for (_ of emptyCells(player); track $index) {
+              <td appTableCell class="text-center">-</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </app-table>
+  </div>
+}

@@ -1,1 +1,2 @@
-# Next.js handles routing automatically
+# Every route is fully prerendered (see dist/angular-app/browser/**/index.html),
+# so no SPA catch-all rewrite is needed.

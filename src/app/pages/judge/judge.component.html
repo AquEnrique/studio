@@ -1,0 +1,81 @@
+@if (tournament.tournament(); as t) {
+  @if (t.status === 'registration') {
+    <main class="flex flex-grow flex-col items-center justify-center p-4 text-center md:p-6">
+      <h1 class="mb-4 text-2xl font-semibold">El torneo aún no ha comenzado.</h1>
+      <p class="mb-6 text-muted-foreground">Por favor, vuelve a la página principal para registrar jugadores y comenzar el torneo.</p>
+      <a appButton routerLink="/">Volver al Registro</a>
+    </main>
+  } @else {
+    <main class="flex-grow space-y-4 p-4 pb-24 md:space-y-6 md:p-6">
+      <div class="flex justify-center sm:justify-start">
+        <div class="flex flex-wrap items-center justify-center gap-2 rounded-full bg-muted p-1">
+          <button appButton variant="outline" size="sm" class="rounded-full" [disabled]="currentRoundForView() <= 1" (click)="goToPrevious()">
+            <lucide-icon name="ChevronLeft" [size]="16" />
+            <span class="sr-only">Ronda anterior</span>
+          </button>
+          <span class="px-2 text-sm font-semibold">Viendo Ronda {{ currentRoundForView() }}</span>
+          <button
+            appButton
+            variant="outline"
+            size="sm"
+            class="rounded-full"
+            [disabled]="currentRoundForView() >= t.rounds.length && !isViewingHistory()"
+            (click)="goToNext()"
+          >
+            <lucide-icon name="ChevronRight" [size]="16" />
+            <span class="sr-only">Siguiente ronda</span>
+          </button>
+          @if (isViewingHistory()) {
+            <button appButton size="sm" class="rounded-full" (click)="goToRound(null)">
+              <lucide-icon name="SkipForward" [size]="16" class="mr-2" />
+              Ir a Actual
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (isViewingHistory()) {
+        <div appAlert>
+          <lucide-icon name="Terminal" [size]="16" />
+          <h5 appAlertTitle>¡Estás viendo una ronda pasada!</h5>
+          <div appAlertDescription>
+            Estás viendo los datos de la ronda {{ tournament.viewingRound() }}. Para editar, haz clic en "Editar Resultados", lo que eliminará todas las rondas futuras.
+          </div>
+        </div>
+      }
+
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div class="flex flex-col gap-4">
+          <h2 class="text-xl font-semibold md:text-2xl">Clasificaciones</h2>
+          <app-standings-table [players]="visibleStandings()" view="judge" [maxRounds]="currentRoundForView()" [isMobile]="breakpoint.isMobile()" />
+        </div>
+        <div>
+          <h2 class="mb-4 text-xl font-semibold md:text-2xl">Emparejamientos - Ronda {{ currentRoundForView() }}</h2>
+          <app-pairings-display
+            [pairings]="tournament.currentPairings()"
+            [roundNumber]="currentRoundForView()"
+            [isEditable]="t.status === 'running'"
+            [allPlayers]="t.players"
+            [isViewingHistory]="isViewingHistory()"
+            [standings]="visibleStandings()"
+            [tournament]="t"
+          />
+        </div>
+      </div>
+    </main>
+
+    <app-tournament-controls
+      [status]="t.status"
+      [playerCount]="t.players.length"
+      [currentRound]="currentRoundForView()"
+      [isMobile]="breakpoint.isMobile()"
+      [isViewingHistory]="isViewingHistory()"
+      [isJudgeView]="true"
+      [allResultsSubmitted]="tournament.allResultsSubmitted()"
+      [currentPairings]="tournament.currentPairings()"
+      [roundsGenerated]="t.rounds.length"
+      [recommendedRounds]="tournament.recommendedRounds()"
+      [standings]="visibleStandings()"
+    />
+  }
+}

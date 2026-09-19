@@ -1,0 +1,37 @@
+<main
+  class="flex min-h-0 flex-1 flex-col items-center gap-4 p-3 transition-opacity duration-200 sm:gap-6 sm:p-4"
+  [class.opacity-0]="!counters.hydrated()"
+>
+  <div class="flex w-full max-w-xl flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2">
+      <h1 class="text-lg font-semibold sm:text-xl">Angelechy</h1>
+      <a appButton routerLink="/life-points" variant="ghost" size="sm" class="gap-2">
+        <lucide-icon name="Heart" [size]="16" />
+        <span class="hidden sm:inline">Puntos de Vida</span>
+      </a>
+    </div>
+    <button appButton variant="outline" size="sm" (click)="counters.resetAll()" class="gap-2">
+      <lucide-icon name="RotateCcw" [size]="16" />
+      <span class="hidden sm:inline">Reiniciar todo</span>
+    </button>
+  </div>
+
+  <div class="flex w-full max-w-xl flex-1 items-stretch justify-center">
+    <div class="flex w-full divide-x-2 divide-border overflow-hidden rounded-xl border-2 border-border">
+      <app-piece-counter
+        symbol="♔"
+        label="Rey"
+        [value]="counters.king()"
+        (adjust)="counters.adjust('king', $event)"
+        (reset)="counters.resetPiece('king')"
+      />
+      <app-piece-counter
+        symbol="♘"
+        label="Caballo"
+        [value]="counters.knight()"
+        (adjust)="counters.adjust('knight', $event)"
+        (reset)="counters.resetPiece('knight')"
+      />
+    </div>
+  </div>
+</main>

@@ -1,0 +1,61 @@
+<footer class="fixed bottom-0 left-0 right-0 z-10 border-t bg-background/80 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm">
+  <div class="container mx-auto flex flex-wrap items-center justify-center gap-2">
+    <input #fileInput type="file" class="hidden" accept=".json,application/json" (change)="handleFileChange($event)" />
+
+    @if (status === 'registration') {
+      <button appButton variant="outline" (click)="handleImportClick()">
+        <lucide-icon name="Upload" [size]="16" />
+        @if (!isMobile) { <span class="ml-2">Importar</span> }
+      </button>
+    }
+
+    <button appButton variant="outline" (click)="handleForceSave()">
+      <lucide-icon name="Save" [size]="16" />
+      @if (!isMobile) { <span class="ml-2">Guardar Estado</span> }
+    </button>
+
+    @if (isJudgeView && status !== 'registration') {
+      <button appButton variant="outline" (click)="handleCopy()" [class]="isChecklistCopyMode ? 'border-yellow-500 bg-yellow-400 text-black hover:bg-yellow-500 hover:text-black' : ''">
+        <lucide-icon name="Copy" [size]="16" />
+        @if (!isMobile) { <span class="ml-2">Copiar</span> }
+      </button>
+    }
+
+    <div class="flex-grow"></div>
+
+    @if (status === 'registration') {
+      <button appButton (click)="startTournament()" [disabled]="playerCount < 2">
+        <lucide-icon name="Play" [size]="16" />
+        @if (!isMobile) { <span class="ml-2">Iniciar Torneo</span> }
+      </button>
+    }
+
+    @if (isJudgeView && status === 'running' && !isViewingHistory && !clock.startTime()) {
+      <button appButton (click)="handleStartTimer()">
+        <lucide-icon name="PlayCircle" [size]="16" />
+        @if (!isMobile) { <span class="ml-2">Iniciar Reloj</span> }
+      </button>
+    }
+
+    @if (isJudgeView && status === 'running' && !isViewingHistory && clock.startTime()) {
+      <button appButton variant="destructive" (click)="handleStopTimer()">
+        <lucide-icon name="StopCircle" [size]="16" />
+        @if (!isMobile) { <span class="ml-2">Detener Reloj</span> }
+      </button>
+    }
+
+    @if (status === 'running' && allResultsSubmitted && !isViewingHistory && isJudgeView && !recommendedRoundsReached) {
+      <button appButton (click)="generateNextRound()">
+        <lucide-icon name="SkipForward" [size]="16" />
+        @if (!isMobile) { <span class="ml-2">Siguiente Ronda</span> }
+      </button>
+    }
+
+    @if (status === 'running' || status === 'finished') {
+      <button appButton variant="destructive" (click)="handleResetTournament()">
+        <lucide-icon name="RefreshCw" [size]="16" />
+        @if (!isMobile) { <span class="ml-2">Reiniciar</span> }
+      </button>
+    }
+  </div>
+</footer>

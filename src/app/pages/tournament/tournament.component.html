@@ -1,0 +1,55 @@
+@if (tournament.tournament(); as t) {
+  <main class="flex-grow space-y-6 p-4 pb-24 md:space-y-8 md:p-6">
+    <h1 class="text-2xl font-bold tracking-tight md:text-3xl">Tournament Manager</h1>
+
+    @if (t.status === 'registration') {
+      <app-player-registration />
+    }
+
+    @if (t.status === 'running' || t.status === 'finished') {
+      <div class="flex flex-col gap-8">
+        @if (t.status === 'running') {
+          <section>
+            <h2 class="mb-4 text-xl font-semibold md:text-2xl">Emparejamientos - Ronda {{ t.rounds.length }}</h2>
+            <app-pairings-display
+              [pairings]="tournament.currentPairings()"
+              [roundNumber]="t.rounds.length"
+              [isEditable]="false"
+              [allPlayers]="t.players"
+              [isViewingHistory]="false"
+              [standings]="tournament.standings()"
+              [tournament]="t"
+            />
+          </section>
+        }
+
+        <section class="flex flex-col gap-4">
+          <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2">
+              <h2 class="text-xl font-semibold md:text-2xl">Clasificaciones</h2>
+              <button appButton variant="outline" size="icon" class="h-8 w-8" (click)="tournament.refreshTournament()">
+                <lucide-icon name="RefreshCw" [size]="16" />
+                <span class="sr-only">Actualizar tabla</span>
+              </button>
+            </div>
+            <div class="flex items-center gap-2 rounded-full bg-muted p-1">
+              <button appButton [variant]="standingsView() === 'simple' ? 'secondary' : 'ghost'" size="sm" class="gap-2 rounded-full" (click)="standingsView.set('simple')">
+                <lucide-icon name="List" [size]="16" />
+                Simple
+              </button>
+              <button appButton [variant]="standingsView() === 'advanced' ? 'secondary' : 'ghost'" size="sm" class="gap-2 rounded-full" (click)="standingsView.set('advanced')">
+                <lucide-icon name="BarChart" [size]="16" />
+                Avanzada
+              </button>
+            </div>
+          </div>
+          <app-standings-table [players]="tournament.standings()" [view]="standingsView()" [maxRounds]="t.rounds.length" [isMobile]="breakpoint.isMobile()" />
+        </section>
+      </div>
+    }
+  </main>
+
+  @if (t.status === 'registration') {
+    <app-tournament-controls [status]="t.status" [playerCount]="t.players.length" [isMobile]="breakpoint.isMobile()" />
+  }
+}

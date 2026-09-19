@@ -1,0 +1,134 @@
+/* Required for @angular/cdk/dialog + Overlay to render/position at all
+   (overlay container sizing, backdrop, centering wrapper, etc). */
+@import '@angular/cdk/overlay-prebuilt.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark-first theme: this app has no light-mode entry point, so the palette
+   lives directly on :root instead of duplicating it behind a .dark class. */
+@layer base {
+  :root {
+    /* Graphite scoreboard base with a medal-gold primary and a muted teal accent. */
+    --background: 190 12% 9%;
+    --foreground: 45 20% 92%;
+    --card: 190 10% 13%;
+    --card-foreground: 45 20% 92%;
+    --popover: 190 10% 13%;
+    --popover-foreground: 45 20% 92%;
+    --primary: 42 55% 52%;
+    --primary-foreground: 190 25% 10%;
+    --secondary: 190 8% 20%;
+    --secondary-foreground: 45 20% 92%;
+    --muted: 190 8% 17%;
+    --muted-foreground: 45 8% 65%;
+    --accent: 189 35% 45%;
+    --accent-foreground: 190 25% 8%;
+    --destructive: 5 55% 48%;
+    --destructive-foreground: 45 20% 96%;
+    --success: 140 30% 42%;
+    --success-foreground: 45 20% 96%;
+    --warning: 28 65% 52%;
+    --warning-foreground: 28 40% 10%;
+    --border: 190 10% 22%;
+    --input: 190 10% 22%;
+    --ring: 42 55% 52%;
+    --chart-1: 42 55% 52%;
+    --chart-2: 189 35% 45%;
+    --chart-3: 140 30% 42%;
+    --chart-4: 28 65% 52%;
+    --chart-5: 5 40% 55%;
+    --radius: 0.375rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  /* Feature/page components are transparent layout-wise: without this, each
+     custom element's own (default `inline`) box would sit between its parent
+     flex/grid container and the component's real root element, breaking the
+     flex-fill-height / grid-item chain those layouts rely on. UI primitives
+     that intentionally keep their own box (app-table, app-tabs-*,
+     app-accordion-*, etc.) are deliberately not in this list. */
+  app-tournament,
+  app-judge,
+  app-life-points,
+  app-angelechy,
+  app-player-registration,
+  app-manual-pairing,
+  app-manual-pairing-editor,
+  app-pairings-display,
+  app-standings-table,
+  app-tournament-controls,
+  app-score-selector,
+  app-player-panel,
+  app-piece-counter,
+  app-confirm-dialog,
+  app-lp-keypad-dialog,
+  app-nav-menu-sheet {
+    display: contents;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* CDK's own dark backdrop ships unstyled by default (overlay-prebuilt.css only
+     provides positioning) - this is the ported `bg-black/80` from the old
+     Radix Dialog/AlertDialog/Sheet overlays. */
+  .cdk-overlay-dark-backdrop {
+    @apply bg-black/80;
+  }
+
+  /* Centered modal panel (Dialog/AlertDialog content). CDK's global position
+     strategy already centers the panel host - this only carries the old
+     DialogContent's sizing/visual classes, not its positioning ones.
+     Compounded with .cdk-overlay-pane (rather than a bare class) so this
+     always outranks CDK's own `.cdk-overlay-pane` base rule (max-width:100%,
+     position:absolute, etc.) on specificity - relying on source order alone
+     is fragile since Angular's build can inject CDK's overlay CSS more than
+     once, and whichever copy lands last in the bundle would otherwise win. */
+  .cdk-overlay-pane.app-dialog-panel {
+    @apply grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg;
+  }
+
+  /* Base panel for the slide-in Sheet; side placement + transform state
+     classes are appended at open() time by SheetService. */
+  .cdk-overlay-pane.app-sheet-panel {
+    @apply fixed z-50 flex flex-col gap-4 bg-background p-6 shadow-lg transition-transform duration-300 ease-in-out;
+  }
+
+  /* Near-fullscreen keypad dialog (life points custom-amount entry). */
+  .cdk-overlay-pane.app-lp-keypad-panel {
+    @apply flex h-[92dvh] max-h-[760px] w-[94vw] max-w-md flex-col gap-3 overflow-hidden rounded-2xl border bg-background p-4 shadow-lg sm:p-6;
+  }
+}
+
+@layer utilities {
+  /* Digits used for anything scoreable: life points, the round clock,
+     standings numbers. Tabular figures keep columns aligned like a real
+     scoreboard. */
+  .font-score {
+    font-family: theme('fontFamily.score');
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

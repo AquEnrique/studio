@@ -1,0 +1,34 @@
+<main class="flex min-h-0 flex-1 flex-col gap-3 p-3 transition-opacity duration-200 sm:p-4" [class.opacity-0]="!lifePoints.hydrated()">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2">
+      <h1 class="text-lg font-semibold sm:text-xl">Puntos de Vida</h1>
+      <a appButton routerLink="/angelechy" variant="ghost" size="sm" class="gap-2">
+        <lucide-icon name="Crown" [size]="16" />
+        <span class="hidden sm:inline">Angelechy</span>
+      </a>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1 rounded-full bg-muted p-1">
+        @for (option of stepOptions; track option) {
+          <button
+            type="button"
+            (click)="setStep(option)"
+            class="rounded-full px-3 py-1 text-xs font-semibold transition-colors sm:text-sm"
+            [class]="step() === option ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+          >
+            {{ option }}
+          </button>
+        }
+      </div>
+      <button appButton variant="outline" size="sm" class="gap-2" (click)="confirmReset()">
+        <lucide-icon name="RotateCcw" [size]="16" />
+        <span class="hidden sm:inline">Reiniciar</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="flex min-h-0 flex-1 flex-col gap-3 [@media(orientation:landscape)]:flex-row">
+    <app-player-panel label="Jugador 1" [value]="lifePoints.player1()" [step]="step()" accent="primary" (adjust)="adjust('player1', $event)" />
+    <app-player-panel label="Jugador 2" [value]="lifePoints.player2()" [step]="step()" accent="accent" (adjust)="adjust('player2', $event)" />
+  </div>
+</main>
