@@ -71,6 +71,7 @@
   app-player-panel,
   app-piece-counter,
   app-confirm-dialog,
+  app-nav-menu,
   app-nav-menu-sheet {
     display: contents;
   }

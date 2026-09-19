@@ -17,7 +17,7 @@ function formatTime(ms: number): string {
     @if (tournament.tournament()?.status === 'running' && clock.startTime()) {
       <div class="flex items-center">
         <div
-          class="flex items-center gap-3 rounded-full border-2 p-2 px-6 text-2xl font-black font-score transition-all md:text-5xl"
+          class="flex items-center gap-2 rounded-full border-2 px-4 py-1 text-lg font-black font-score leading-none transition-all sm:text-xl"
           [class]="clock.isFinished()
             ? 'bg-destructive text-destructive-foreground border-destructive animate-pulse'
             : 'bg-primary text-primary-foreground border-primary-foreground/20 shadow-xl'"

@@ -19,45 +19,49 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 /**
- * Persistent side menu. Fully retractable to width 0, leaving only the toggle
- * tab visible attached to its edge (it's a flex sibling of the panel, so it
- * slides with it instead of needing manual position math).
+ * Overlay side menu. Rendered fixed above the page on its own layer, so
+ * opening/closing it never resizes or shifts the rest of the layout.
+ * Closes on outside click (via the backdrop) and after any navigation.
  */
 @Component({
   selector: 'app-nav-menu',
   standalone: true,
   imports: [RouterLink, RouterLinkActive, LucideIcons],
   template: `
-    <div class="flex h-full items-start bg-background">
+    <div class="pointer-events-none fixed inset-0 z-40">
+      @if (open()) {
+        <div class="pointer-events-auto absolute inset-0 bg-black/40 transition-opacity" (click)="close()"></div>
+      }
+
       <aside
-        class="h-full overflow-hidden border-r transition-[width] duration-300 ease-in-out"
-        [class.w-64]="open()"
-        [class.w-0]="!open()"
+        class="pointer-events-auto absolute inset-y-0 left-0 flex h-full w-64 flex-col border-r bg-background shadow-lg transition-transform duration-300 ease-in-out"
+        [class.translate-x-0]="open()"
+        [class.-translate-x-full]="!open()"
       >
-        <div class="flex h-full w-64 flex-col">
-          <div class="border-b p-4">
-            <h2 class="text-lg font-semibold text-foreground">Menú</h2>
-          </div>
-          <nav class="flex flex-col gap-1 p-2">
-            @for (item of items(); track item.href) {
-              <a
-                [routerLink]="item.href"
-                routerLinkActive="bg-primary text-primary-foreground"
-                [routerLinkActiveOptions]="{ exact: item.href === '/' }"
-                (click)="onNavigate()"
-                class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                <lucide-icon [name]="item.icon" [size]="20" class="shrink-0" />
-                {{ item.label }}
-              </a>
-            }
-          </nav>
+        <div class="border-b p-4">
+          <h2 class="text-lg font-semibold text-foreground">Menú</h2>
         </div>
+        <nav class="flex flex-col gap-1 p-2">
+          @for (item of items(); track item.href) {
+            <a
+              [routerLink]="item.href"
+              routerLinkActive="bg-primary text-primary-foreground"
+              [routerLinkActiveOptions]="{ exact: item.href === '/' }"
+              (click)="onNavigate()"
+              class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <lucide-icon [name]="item.icon" [size]="20" class="shrink-0" />
+              {{ item.label }}
+            </a>
+          }
+        </nav>
       </aside>
 
       <button
         type="button"
-        class="mt-4 flex h-10 w-6 shrink-0 items-center justify-center rounded-r-md border border-l-0 bg-background shadow-md hover:bg-accent"
+        class="pointer-events-auto absolute top-4 flex h-10 w-6 items-center justify-center rounded-r-md border border-l-0 bg-background shadow-md transition-[left] duration-300 ease-in-out hover:bg-accent"
+        [class.left-64]="open()"
+        [class.left-0]="!open()"
         [attr.aria-label]="open() ? 'Cerrar menú' : 'Abrir menú'"
         (click)="toggle()"
       >
@@ -81,9 +85,11 @@ export class NavMenuComponent {
     this.open.update((value) => !value);
   }
 
+  close(): void {
+    this.open.set(false);
+  }
+
   onNavigate(): void {
-    if (this.breakpoint.isMobile()) {
-      this.open.set(false);
-    }
+    this.close();
   }
 }
