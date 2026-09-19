@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:gh-pages": "ng build --configuration production --base-href /fortaleza-tcg/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:angular-app": "node dist/angular-app/server/server.mjs"
