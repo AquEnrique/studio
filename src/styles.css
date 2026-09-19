@@ -71,9 +71,22 @@
   app-player-panel,
   app-piece-counter,
   app-confirm-dialog,
-  app-lp-keypad-dialog,
   app-nav-menu-sheet {
     display: contents;
+  }
+
+  /* Not display:contents like its siblings above: it hosts an absolutely
+     positioned close button (top-right), which needs THIS element to be a
+     real, positioned box to anchor to. CDK's global position strategy sets
+     an inline `position: static` directly on `.cdk-overlay-pane` (inline
+     styles beat any stylesheet rule short of !important), so the pane itself
+     can't be used as the positioning context - this is the next element in. */
+  app-lp-keypad-dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
   }
 
   body {
@@ -107,9 +120,11 @@
     @apply fixed z-50 flex flex-col gap-4 bg-background p-6 shadow-lg transition-transform duration-300 ease-in-out;
   }
 
-  /* Near-fullscreen keypad dialog (life points custom-amount entry). */
+  /* Life points custom-amount keypad: sized to its own content (not the
+     viewport) with a max-height safety cap so it still fits on very short
+     screens instead of overflowing. */
   .cdk-overlay-pane.app-lp-keypad-panel {
-    @apply flex h-[92dvh] max-h-[760px] w-[94vw] max-w-md flex-col gap-3 overflow-hidden rounded-2xl border bg-background p-4 shadow-lg sm:p-6;
+    @apply flex max-h-[90dvh] w-[92vw] max-w-sm flex-col overflow-y-auto rounded-2xl border bg-background p-4 shadow-lg sm:p-6;
   }
 }
 

@@ -1,4 +1,6 @@
-<div appDialogHeader class="shrink-0 text-left">
+<app-dialog-close />
+
+<div appDialogHeader class="shrink-0 pr-8 text-left">
   <h2 appDialogTitle class="flex items-baseline justify-between gap-2" [class]="accentTextClass">
     <span>{{ data.label }}</span>
     <span class="text-sm font-normal text-muted-foreground">Actual: {{ data.currentValue }}</span>
@@ -46,12 +48,12 @@
   </button>
 </div>
 
-<div class="grid flex-1 grid-cols-3 grid-rows-4 gap-2 sm:gap-3">
+<div class="grid shrink-0 grid-cols-3 gap-2 sm:gap-3">
   @for (digit of digitRows; track digit) {
     <button
       type="button"
       (click)="pushDigit(digit)"
-      class="flex items-center justify-center rounded-xl bg-muted text-2xl font-bold transition-colors active:bg-muted-foreground/20 sm:text-3xl"
+      class="flex h-14 items-center justify-center rounded-xl bg-muted text-2xl font-bold transition-colors active:bg-muted-foreground/20 sm:h-16 sm:text-3xl"
     >
       {{ digit }}
     </button>
@@ -60,24 +62,24 @@
   <button
     type="button"
     (click)="apply(1)"
-    class="flex items-center justify-center rounded-xl bg-success/15 text-success transition-colors active:bg-success/25"
+    class="flex h-14 items-center justify-center rounded-xl bg-success/15 text-success transition-colors active:bg-success/25 sm:h-16"
     [attr.aria-label]="'Sumar ' + staged() + ' a ' + data.label"
   >
-    <lucide-icon name="Plus" [size]="32" />
+    <lucide-icon name="Plus" [size]="28" />
   </button>
   <button
     type="button"
     (click)="pushDigit('0')"
-    class="flex items-center justify-center rounded-xl bg-muted text-2xl font-bold transition-colors active:bg-muted-foreground/20 sm:text-3xl"
+    class="flex h-14 items-center justify-center rounded-xl bg-muted text-2xl font-bold transition-colors active:bg-muted-foreground/20 sm:h-16 sm:text-3xl"
   >
     0
   </button>
   <button
     type="button"
     (click)="apply(-1)"
-    class="flex items-center justify-center rounded-xl bg-destructive/15 text-destructive transition-colors active:bg-destructive/25"
+    class="flex h-14 items-center justify-center rounded-xl bg-destructive/15 text-destructive transition-colors active:bg-destructive/25 sm:h-16"
     [attr.aria-label]="'Restar ' + staged() + ' a ' + data.label"
   >
-    <lucide-icon name="Minus" [size]="32" />
+    <lucide-icon name="Minus" [size]="28" />
   </button>
 </div>

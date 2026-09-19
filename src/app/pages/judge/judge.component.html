@@ -9,7 +9,7 @@
     <main class="flex-grow space-y-4 p-4 pb-24 md:space-y-6 md:p-6">
       <div class="flex justify-center sm:justify-start">
         <div class="flex flex-wrap items-center justify-center gap-2 rounded-full bg-muted p-1">
-          <button appButton variant="outline" size="sm" class="rounded-full" [disabled]="currentRoundForView() <= 1" (click)="goToPrevious()">
+          <button appButton variant="outline" size="icon" class="h-9 w-9 rounded-full" [disabled]="currentRoundForView() <= 1" (click)="goToPrevious()">
             <lucide-icon name="ChevronLeft" [size]="16" />
             <span class="sr-only">Ronda anterior</span>
           </button>
@@ -17,8 +17,8 @@
           <button
             appButton
             variant="outline"
-            size="sm"
-            class="rounded-full"
+            size="icon"
+            class="h-9 w-9 rounded-full"
             [disabled]="currentRoundForView() >= t.rounds.length && !isViewingHistory()"
             (click)="goToNext()"
           >
