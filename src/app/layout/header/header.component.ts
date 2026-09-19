@@ -5,7 +5,6 @@ import { filter, map, startWith } from 'rxjs';
 import { ButtonDirective } from '../../ui/button/button.directive';
 import { LucideIcons } from '../../core/icons';
 import { TournamentService } from '../../core/services/tournament.service';
-import { NavMenuComponent } from '../nav-menu/nav-menu.component';
 import { ClockDisplayComponent } from '../clock-display/clock-display.component';
 import { BreakpointService } from '../../core/services/breakpoint.service';
 import { BadgeDirective } from '../../ui/badge/badge.directive';
@@ -13,7 +12,7 @@ import { BadgeDirective } from '../../ui/badge/badge.directive';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, ButtonDirective, BadgeDirective, LucideIcons, NavMenuComponent, ClockDisplayComponent],
+  imports: [RouterLink, ButtonDirective, BadgeDirective, LucideIcons, ClockDisplayComponent],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent {

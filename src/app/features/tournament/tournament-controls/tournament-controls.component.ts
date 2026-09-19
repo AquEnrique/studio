@@ -120,13 +120,13 @@ export class TournamentControlsComponent {
       participantNames.forEach((name) => {
         text += `${name} ✅❌\n`;
       });
-      text += `\nLink del torneo: https://tournamentygo-fortaleza.netlify.app/`;
+      text += `\nLink del torneo: https://aquenrique.github.io/fortaleza-tcg/#/`;
     } else {
       text = `RONDA ${currentRound}\n\n`;
       pairings.forEach((p, index) => {
         text += `${index + 1}. ${p.player1.name} vs ${p.player2.name}\n`;
       });
-      text += `\nLink del torneo: https://tournamentygo-fortaleza.netlify.app/`;
+      text += `\nLink del torneo: https://aquenrique.github.io/fortaleza-tcg/#/`;
     }
 
     navigator.clipboard.writeText(text);

@@ -1,5 +1,8 @@
-<div class="flex h-screen flex-col">
-  <app-header />
-  <router-outlet />
+<div class="flex h-screen">
+  <app-nav-menu />
+  <div class="flex min-w-0 flex-1 flex-col">
+    <app-header />
+    <router-outlet />
+  </div>
 </div>
 <app-toaster />

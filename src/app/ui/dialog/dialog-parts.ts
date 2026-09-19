@@ -3,7 +3,7 @@ import { DialogRef } from '@angular/cdk/dialog';
 import { LucideIcons } from '../../core/icons';
 
 // Presentational pieces for content authors composing whatever component they
-// pass to `Dialog.open()` / `SheetService.open()`. Ported from dialog.tsx.
+// pass to `Dialog.open()`. Ported from dialog.tsx.
 
 @Directive({ selector: '[appDialogHeader]', standalone: true })
 export class DialogHeaderDirective {
