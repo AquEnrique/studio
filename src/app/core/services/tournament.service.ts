@@ -4,13 +4,14 @@ import { produce } from 'immer';
 import type { DisplayPairing, ManualPairing, Match, Player, Round, StandingsPlayer, Tournament } from '../models/types';
 import { getPeruTimestamp } from '../lib/peru-time';
 import {
-  NPOINT_URL,
+  TOURNAMENT_URL,
   buildCurrentPairings,
   calculateStandings,
   getRecommendedRounds,
   initialTournamentState,
   isFechaGuardadoNewer,
   isValidTournamentPayload,
+  parseStoredTournament,
   swissPair,
 } from '../lib/tournament-logic';
 
@@ -83,8 +84,8 @@ export class TournamentService {
 
   private async fetchTournament(): Promise<void> {
     try {
-      const response = await fetch(NPOINT_URL, { cache: 'no-store' });
-      const data = response.ok ? await response.json() : null;
+      const response = await fetch(TOURNAMENT_URL, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+      const data = response.ok ? parseStoredTournament(await response.json()) : null;
       if (isValidTournamentPayload(data)) {
         this.lastSyncedFechaGuardado = data.fechaGuardado ?? null;
         this.skipNextAutosave = true;
@@ -109,9 +110,9 @@ export class TournamentService {
   // Otherwise we stamp the save with an authoritative Peru timestamp and write it.
   private async persistTournament(tournamentToSave: Tournament): Promise<boolean> {
     try {
-      const checkResponse = await fetch(NPOINT_URL, { cache: 'no-store' });
+      const checkResponse = await fetch(TOURNAMENT_URL, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       if (checkResponse.ok) {
-        const remoteData = await checkResponse.json();
+        const remoteData = parseStoredTournament(await checkResponse.json());
         if (isValidTournamentPayload(remoteData) && isFechaGuardadoNewer(remoteData.fechaGuardado, this.lastSyncedFechaGuardado)) {
           this.isUpdatingToLatest.set(true);
           this.lastSyncedFechaGuardado = remoteData.fechaGuardado ?? null;
@@ -126,10 +127,11 @@ export class TournamentService {
       const fechaGuardado = await getPeruTimestamp();
       const finalTournament: Tournament = { ...tournamentToSave, fechaGuardado };
 
-      const saveResponse = await fetch(NPOINT_URL, {
-        method: 'POST',
+      const saveResponse = await fetch(TOURNAMENT_URL, {
+        method: 'PUT',
+        signal: AbortSignal.timeout(10000),
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalTournament),
+        body: JSON.stringify(JSON.stringify(finalTournament)),
       });
 
       if (saveResponse.ok) {

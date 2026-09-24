@@ -27,4 +27,4 @@ Genera `dist/angular-app/browser` (sitio estático prerenderizado, una página p
 - `src/app/pages/` — las 4 páginas enrutadas: torneo (`/`), juez (`/judge`), life points (`/life-points`) y Angelechy (`/angelechy`).
 - `src/app/layout/` — cabecera, menú de navegación y reloj de ronda, compartidos por toda la app.
 
-La persistencia del torneo y del reloj de ronda se hace contra dos JSON bins de npoint.io (no hay backend propio); los contadores de life points/Angelechy usan `localStorage`.
+La persistencia del torneo y del reloj de ronda se hace contra Firebase Realtime Database (nodos `torneo` y `reloj`, vía REST) (no hay backend propio); los contadores de life points/Angelechy usan `localStorage`.

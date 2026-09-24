@@ -21,7 +21,7 @@ const PERU_UTC_OFFSET = '-05:00';
 export async function getPeruTimestamp(): Promise<string> {
   for (const url of TIME_ENDPOINTS) {
     try {
-      const response = await fetch(url, { cache: 'no-store' });
+      const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       if (!response.ok) continue;
       const data = await response.json();
 

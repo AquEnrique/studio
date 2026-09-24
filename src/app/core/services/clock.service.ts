@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
-const CLOCK_NPOINT_URL = 'https://api.npoint.io/37831bbb7b302ff650e8';
+const CLOCK_URL = 'https://fortaleza-tcg-default-rtdb.firebaseio.com/reloj.json';
 const ROUND_DURATION = 50 * 60 * 1000; // 50 minutes in milliseconds
 const FIVE_MINUTE_WARNING = 5 * 60 * 1000;
 
@@ -18,7 +18,7 @@ async function notify(title: string, options?: NotifyOptions): Promise<void> {
   if (!('serviceWorker' in navigator)) return;
   try {
     const registration = await navigator.serviceWorker.ready;
-    await registration.showNotification(title, { icon: '/favicon.ico', ...options } as NotificationOptions);
+    await registration.showNotification(title, { icon: 'favicon.ico', ...options } as NotificationOptions);
   } catch (error) {
     console.error('Failed to show notification:', error);
   }
@@ -42,7 +42,7 @@ export class ClockService implements OnDestroy {
     if (!this.isBrowser) return;
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch((error) => {
+      navigator.serviceWorker.register('sw.js').catch((error) => {
         console.error('Service worker registration failed:', error);
       });
     }
@@ -56,7 +56,7 @@ export class ClockService implements OnDestroy {
 
   private async fetchStartTime(): Promise<void> {
     try {
-      const response = await fetch(CLOCK_NPOINT_URL, { cache: 'no-store' });
+      const response = await fetch(CLOCK_URL, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       if (response.ok) {
         const data = await response.json();
         if (data && data.startTime) {
@@ -76,15 +76,16 @@ export class ClockService implements OnDestroy {
     this.fetchStartTime();
   }
 
-  private async updateNpoint(time: number | null): Promise<void> {
+  private async updateRemote(time: number | null): Promise<void> {
     try {
-      await fetch(CLOCK_NPOINT_URL, {
-        method: 'POST',
+      await fetch(CLOCK_URL, {
+        method: 'PUT',
+        signal: AbortSignal.timeout(10000),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ startTime: time }),
       });
     } catch (error) {
-      console.error('Failed to update clock on npoint.io:', error);
+      console.error('Failed to update clock on Firebase:', error);
     }
   }
 
@@ -92,7 +93,7 @@ export class ClockService implements OnDestroy {
     const now = Date.now();
     this.setStartTime(now);
     this.isFinished.set(false);
-    await this.updateNpoint(now);
+    await this.updateRemote(now);
   }
 
   async resetRoundTimer(): Promise<void> {
@@ -101,7 +102,7 @@ export class ClockService implements OnDestroy {
     this.isFinished.set(false);
     this.fiveMinWarningSentFor = null;
     this.finishedNotificationSentFor = null;
-    await this.updateNpoint(null);
+    await this.updateRemote(null);
   }
 
   requestNotificationPermission(): void {

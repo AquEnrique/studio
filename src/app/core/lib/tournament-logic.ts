@@ -8,7 +8,18 @@ import type {
   Tournament,
 } from '../models/types';
 
-export const NPOINT_URL = 'https://api.npoint.io/36dc4af53c22ef8f8eb5';
+export const TOURNAMENT_URL = 'https://fortaleza-tcg-default-rtdb.firebaseio.com/torneo.json';
+
+// Firebase drops empty arrays and nulls (e.g. `rounds: []`, bye `playerId2: null`), so the
+// tournament is stored as a JSON string. Also accepts a plain object for old/imported data.
+export function parseStoredTournament(raw: unknown): unknown {
+  if (typeof raw !== 'string') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 export const initialTournamentState: Tournament = {
   players: [],
