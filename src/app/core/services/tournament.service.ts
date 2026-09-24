@@ -35,6 +35,9 @@ export class TournamentService {
   private skipNextAutosave = false;
   private isInitialLoad = true;
   private autosaveHandle: ReturnType<typeof setTimeout> | undefined;
+  // Saves run one at a time: overlapping saves would see each other's write as a "newer remote
+  // version" and adopt it, reverting whatever the later save was trying to store.
+  private saveQueue: Promise<unknown> = Promise.resolve();
 
   readonly standings = computed<StandingsPlayer[]>(() => {
     const tournament = this.tournament();
@@ -60,6 +63,7 @@ export class TournamentService {
   constructor() {
     if (this.isBrowser) {
       this.fetchTournament();
+      this.listenForRemoteChanges();
     }
 
     // Debounced autosave: any edit that isn't the result of a fetch/save adopting remote state
@@ -83,6 +87,7 @@ export class TournamentService {
   }
 
   private async fetchTournament(): Promise<void> {
+    if (!this.isBrowser) return;
     try {
       const response = await fetch(TOURNAMENT_URL, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       const data = response.ok ? parseStoredTournament(await response.json()) : null;
@@ -96,10 +101,26 @@ export class TournamentService {
         this.tournament.set(initialTournamentState);
       }
     } catch {
+      // Network error: keep what we already have instead of showing an empty registration.
+      if (this.tournament()) return;
       this.lastSyncedFechaGuardado = null;
       this.skipNextAutosave = true;
       this.tournament.set(initialTournamentState);
     }
+  }
+
+  // Firebase REST streaming (native EventSource, auto-reconnects): every device adopts saves
+  // made elsewhere as they happen, so viewers don't stay stuck on an old round or on registration.
+  private listenForRemoteChanges(): void {
+    new EventSource(TOURNAMENT_URL).addEventListener('put', (event) => {
+      const { path, data } = JSON.parse((event as MessageEvent).data);
+      if (path !== '/') return;
+      const remote = parseStoredTournament(data);
+      if (!isValidTournamentPayload(remote) || !isFechaGuardadoNewer(remote.fechaGuardado, this.lastSyncedFechaGuardado)) return;
+      this.lastSyncedFechaGuardado = remote.fechaGuardado ?? null;
+      this.skipNextAutosave = true;
+      this.tournament.set(remote);
+    });
   }
 
   // Central write path: every save (autosave, "Guardar Estado", next round, etc.) goes through
@@ -108,7 +129,13 @@ export class TournamentService {
   // remote has moved ahead (someone else saved from another device/tab while we were editing),
   // we don't overwrite it - we adopt it locally instead and surface the "Actualizando" state.
   // Otherwise we stamp the save with an authoritative Peru timestamp and write it.
-  private async persistTournament(tournamentToSave: Tournament): Promise<boolean> {
+  private persistTournament(tournamentToSave: Tournament): Promise<boolean> {
+    const save = this.saveQueue.then(() => this.saveNow(tournamentToSave));
+    this.saveQueue = save;
+    return save;
+  }
+
+  private async saveNow(tournamentToSave: Tournament): Promise<boolean> {
     try {
       const checkResponse = await fetch(TOURNAMENT_URL, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       if (checkResponse.ok) {
@@ -126,6 +153,10 @@ export class TournamentService {
 
       const fechaGuardado = await getPeruTimestamp();
       const finalTournament: Tournament = { ...tournamentToSave, fechaGuardado };
+      // Mark as synced before writing so our own save echoing back over the stream isn't
+      // mistaken for someone else's newer version.
+      const previousSynced = this.lastSyncedFechaGuardado;
+      this.lastSyncedFechaGuardado = fechaGuardado;
 
       const saveResponse = await fetch(TOURNAMENT_URL, {
         method: 'PUT',
@@ -135,11 +166,15 @@ export class TournamentService {
       });
 
       if (saveResponse.ok) {
-        this.lastSyncedFechaGuardado = fechaGuardado;
-        this.skipNextAutosave = true;
-        this.tournament.set(finalTournament);
+        // Only stamp the new fechaGuardado locally if nothing was edited while saving; otherwise
+        // keep the newer local edit (its own autosave is already queued).
+        if (this.tournament() === tournamentToSave) {
+          this.skipNextAutosave = true;
+          this.tournament.set(finalTournament);
+        }
         return true;
       }
+      this.lastSyncedFechaGuardado = previousSynced;
       return false;
     } catch (error) {
       console.error('Error al guardar el torneo:', error);

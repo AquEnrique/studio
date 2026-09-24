@@ -48,6 +48,11 @@ export class ClockService implements OnDestroy {
     }
 
     this.fetchStartTime();
+    // Live updates from Firebase so every device sees the judge start/reset the round timer.
+    new EventSource(CLOCK_URL).addEventListener('put', (event) => {
+      const { path, data } = JSON.parse((event as MessageEvent).data);
+      if (path === '/') this.applyRemote(data);
+    });
   }
 
   ngOnDestroy(): void {
@@ -55,21 +60,18 @@ export class ClockService implements OnDestroy {
   }
 
   private async fetchStartTime(): Promise<void> {
+    if (!this.isBrowser) return;
     try {
       const response = await fetch(CLOCK_URL, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.startTime) {
-          this.setStartTime(data.startTime);
-        } else {
-          this.setStartTime(null);
-          this.remainingTime.set(ROUND_DURATION);
-          this.isFinished.set(false);
-        }
-      }
+      if (response.ok) this.applyRemote(await response.json());
     } catch (error) {
       console.error('Failed to fetch clock start time:', error);
     }
+  }
+
+  private applyRemote(data: { startTime?: number | null } | null): void {
+    const startTime = data?.startTime || null;
+    if (startTime !== this.startTime()) this.setStartTime(startTime);
   }
 
   refreshClock(): void {
